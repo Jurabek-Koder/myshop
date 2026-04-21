@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+ import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 
 const AuthContext = createContext(null);
 const base = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
