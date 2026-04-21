@@ -1,10 +1,28 @@
+# dependencies
 node_modules/
+
+# build files
 dist/
+build/
+
+# env files
 .env
-.env.local
-.env.development
+.env.*
+!.env.example
+
+# logs
+*.log
+
+# database
 *.db
 *.db-shm
 *.db-wal
+
+# uploads
 uploads/
-*.log
+
+# system files
+.DS_Store
+
+# test coverage
+coverage/
