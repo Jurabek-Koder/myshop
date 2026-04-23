@@ -6,7 +6,7 @@ import { PickerUiSettingsProvider } from './context/PickerUiSettingsContext';
 import { CartProvider } from './context/CartContext';
 import Layout from './components/Layout';
 import RouteLoader from './components/RouteLoader.jsx';
-import { canAccessPath } from './utils/allowedPages';
+import { canAccessPath } from './utils/canAccessPath.js';
 
 /** Do‘kon va kirish sahifalari — alohida chunk; birinchi yuklash tezroq */
 const Home = lazy(() => import('./pages/Home.jsx'));
