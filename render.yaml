@@ -1,0 +1,46 @@
+# MyShop — Render Blueprint (API + statik frontend)
+# Hujjat: https://render.com/docs/blueprint-spec
+#
+# Git repoga ulang: bu fayl reponing ildizida bo‘lishi kerak.
+# Keyin: Dashboard → New → Blueprint → shu repo.
+
+services:
+  # --- Backend (Express + SQLite) ---
+  - type: web
+    name: myshop-api
+    runtime: node
+    plan: free
+    region: frankfurt
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "20.18.0"
+      - key: TZ
+        value: Asia/Tashkent
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      # Brauzer ochiladigan frontend manzili(lar), vergul bilan. Static site deploy bo‘lgach URL ni qo‘ying.
+      - key: CORS_ORIGINS
+        sync: false
+      # PORT ni Render o‘zi beradi — qo‘shmang.
+
+  # --- Frontend (Vite build → CDN) ---
+  # Region/plan static saytlarga tegishli emas (global CDN).
+  - type: web
+    name: myshop-web
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      # API ning tashqi HTTPS manzili, oxirida / qo‘ymang. Masalan: https://myshop-api.onrender.com
+      # Birinchi marta: avval myshop-api ni deploy qiling, URL ni oling, keyin shu yerga yozing va static qayta build.
+      - key: VITE_API_BASE_URL
+        sync: false
