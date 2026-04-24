@@ -1,0 +1,58 @@
+================================================================================
+Render: frontend ↔ backend ulanishi (MyShop)
+================================================================================
+
+MUAMMO
+------
+Alohida Static Site va Web Service bo'lsa, brauzer so'rovlarini bilmaydi qayerga
+yuborish kerak. VITE_API_BASE_URL bo'lmasa, so'rovlar saytning o'ziga /api ga
+ketadi — statik CDN da /api yo'q, shuning uchun "ulanmadi" yoki "yo'l xato".
+
+1) BACKEND (Web Service, masalan myshop-api)
+-------------------------------------------
+Dashboard → shu servis → Settings → Environment:
+
+  CORS_ORIGINS=https://SIZNING-FRONTEND.onrender.com
+
+  • To'liq HTTPS manzil, vergul bilan bir nechta mumkin.
+  • www yoki boshqa domen bo'lsa — ikkalasini ham qo'shing.
+  • Hech qachon http:// emas — Renderda HTTPS.
+
+  NODE_ENV=production (odatda bor)
+  JWT kalitlari Render tomonidan berilgan bo'lishi kerak.
+
+Tekshiruv (brauzer yoki terminal):
+  curl -sS https://SIZNING-API.onrender.com/api/health
+
+2) FRONTEND (Static Site, masalan myshop-web)
+---------------------------------------------
+Dashboard → shu servis → Environment:
+
+  VITE_API_BASE_URL=https://SIZNING-API.onrender.com
+
+  • Bu aynan Web Service ning "URL" maydonidagi manzil (onrender.com).
+  • Oxirida / qo'ymang ( /api ham qo'shmang — kod o'zi /api qo'shadi).
+  • Vite build vaqtida shu qiymat bundle ichiga yoziladi.
+
+MUHIM: O'zgarishdan keyin
+  Static Site → Manual Deploy → "Clear build cache & deploy"
+  (faqat "Deploy" yetmaydi — VITE_* o'zgarganda cache tozalash kerak)
+
+3) TARTIB (tavsiya)
+-------------------
+  a) Avval backend deploy bo'lsin, URL ni ko'ring.
+  b) Frontend Environment ga VITE_API_BASE_URL ni qo'ying.
+  c) Backend ga CORS_ORIGINS ni frontend URL bilan qo'ying.
+  d) Frontend: Clear build cache & deploy.
+
+4) XATO: CORS
+-------------
+Brauzer konsolida "blocked by CORS" bo'lsa — CORS_ORIGINS da frontend manzili
+to'g'ri emas yoki https yo'q. Ikkala tomonda ham URL ni nusxa qilib tekshiring.
+
+5) XATO: 404 on /api
+--------------------
+Agar VITE_API_BASE_URL buildda bo'sh bo'lsa, so'rovlar noto'g'ri joyga ketadi.
+Qayta: Environment → VITE_API_BASE_URL → Clear build cache & deploy.
+
+================================================================================
