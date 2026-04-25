@@ -1,0 +1,21 @@
+# Render Blueprint: GitHub repoga ulaganda yoki "New Blueprint" orqali ishlatiladi.
+# Bitta Web Service: frontend build + Node API, bir domen, /api va SPA birgalikda.
+# Shundan keyin Render Dashboard orqali JWT, CORS va boshqa o‘zgaruvchilarni qo‘llang.
+
+databases: []
+
+services:
+  - type: web
+    name: myshop
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: cd frontend && npm ci && npm run build && cd ../backend && npm ci
+    startCommand: cd backend && NODE_ENV=production node src/server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TZ
+        value: Asia/Tashkent
+    # PORT — Render o‘zi beradi. Maxfiy: Dashboard — JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, CORS_ORIGINS, ...
