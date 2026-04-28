@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="uz">
+  <head>
+    <script>
+      (function(){ try { if (localStorage.getItem('myshop-theme') === 'dark') document.documentElement.classList.add('theme-dark'); } catch(e){} })();
+    </script>
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background: #f8fafc;
+      }
+
+      html.theme-dark,
+      html.theme-dark body {
+        background: #0f172a;
+        color-scheme: dark;
+      }
+
+      #root {
+        min-height: 100%;
+        background: inherit;
+      }
+
+      #myshop-boot {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        background: #f8fafc;
+      }
+
+      html.theme-dark #myshop-boot {
+        background: #0f172a;
+      }
+
+      #myshop-boot .myshop-boot-inner {
+        text-align: center;
+      }
+
+      #myshop-boot .myshop-boot-logo {
+        display: block;
+        margin: 0;
+        font-weight: 800;
+        font-size: 1.5rem;
+        letter-spacing: -0.02em;
+        color: #eab308;
+      }
+    </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#2563eb" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>MyShop | Onlayn do'kon</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&amp;family=Source+Sans+3:wght@400;500;600;700&amp;display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap"
+    />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script type="module" crossorigin src="/assets/index-CcTSDwsp.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-B5nbob9J.js">
+    <link rel="modulepreload" crossorigin href="/assets/react-vendor-C9WlAskd.js">
+    <link rel="modulepreload" crossorigin href="/assets/router-B85LL-fX.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-fM3PFVZP.css">
+  </head>
+  <body>
+    <div id="root">
+      <div id="myshop-boot" role="status" aria-live="polite" aria-label="MyShop">
+        <div class="myshop-boot-inner">
+          <span class="myshop-boot-logo">MyShop</span>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
