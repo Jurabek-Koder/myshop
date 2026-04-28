@@ -2388,14 +2388,14 @@
   }
 
   .seller-notify-menu {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    left: auto;
-    transform: none;
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    right: auto;
+    transform: translate(-50%, -50%);
     width: min(360px, calc(100vw - 1.25rem));
     max-width: calc(100vw - 1.25rem);
-    max-height: min(65vh, 420px);
+    max-height: min(75dvh, calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 2rem));
     z-index: 401;
     overflow: hidden;
     display: flex;
