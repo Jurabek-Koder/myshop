@@ -10,6 +10,7 @@ services:
     runtime: node
     plan: free
     region: frankfurt
+    # Alohida static frontend bo‘lsa, build oldin: VITE_API_BASE_URL=https://backend-xxxx.onrender.com
     buildCommand: cd frontend && npm ci && npm run build && cd ../backend && npm ci
     startCommand: cd backend && NODE_ENV=production node src/server.js
     healthCheckPath: /api/health
