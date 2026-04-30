@@ -614,27 +614,32 @@
 .admin-bell-wrap {
   position: relative;
 }
+/* Body portali: butun ekran ustida, kontentdan mustaqil bosiladi */
 .admin-bell-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 99;
-  background: transparent;
+  z-index: 5200;
+  background: rgba(15, 23, 42, 0.45);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 .admin-bell-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 0.5rem;
+  position: fixed;
+  left: auto;
+  top: calc(env(safe-area-inset-top, 0px) + 4.35rem);
+  right: max(0.75rem, env(safe-area-inset-right, 0px));
+  margin-top: 0;
   width: min(360px, calc(100vw - 2rem));
-  max-height: 70vh;
+  max-height: min(70dvh, calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 5rem));
   overflow-y: auto;
   overflow-x: hidden;
   background: var(--admin-surface);
   border: 1px solid var(--admin-border);
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  z-index: 100;
+  z-index: 5201;
   box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
 }
 .admin-bell-head {
   padding: 0.75rem 1rem;
@@ -703,6 +708,15 @@
   overflow: hidden;
   display: grid;
   z-index: 20;
+}
+
+.profile-menu.profile-menu--portal {
+  position: fixed;
+  z-index: 5201;
+  top: calc(env(safe-area-inset-top, 0px) + 4.35rem);
+  right: max(0.75rem, env(safe-area-inset-right, 0px));
+  left: auto;
+  width: min(260px, calc(100vw - 1.25rem));
 }
 
 .profile-menu button {
@@ -1983,36 +1997,23 @@
     overflow: visible;
   }
 
-  .admin-bell-backdrop {
-    z-index: 400;
-    background: rgba(0, 0, 0, 0.42);
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  /* Qo‘ng‘iroqcha: xabarlar oynasi ekran markazida; tashqari bosilsa backdrop yopadi */
+  /* Bildirishnoma oynasi mobil: markaz; backdrop yuqorida global z-index */
   .admin-bell-dropdown {
-    position: fixed;
     left: 50%;
     top: 50%;
     right: auto;
     transform: translate(-50%, -50%);
     width: min(360px, calc(100vw - 1.5rem));
     max-width: calc(100vw - 1.25rem);
-    margin-top: 0;
     max-height: min(75dvh, calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 2rem));
-    z-index: 401;
-    -webkit-overflow-scrolling: touch;
   }
 
-  .profile-menu {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    left: auto;
-    transform: none;
+  .profile-menu.profile-menu--portal {
+    left: 50%;
+    top: 50%;
+    right: auto;
+    transform: translate(-50%, -50%);
     width: min(260px, calc(100vw - 1.25rem));
-    z-index: 401;
   }
 
   .profile-btn span {
