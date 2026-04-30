@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -2686,11 +2687,27 @@ export default function AdminDashboard() {
                   <span className="dot">{adminNotifications.filter((n) => !n.read_at).length}</span>
                 )}
               </button>
-              {adminNotificationsOpen && (
+            </div>
+
+            {adminNotificationsOpen &&
+              createPortal(
                 <>
-                  <div className="admin-bell-backdrop" onClick={() => setAdminNotificationsOpen(false)} aria-hidden="true" />
-                  <div className="admin-bell-dropdown">
-                    <div className="admin-bell-head">Bildirishnolar</div>
+                  <div
+                    className="admin-bell-backdrop"
+                    role="presentation"
+                    onClick={() => setAdminNotificationsOpen(false)}
+                    aria-hidden="true"
+                  />
+                  <div
+                    className="admin-bell-dropdown"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="admin-bell-dialog-title"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="admin-bell-head" id="admin-bell-dialog-title">
+                      Bildirishnolar
+                    </div>
                     {adminNotifications.length === 0 ? (
                       <p className="admin-bell-empty">Xabar yo&apos;q</p>
                     ) : (
@@ -2720,9 +2737,9 @@ export default function AdminDashboard() {
                       </ul>
                     )}
                   </div>
-                </>
+                </>,
+                document.body,
               )}
-            </div>
 
             <div className="profile-wrap">
               <button
@@ -2742,35 +2759,49 @@ export default function AdminDashboard() {
                 <span>{user?.full_name || 'SuperAdmin'}</span>
                 <i className="fas fa-chevron-down" />
               </button>
-              {profileOpen && (
-                <>
-                  <div className="admin-bell-backdrop" onClick={() => setProfileOpen(false)} aria-hidden="true" />
-                  <div className="profile-menu" role="menu">
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => {
-                      setProfileOpen(false);
-                      setActiveViewWithUrl('admin_profile');
-                    }}
-                  >
-                    <i className="fas fa-user" /> Profil
-                  </button>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => {
-                      setProfileOpen(false);
-                      setActiveViewWithUrl('admin_settings');
-                    }}
-                  >
-                    <i className="fas fa-cog" /> Sozlamalar
-                  </button>
-                  <button type="button" className="danger" role="menuitem" onClick={handleLogout}><i className="fas fa-sign-out-alt" /> Chiqish</button>
-                </div>
-                </>
-              )}
             </div>
+
+            {profileOpen &&
+              createPortal(
+                <>
+                  <div
+                    className="admin-bell-backdrop"
+                    role="presentation"
+                    onClick={() => setProfileOpen(false)}
+                    aria-hidden="true"
+                  />
+                  <div
+                    className="profile-menu profile-menu--portal"
+                    role="menu"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setProfileOpen(false);
+                        setActiveViewWithUrl('admin_profile');
+                      }}
+                    >
+                      <i className="fas fa-user" /> Profil
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setProfileOpen(false);
+                        setActiveViewWithUrl('admin_settings');
+                      }}
+                    >
+                      <i className="fas fa-cog" /> Sozlamalar
+                    </button>
+                    <button type="button" className="danger" role="menuitem" onClick={handleLogout}>
+                      <i className="fas fa-sign-out-alt" /> Chiqish
+                    </button>
+                  </div>
+                </>,
+                document.body,
+              )}
           </div>
         </header>
         )}
