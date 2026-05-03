@@ -286,10 +286,13 @@
   overflow-x: hidden;
   background: var(--bg-card);
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(15, 23, 42, 0.05);
   border: 1px solid var(--border);
   z-index: 99;
   color: var(--text);
+  isolation: isolate;
 }
 .picker-bell-dropdown-head {
   padding: 0.75rem 1rem;
@@ -336,7 +339,12 @@
 }
 .picker-bell-item:last-child { border-bottom: none; }
 .picker-bell-item:hover { background: var(--bg-deep); }
-.picker-bell-item.unread { background: rgba(5, 150, 105, 0.08); }
+.picker-bell-item.unread {
+  background: #e8f5f0;
+}
+.theme-dark .picker-bell-item.unread {
+  background: #153d30;
+}
 .picker-bell-item-title { display: block; font-weight: 600; margin-bottom: 0.2rem; }
 .picker-bell-item-date { font-size: 0.8rem; color: var(--text-muted); }
 .picker-notification-body {
@@ -361,11 +369,22 @@
     overflow: visible;
   }
 
+  .picker-phone-frame:has(.picker-bell-backdrop) .picker-topbar {
+    z-index: 800;
+  }
+
   .picker-bell-backdrop {
-    background: rgba(0, 0, 0, 0.42);
+    background: rgba(15, 23, 42, 0.66);
     z-index: 400;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
+    -webkit-backdrop-filter: saturate(140%) blur(6px);
+    backdrop-filter: saturate(140%) blur(6px);
+    isolation: isolate;
+  }
+
+  .theme-dark .picker-bell-backdrop {
+    background: rgba(2, 6, 23, 0.78);
   }
 
   .picker-bell-dropdown {
@@ -380,6 +399,9 @@
     margin-top: 0;
     z-index: 401;
     -webkit-overflow-scrolling: touch;
+    box-shadow:
+      0 8px 28px rgba(0, 0, 0, 0.24),
+      0 0 0 1px rgba(15, 23, 42, 0.06);
   }
 
   .picker-bell-dropdown-head-title,
