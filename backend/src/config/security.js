@@ -36,11 +36,30 @@ export const security = {
   },
   // CORS: prod — ro‘yxat; dev — `true` (so‘rov kelgan Origin qaytariladi) — 192.168... yoki boshqa port bilan ham kirish ishlaydi
   cors: {
-    origins: process.env.CORS_ORIGINS
-      ? process.env.CORS_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean)
-      : process.env.NODE_ENV === 'production'
-        ? ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5174', 'http://127.0.0.1:5174', 'http://localhost:5175', 'http://127.0.0.1:5175', 'http://localhost:5176', 'http://127.0.0.1:5176', 'http://localhost:5177', 'http://127.0.0.1:5177']
-        : true,
+    origins: (() => {
+      const fromList = process.env.CORS_ORIGINS
+        ? process.env.CORS_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean)
+        : [];
+      const fromFrontend = process.env.FRONTEND_URL
+        ? [String(process.env.FRONTEND_URL).replace(/\/$/, '').trim()].filter(Boolean)
+        : [];
+      const merged = [...new Set([...fromList, ...fromFrontend])];
+      if (merged.length) return merged;
+      return process.env.NODE_ENV === 'production'
+        ? [
+            'http://localhost:5173',
+            'http://127.0.0.1:5173',
+            'http://localhost:5174',
+            'http://127.0.0.1:5174',
+            'http://localhost:5175',
+            'http://127.0.0.1:5175',
+            'http://localhost:5176',
+            'http://127.0.0.1:5176',
+            'http://localhost:5177',
+            'http://127.0.0.1:5177',
+          ]
+        : true;
+    })(),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-App-Secret-Key'],
