@@ -34,7 +34,9 @@ services:
         value: production
       - key: TZ
         value: Asia/Tashkent
-      # SQLite + uploads uchun doimiy yoʻl (faqat Persistent Disk berganingizdan keyin; mountPath bilan bir xil):
+      # Free / disk yo‘q demo: MYSHOP_ALLOW_EPHEMERAL_DISK=1 (xavfli — ma’lumot uzilib ketishi mumkin).
       # - key: MYSHOP_DATA_DIR
       #   value: /var/data/myshop
-    # PORT — Render o‘zi beradi. Maxfiy: JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, CORS_ORIGINS, ...
+      # Alohida Static Site (frontend boshqa domen) → API da: CORS_ORIGINS=https://frontend-xxxx.onrender.com
+      # yoki FRONTEND_URL=shu manzil (vergul bilan bir nechta domen CORS_ORIGINS da)
+    # PORT — Render o‘zi beradi. Maxfiy: JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, CORS_ORIGINS, FRONTEND_URL, ...
