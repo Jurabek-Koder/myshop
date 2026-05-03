@@ -154,6 +154,25 @@ function formatDateLabel(value) {
   return formatIsoDateLabelUz(iso);
 }
 
+/** Buyurtma statusini oddiy qilib (seller panel uchun) */
+function sellerOrderStatusLabelUz(raw) {
+  const s = String(raw || '').trim().toLowerCase();
+  const map = {
+    pending: 'Kutilmoqda',
+    hold: 'Vaqtinchalik saqlangan',
+    picked: 'Yig‘ilgan',
+    packaged: 'Qadoqlangan',
+    assigned: 'Kuryerga berilgan',
+    picked_up: 'Kuryer oldi',
+    on_the_way: 'Yo‘lda',
+    delivered: 'Yetkazildi',
+    cancelled: 'Bekor qilindi',
+    blocked: 'Bloklangan',
+    archived: 'Arxiv',
+  };
+  return map[s] || (raw ? String(raw) : '—');
+}
+
 function makeProductForm() {
   return {
     name_uz: '',
@@ -293,6 +312,12 @@ export default function SellerDashboard() {
   const [sellerWithdrawErr, setSellerWithdrawErr] = useState(false);
   const [salesChartLoading, setSalesChartLoading] = useState(false);
 
+  const [ordersOverviewLoading, setOrdersOverviewLoading] = useState(false);
+  const [ordersOverviewErr, setOrdersOverviewErr] = useState('');
+  const [ordersOverviewSummary, setOrdersOverviewSummary] = useState(null);
+  const [ordersOverviewProducts, setOrdersOverviewProducts] = useState([]);
+  const [ordersOverviewRecent, setOrdersOverviewRecent] = useState([]);
+  const [ordersViewSearch, setOrdersViewSearch] = useState('');
   const [printProductName, setPrintProductName] = useState('');
   const [printPrice, setPrintPrice] = useState('');
   const [printQty, setPrintQty] = useState('1');
@@ -353,6 +378,7 @@ export default function SellerDashboard() {
   useEffect(() => {
     setProfileOpen(false);
     setNotificationsOpen(false);
+    if (activeView !== 'orders') setOrdersViewSearch('');
   }, [activeView]);
 
   /** Nom/kategoriya kiritilganda izoh bo‘sh bo‘lsa — avtomatik matn. */
@@ -460,6 +486,27 @@ export default function SellerDashboard() {
     }
   }, [request]);
 
+  const loadOrdersOverview = useCallback(async () => {
+    setOrdersOverviewLoading(true);
+    setOrdersOverviewErr('');
+    try {
+      const res = await request('/seller/orders-overview');
+      const data = res.ok ? await res.json().catch(() => ({})) : {};
+      if (!res.ok) throw new Error(data.error || 'Buyurtmalar ko‘rinmadi');
+      setOrdersOverviewSummary(data.summary || null);
+      setOrdersOverviewProducts(Array.isArray(data.products) ? data.products : []);
+      setOrdersOverviewRecent(Array.isArray(data.recent_orders) ? data.recent_orders : []);
+    } catch (e) {
+      const msg = e.message || 'Buyurtmalar yuklanmadi';
+      setOrdersOverviewErr(msg);
+      setOrdersOverviewSummary(null);
+      setOrdersOverviewProducts([]);
+      setOrdersOverviewRecent([]);
+    } finally {
+      setOrdersOverviewLoading(false);
+    }
+  }, [request]);
+
   const loadData = useCallback(
     async (withLoader = true, targetDate) => {
       const dateValue = normalizeDateValue(targetDate ?? selectedDate);
@@ -532,7 +579,8 @@ export default function SellerDashboard() {
 
     loadData(firstLoad, selectedDate);
     loadNotifications(selectedDate, true);
-  }, [user, selectedDate, loadData]);
+    loadOrdersOverview();
+  }, [user, selectedDate, loadData, loadOrdersOverview]);
 
   useEffect(() => {
     if (!user) return;
@@ -619,6 +667,7 @@ export default function SellerDashboard() {
       await fn();
       await loadData(false, selectedDate);
       await loadSellerCatalog();
+      await loadOrdersOverview();
       await loadNotifications(selectedDate, true);
     } catch (e) {
       setError(e.message || 'Amal bajarilmadi');
@@ -652,19 +701,23 @@ export default function SellerDashboard() {
       .slice(0, 6);
   }, [products]);
 
+  const filteredOrderOverviewProducts = useMemo(() => {
+    const q = ordersViewSearch.trim().toLowerCase();
+    const list = ordersOverviewProducts || [];
+    if (!q) return list;
+    return list.filter((row) => `${row.name_uz || ''} ${row.id}`.toLowerCase().includes(q));
+  }, [ordersOverviewProducts, ordersViewSearch]);
+
   const recentOrders = useMemo(() => {
-    const statuses = ['Kutilmoqda', 'Yuborildi', 'Tasdiqlandi', 'Qabul qilindi'];
-    return [...products]
-      .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
-      .slice(0, 6)
-      .map((p, idx) => ({
-        id: p.id,
-        title: p.name_uz || `Mahsulot #${p.id}`,
-        time: formatDateTime(p.created_at),
-        status: statuses[idx % statuses.length],
-        amount: formatCurrency((Number(p.price || 0) * Math.max(1, Number(p.stock || 1))) / 3),
-      }));
-  }, [products]);
+    return (ordersOverviewRecent || []).slice(0, 6).map((r) => ({
+      id: r.id,
+      title: `Buyurtma #${r.id}`,
+      subtitle: `${r.qty_seller_lines != null ? r.qty_seller_lines : ''} ta mahsulot qatori`,
+      time: formatDateTime(r.created_at),
+      status: sellerOrderStatusLabelUz(r.status),
+      amount: formatCurrency(r.line_total || 0),
+    }));
+  }, [ordersOverviewRecent]);
 
   const salesChartDisplay = useMemo(() => {
     const pts = salesChartPoints || [];
@@ -698,7 +751,10 @@ export default function SellerDashboard() {
   };
 
   const todayIncome = Math.round((summary?.seller_net_total || 0) * 0.14);
-  const ordersCount = Math.max(0, Math.round((summary?.products_count || 0) * 1.9));
+  const ordersCount =
+    ordersOverviewSummary?.distinct_buyurtmalar != null
+      ? Math.max(0, Number(ordersOverviewSummary.distinct_buyurtmalar) || 0)
+      : Math.max(0, Math.round((summary?.products_count || 0) * 1.9));
   const productCount = summary?.products_count || products.length || 0;
   const rating = (4.6 + Math.min(0.4, productCount / 200)).toFixed(1);
 
@@ -1006,11 +1062,20 @@ export default function SellerDashboard() {
           <div className="seller-menu-label">ASOSIY</div>
           <nav className="seller-menu-list">
             {menuItems.map((item) => {
-              const badge = item.key === 'products'
-                ? productCount
-                : item.key === 'orders'
-                  ? pendingOrders
-                  : null;
+              const qtyYolda =
+                ordersOverviewSummary != null ? Number(ordersOverviewSummary.total_qty_yolda) || 0 : null;
+              const badge =
+                item.key === 'products'
+                  ? productCount
+                  : item.key === 'orders'
+                    ? qtyYolda != null && qtyYolda > 0
+                      ? Math.min(99, qtyYolda)
+                      : ordersOverviewSummary != null &&
+                          Number(ordersOverviewSummary.distinct_buyurtmalar) > 0 &&
+                          qtyYolda === 0
+                        ? Math.min(99, Number(ordersOverviewSummary.distinct_buyurtmalar))
+                        : null
+                    : null;
 
               return (
                 <button
@@ -1318,12 +1383,17 @@ export default function SellerDashboard() {
                     <button type="button" onClick={() => setActiveViewWithUrl('orders')}>Barchasi</button>
                   </div>
                   <div className="seller-list-box">
-                    {recentOrders.length === 0 && <p className="seller-muted">Buyurtmalar yo'q</p>}
+                    {recentOrders.length === 0 && (
+                      <p className="seller-muted">
+                        {ordersOverviewLoading ? 'Yuklanmoqda...' : "Hozircha buyurtmalar yo'q"}
+                      </p>
+                    )}
                     {recentOrders.map((row) => (
                       <div className="seller-list-row" key={`${row.id}-${row.time}`}>
                         <div>
                           <strong>{row.title}</strong>
                           <span>{row.time}</span>
+                          {row.subtitle ? <span className="seller-muted seller-list-row-sub">{row.subtitle}</span> : null}
                         </div>
                         <div className="right">
                           <strong>{row.amount}</strong>
@@ -1656,13 +1726,144 @@ export default function SellerDashboard() {
           )}
 
           {activeView === 'orders' && (
-            <article className="seller-panel-card">
-              <div className="seller-panel-head"><h4>Buyurtmalar</h4></div>
-              <div className="seller-placeholder-box">
-                <p>Buyurtmalar bo'limi tayyor. Hozircha dashboarddagi so'nggi buyurtmalar ko'rinmoqda.</p>
-                <strong>Jami buyurtma: {ordersCount}</strong>
-              </div>
-            </article>
+            <>
+              <article className="seller-panel-card seller-orders-overview-card">
+                <div className="seller-panel-head seller-orders-overview-head">
+                  <h4>Buyurtmalar</h4>
+                  <button
+                    type="button"
+                    className="seller-mini-btn"
+                    disabled={ordersOverviewLoading}
+                    onClick={() => loadOrdersOverview()}
+                  >
+                    Yangilash
+                  </button>
+                </div>
+                {ordersOverviewErr ? (
+                  <p className="seller-orders-overview-error">{ordersOverviewErr}</p>
+                ) : null}
+                <div className="seller-orders-summary-strip" aria-label="Umumiy statistika">
+                  <div className="seller-orders-summary-tile">
+                    <span>Jami zakazlar</span>
+                    <strong>{ordersOverviewSummary?.distinct_buyurtmalar ?? (ordersOverviewLoading ? '…' : 0)}</strong>
+                    <small className="seller-muted">Sizning mahsulotlaringiz qatnashgan</small>
+                  </div>
+                  <div className="seller-orders-summary-tile">
+                    <span>Yo‘ldagi mahsulotlar</span>
+                    <strong>{ordersOverviewSummary?.total_qty_yolda ?? (ordersOverviewLoading ? '…' : 0)}</strong>
+                    <small className="seller-muted">Dona (yetkazish jarayonida)</small>
+                  </div>
+                  <div className="seller-orders-summary-tile">
+                    <span>Qaytgan / bekor</span>
+                    <strong>{ordersOverviewSummary?.total_qty_qaytgan ?? (ordersOverviewLoading ? '…' : 0)}</strong>
+                    <small className="seller-muted">Dona</small>
+                  </div>
+                </div>
+              </article>
+
+              <article className="seller-panel-card">
+                <div className="seller-panel-head seller-orders-overview-head">
+                  <h4>Mahsulotlar bo‘yicha</h4>
+                  <button type="button" className="seller-mini-btn" onClick={() => setActiveViewWithUrl('products')}>
+                    Mahsulotlarim
+                  </button>
+                </div>
+                <input
+                  className="seller-search"
+                  placeholder="Mahsulot bo‘yicha qidirish..."
+                  value={ordersViewSearch}
+                  onChange={(e) => setOrdersViewSearch(e.target.value)}
+                  aria-label="Buyurtmadagi mahsulotlardan qidirish"
+                />
+
+                <div className="seller-product-summary-wrap seller-orders-by-product-wrap">
+                  <div className="seller-product-summary-list" role="list" aria-label="Mahsulotlar va buyurtma statistikasi">
+                    {filteredOrderOverviewProducts.map((row) => {
+                      const title = row.name_uz || `Mahsulot #${row.id}`;
+                      const oz = Number(row.orders_count) || 0;
+                      const oy = Number(row.qty_on_way) || 0;
+                      const orr = Number(row.qty_returned) || 0;
+                      return (
+                        <div
+                          key={row.id}
+                          className="seller-product-summary-row seller-orders-product-row"
+                          role="listitem"
+                          aria-label={`${title}. Buyurtma: ${oz}, yo'lda: ${oy}, qaytgan: ${orr}`}
+                        >
+                          <div className="seller-product-summary-thumb">
+                            {row.image_url ? (
+                              <img src={row.image_url} alt="" className="seller-product-summary-img" />
+                            ) : (
+                              <span className="seller-product-summary-placeholder" aria-hidden>
+                                <i className="fas fa-image" />
+                              </span>
+                            )}
+                          </div>
+                          <div className="seller-orders-product-body">
+                            <strong className="seller-orders-product-name">{title}</strong>
+                            <dl className="seller-product-summary-metrics seller-orders-product-metrics">
+                              <div className="seller-product-metric">
+                                <dt>Buyurtmalar</dt>
+                                <dd>{oz}</dd>
+                              </div>
+                              <div className="seller-product-metric">
+                                <dt>Yo‘lda</dt>
+                                <dd>{oy}</dd>
+                              </div>
+                              <div className="seller-product-metric">
+                                <dt>Qaytganlar</dt>
+                                <dd>{orr}</dd>
+                              </div>
+                            </dl>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {!ordersOverviewLoading && filteredOrderOverviewProducts.length === 0 && (
+                    <p className="seller-empty seller-product-summary-empty">
+                      {ordersViewSearch.trim()
+                        ? 'Qidiruv bo‘yicha mahsulot topilmadi'
+                        : "Hali bu mahsulotlar uchun buyurtma yozuvlari yo‘q — mijoz zakaz bergach shu yerda chiqadi"}
+                    </p>
+                  )}
+                </div>
+              </article>
+
+              <article className="seller-panel-card">
+                <div className="seller-panel-head">
+                  <h4>Oxirgi buyurtmalar</h4>
+                  <button type="button" className="seller-mini-btn" disabled={ordersOverviewLoading} onClick={() => loadOrdersOverview()}>
+                    Yangilash
+                  </button>
+                </div>
+                <div className="seller-list-box seller-orders-recent-list">
+                  {ordersOverviewLoading && !(ordersOverviewRecent || []).length ? (
+                    <p className="seller-muted">Yuklanmoqda...</p>
+                  ) : null}
+                  {!(ordersOverviewRecent || []).length && !ordersOverviewLoading ? (
+                    <p className="seller-muted">Buyurtmalar yo‘q</p>
+                  ) : null}
+                  {(ordersOverviewRecent || []).slice(0, 30).map((r) => (
+                    <div className="seller-list-row" key={`all-${r.id}`}>
+                      <div>
+                        <strong>#{r.id}</strong>
+                        <span>{formatDateTime(r.created_at)}</span>
+                        <span className="seller-muted seller-list-row-sub">
+                          {sellerOrderStatusLabelUz(r.status)}
+                          {typeof r.qty_seller_lines === 'number'
+                            ? ` · ${r.qty_seller_lines} dona`
+                            : ''}
+                        </span>
+                      </div>
+                      <div className="right">
+                        <strong>{formatCurrency(r.line_total || 0)}</strong>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </article>
+            </>
           )}
 
           {activeView === 'chat' && (
@@ -1725,6 +1926,7 @@ export default function SellerDashboard() {
                       setSellerWithdrawHist(Array.isArray(wData.withdrawals) ? wData.withdrawals : []);
                       await loadData(false, selectedDate);
                       await loadNotifications(selectedDate, true);
+                      await loadOrdersOverview();
                     } catch (err) {
                       setSellerWithdrawMsg(String(err.message || 'Xatolik'));
                       setSellerWithdrawErr(true);
