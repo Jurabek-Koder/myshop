@@ -1,0 +1,40 @@
+# Render Blueprint: GitHub repoga ulaganda yoki "New Blueprint" orqali ishlatiladi.
+# Bitta Web Service: frontend build + Node API, bir domen, /api va SPA birgalikda.
+#
+# SQLite va yuklamalar: Render-da sukut bo‘yicha fayl tizimi ephemeral — uyqu/deploy/restart
+# dan keyin myshop.db qayta boshlanishi mumkin (≈bir necha daqiqa keyin yo‘qolgan ko‘rinadi).
+# Kod: Render-da MYSHOP_DATA_DIR yoʻq boʻlsa NODE_ENV=production ishlamaydi (process.exit) — ma'lumot
+# ephemeral diskda yozilmasligi uchun. Disk + env majburiy.
+#
+# Persistent Disk faqat toʻlangan Web Service da (Free da qoʻllab boʻlmasligi mumkin — Starter+ Disk).
+#
+# Qo‘lda (Dashboard → service → Disk): mount `/var/data/myshop`, Env: MYSHOP_DATA_DIR=/var/data/myshop
+# Blueprint: `plan` ning Starter+ ga o‘tgan boʻlishi kerak — quyidagi `disk` hamda env ni oching.
+
+databases: []
+
+services:
+  - type: web
+    name: myshop
+    runtime: node
+    plan: free
+    region: frankfurt
+
+    # Free rejimda `disk` blokini Render qabul qilmaydi — toʻlangan rejimga koʻchganingizda commentni oching:
+    # disk:
+    #   name: myshop-sqlite
+    #   mountPath: /var/data/myshop
+    #   sizeGB: 1
+    # Alohida static frontend bo‘lsa, build oldin: VITE_API_BASE_URL=https://backend-xxxx.onrender.com
+    buildCommand: cd frontend && npm ci && npm run build && cd ../backend && npm ci
+    startCommand: cd backend && NODE_ENV=production node src/server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TZ
+        value: Asia/Tashkent
+      # SQLite + uploads uchun doimiy yoʻl (faqat Persistent Disk berganingizdan keyin; mountPath bilan bir xil):
+      # - key: MYSHOP_DATA_DIR
+      #   value: /var/data/myshop
+    # PORT — Render o‘zi beradi. Maxfiy: JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, CORS_ORIGINS, ...
