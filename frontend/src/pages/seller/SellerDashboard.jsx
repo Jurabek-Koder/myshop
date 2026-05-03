@@ -10,6 +10,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { usePickerUiSettings } from '../../context/PickerUiSettingsContext';
 import SellerMyShopChat from '../../components/seller/SellerMyShopChat';
 import { AUDIENCE_CATEGORIES } from '../../constants/audienceCategories.js';
+import { isSellerPrincipal } from '../../utils/sellerPrincipal.js';
 import './SellerDashboard.css';
 
 const PROFILE_VIEW_KEY = 'profile';
@@ -592,8 +593,7 @@ export default function SellerDashboard() {
   useEffect(() => {
     if (!user) return;
 
-    const role = String(user?.role || '').toLowerCase();
-    if (role !== 'seller') {
+    if (!isSellerPrincipal(user)) {
       setLoading(false);
       return;
     }
@@ -609,8 +609,7 @@ export default function SellerDashboard() {
   useEffect(() => {
     if (!user) return;
 
-    const role = String(user?.role || '').toLowerCase();
-    if (role !== 'seller') return;
+    if (!isSellerPrincipal(user)) return;
 
     const timer = setInterval(() => {
       loadNotifications(selectedDate, true);
@@ -626,7 +625,7 @@ export default function SellerDashboard() {
   }, [activeView]);
 
   useEffect(() => {
-    if (String(user?.role || '').toLowerCase() !== 'seller') return;
+    if (!isSellerPrincipal(user)) return;
     if (activeView !== 'products' && activeView !== 'products_add' && activeView !== 'products_archive') return;
     loadSellerCatalog();
   }, [user, activeView, loadSellerCatalog]);
@@ -658,7 +657,7 @@ export default function SellerDashboard() {
   }, [user, activeView, salesChartPeriod, request]);
 
   useEffect(() => {
-    if (!user || String(user?.role || '').toLowerCase() !== 'seller') return undefined;
+    if (!user || !isSellerPrincipal(user)) return undefined;
     if (activeView !== 'finance') return undefined;
     let cancelled = false;
     setSellerWithdrawMsg('');
@@ -706,21 +705,23 @@ export default function SellerDashboard() {
   );
 
   const productRowsForTable = useMemo(() => {
-    if (activeView === 'products_archive') {
-      return catalogProducts;
-    }
-    if (activeView === 'products' || activeView === 'products_add') return catalogProducts;
-    return products;
+    const cat = Array.isArray(catalogProducts) ? catalogProducts : [];
+    if (activeView === 'products_archive') return cat;
+    if (activeView === 'products' || activeView === 'products_add') return cat;
+    return Array.isArray(products) ? products : [];
   }, [activeView, catalogProducts, products]);
 
   const filteredProducts = useMemo(() => {
-    let table = productRowsForTable;
+    const cat = Array.isArray(catalogProducts) ? catalogProducts : [];
+    let table = Array.isArray(productRowsForTable) ? productRowsForTable : [];
     if (activeView === 'products_archive') {
-      table = catalogProducts.filter((p) => isSellerProductBrak(p) || isSellerWithdrawnProduct(p));
+      table = cat.filter((p) => isSellerProductBrak(p) || isSellerWithdrawnProduct(p));
     }
     const q = search.trim().toLowerCase();
     if (!q) return table;
-    return table.filter((row) => `${row.name_uz || ''} ${row.category || ''} ${row.id}`.toLowerCase().includes(q));
+    return table.filter((row) =>
+      `${row.name_uz || ''} ${row.category || ''} ${row.id}`.toLowerCase().includes(q),
+    );
   }, [productRowsForTable, search, activeView, catalogProducts]);
 
   const productListSummaryNodes = useMemo(
