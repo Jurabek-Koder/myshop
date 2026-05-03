@@ -347,6 +347,7 @@ export default function SellerDashboard() {
     priceNumeric: 0,
     qty: 1,
   });
+  const hasLoadedOnceRef = useRef(false);
   const sellerProductImageSlotFileRefs = useRef({});
   const videoFileInputRef = useRef(null);
 
