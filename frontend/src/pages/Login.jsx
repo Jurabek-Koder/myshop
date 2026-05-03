@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { isSellerPrincipal } from '../utils/sellerPrincipal.js';
 
 function isSuperuser(user) {
   const role = String(user?.role || '').toLowerCase();
@@ -8,8 +9,7 @@ function isSuperuser(user) {
 }
 
 function isSeller(user) {
-  const role = String(user?.role || '').toLowerCase();
-  return role === 'seller';
+  return isSellerPrincipal(user);
 }
 
 function isCourier(user) {
