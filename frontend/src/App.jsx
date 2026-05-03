@@ -7,6 +7,7 @@ import { CartProvider } from './context/CartContext';
 import Layout from './components/Layout';
 import RouteLoader from './components/RouteLoader.jsx';
 import { canAccessPath } from './utils/canAccessPath.js';
+import { isSellerPrincipal } from './utils/sellerPrincipal.js';
 
 /** Do‘kon va kirish sahifalari — alohida chunk; birinchi yuklash tezroq */
 const Home = lazy(() => import('./pages/Home.jsx'));
@@ -65,9 +66,7 @@ function isSuperuser(user) {
 }
 
 function isSeller(user) {
-  const role = String(user?.role || '').toLowerCase();
-  if (role === 'seller') return true;
-  return user?.seller_id != null && Number(user.seller_id) > 0;
+  return isSellerPrincipal(user);
 }
 
 function isCourier(user) {
