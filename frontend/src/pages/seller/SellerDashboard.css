@@ -2936,24 +2936,260 @@
   align-items: center;
 }
 
-.seller-print-intro {
-  margin: 0 0 0.75rem;
+/* Mahsulotlar ro'yxati (qisqacha: rasm + narx + ombor + sotilgan) */
+.seller-product-summary-wrap {
+  padding: 0.15rem 0 0.35rem;
 }
 
-.seller-print-fields .seller-print-label {
+.seller-product-summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.seller-product-summary-row {
+  display: grid;
+  grid-template-columns: minmax(76px, 92px) minmax(0, 1fr);
+  gap: 0.85rem 1rem;
+  align-items: center;
+  padding: 0.78rem 0.92rem;
+  border-radius: 16px;
+  border: 1px solid var(--seller-border);
+  background: color-mix(in srgb, var(--seller-surface) 94%, transparent);
+  box-sizing: border-box;
+}
+
+.seller-product-summary-thumb {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--seller-muted) 10%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.seller-product-summary-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   display: block;
-  font-size: 0.78rem;
-  font-weight: 600;
+}
+
+.seller-product-summary-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 1.35rem;
+  color: color-mix(in srgb, var(--seller-muted) 65%, transparent);
+}
+
+.seller-product-summary-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem 0.85rem;
+  margin: 0;
+  min-width: 0;
+}
+
+.seller-product-metric {
+  margin: 0;
+  min-width: 0;
+}
+
+.seller-product-metric dt {
+  margin: 0 0 0.28rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   color: var(--seller-muted);
-  margin-bottom: 0.25rem;
 }
 
-.seller-print-fields label.seller-field-wide {
+.seller-product-metric dd {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.seller-product-summary-empty {
+  text-align: center;
+  padding: 1.5rem 0.85rem;
+  margin: 0;
+}
+
+@media (max-width: 620px) {
+  .seller-product-summary-row {
+    grid-template-columns: minmax(64px, 80px) minmax(0, 1fr);
+    padding: 0.7rem 0.78rem;
+    gap: 0.75rem;
+  }
+
+  .seller-product-summary-metrics {
+    grid-template-columns: 1fr;
+    gap: 0.72rem;
+  }
+
+  .seller-product-metric {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.85rem;
+    padding-bottom: 0.55rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--seller-border) 70%, transparent);
+  }
+
+  .seller-product-summary-metrics .seller-product-metric:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .seller-product-metric dt {
+    margin-bottom: 0;
+    flex-shrink: 0;
+  }
+
+  .seller-product-metric dd {
+    font-size: 1.06rem;
+    text-align: right;
+  }
+
+  /* Mobil «picker» shell: yumshoq yashil ipliq */
+  .seller-app.seller-mobile-shell:not(.seller-dark):not(.seller-chat-mode) .seller-product-summary-row {
+    background: #fffefb;
+    border-color: rgba(5, 100, 60, 0.14);
+    box-shadow:
+      0 8px 24px rgba(15, 23, 42, 0.06),
+      0 0 0 1px rgba(5, 100, 60, 0.05);
+  }
+
+  .seller-app.seller-mobile-shell:not(.seller-dark):not(.seller-chat-mode) .seller-product-summary-thumb {
+    background: #fffbeb;
+    border: 1px solid rgba(16, 185, 129, 0.15);
+    box-sizing: border-box;
+  }
+
+  .seller-app.seller-mobile-shell:not(.seller-dark):not(.seller-chat-mode) .seller-product-metric dd {
+    color: #0f766e;
+  }
+}
+
+@media (max-width: 620px) {
+  .seller-app.seller-dark .seller-product-metric dd {
+    color: inherit;
+  }
+}
+
+/* Chek chiqarish */
+.seller-print-card {
+  border-radius: 18px;
+  overflow: visible;
+}
+
+.seller-print-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.9rem 1rem 0.75rem;
+  border-bottom: 1px solid var(--seller-border);
+}
+
+.seller-print-heading {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  flex: 1;
+  min-width: 140px;
+  letter-spacing: -0.02em;
+}
+
+.seller-print-back {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.42rem;
+  min-height: 42px;
+  padding: 0.45rem 0.95rem;
+  border-radius: 12px;
+  border: 1px solid var(--seller-border);
+  background: var(--seller-surface);
+  color: var(--seller-primary);
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.seller-print-back i {
+  font-size: 0.82rem;
+  opacity: 0.92;
+}
+
+.seller-print-card-inner {
+  padding: 1rem 1.05rem 1.25rem;
+}
+
+.seller-print-intro {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.seller-print-fields {
+  display: grid;
+  gap: 1rem;
+}
+
+.seller-print-field .seller-print-label {
   display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--seller-muted);
+  margin-bottom: 0.42rem;
+  letter-spacing: 0.01em;
 }
 
-.seller-print-btn {
+.seller-print-fields .seller-print-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+.seller-print-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 46px;
+  padding: 0.62rem 0.82rem !important;
+  font-size: 0.93rem !important;
+  border-radius: 13px !important;
+  border: 1px solid color-mix(in srgb, var(--seller-primary) 24%, transparent) !important;
+  background: color-mix(in srgb, var(--seller-bg) 88%, #fff) !important;
+}
+
+.seller-print-submit {
+  width: 100%;
+  justify-content: center;
   margin-top: 0.35rem;
+  min-height: 50px;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  border-radius: 14px !important;
+}
+
+.seller-print-preview-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--seller-muted);
+  margin: 1.35rem 0 0.5rem;
 }
 
 .seller-receipt-sheet {
@@ -2964,6 +3200,12 @@
   border-radius: 14px;
   background: var(--seller-surface);
   box-sizing: border-box;
+}
+
+.seller-receipt-sheet--inline {
+  margin: 0 auto;
+  width: 100%;
+  max-width: none;
 }
 
 .seller-dark .seller-receipt-sheet {
@@ -3011,6 +3253,90 @@
   font-size: 0.74rem;
   color: var(--seller-muted);
   text-align: center;
+}
+
+@media (max-width: 640px) {
+  .seller-print-card-inner {
+    padding: 1.05rem 0.92rem calc(1.15rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .seller-print-intro {
+    font-size: 0.92rem;
+  }
+
+  .seller-print-fields .seller-print-two-col {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .seller-print-heading {
+    width: 100%;
+    flex: none;
+    order: -2;
+    font-size: 1.22rem;
+  }
+
+  .seller-print-header {
+    padding: 1rem 0.92rem 0.88rem;
+    gap: 0.55rem;
+  }
+
+  .seller-print-back {
+    order: -1;
+    width: 100%;
+    min-height: 48px;
+    justify-content: center;
+    padding: 0.55rem 1rem;
+    font-size: 0.93rem;
+  }
+
+  .seller-print-field .seller-print-label {
+    font-size: 0.85rem;
+  }
+
+  .seller-print-input {
+    min-height: 50px;
+    padding: 0.72rem 0.92rem !important;
+    font-size: 16px !important;
+  }
+
+  .seller-print-submit {
+    min-height: 52px;
+    margin-top: 0.5rem;
+  }
+
+  /* Mobil «picker» qutisi: yashil aksent */
+  .seller-app.seller-mobile-shell:not(.seller-dark):not(.seller-chat-mode) .seller-print-submit {
+    background: linear-gradient(135deg, #10b981, #059669) !important;
+    border: 0 !important;
+    box-shadow: 0 8px 20px rgba(5, 95, 60, 0.28);
+  }
+
+  .seller-app.seller-mobile-shell:not(.seller-dark):not(.seller-chat-mode) .seller-print-back {
+    background: rgba(255, 255, 255, 0.75);
+    border-color: rgba(5, 120, 75, 0.22);
+    color: #047857;
+  }
+
+  .seller-app.seller-mobile-shell:not(.seller-dark):not(.seller-chat-mode) .seller-print-input {
+    background: #fffbeb !important;
+    border-color: rgba(16, 185, 129, 0.32) !important;
+  }
+
+  .seller-app.seller-mobile-shell:not(.seller-dark):not(.seller-chat-mode) .seller-print-card {
+    box-shadow:
+      0 12px 40px rgba(15, 23, 42, 0.08),
+      0 0 0 1px rgba(5, 100, 60, 0.07);
+    border-radius: 20px;
+  }
+
+  .seller-app.seller-mobile-shell:not(.seller-dark):not(.seller-chat-mode) .seller-receipt-sheet--inline {
+    background: #fffefb;
+    border-style: solid;
+    border-color: rgba(5, 100, 60, 0.15);
+    border-radius: 16px;
+    padding: 1.05rem 1.1rem 1.2rem;
+  }
 }
 
 @media print {
