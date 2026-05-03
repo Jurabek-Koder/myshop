@@ -70,6 +70,28 @@ function formatCurrency(value) {
   return `${new Intl.NumberFormat('uz-UZ').format(Number(value || 0))} so'm`;
 }
 
+const SELLER_LIST_PIPELINE_STATUSES = new Set(['pending', 'scheduled', 'approved']);
+
+function isSellerProductBrak(p) {
+  const v = String(p?.off_sale_variant || '').trim().toLowerCase();
+  if (v === 'brak') return true;
+  return String(p?.status || '').trim().toLowerCase() === 'brak';
+}
+
+/** Sotuvda emas (“sotuvdan olingan”) — moderatsiya qatorida yo‘q, brak emas */
+function isSellerWithdrawnProduct(p) {
+  const st = String(p?.status || '').trim().toLowerCase();
+  if (st === 'active') return false;
+  if (SELLER_LIST_PIPELINE_STATUSES.has(st)) return false;
+  return !isSellerProductBrak(p);
+}
+
+function sellerBrakQtyDisplay(p) {
+  const b = Number(p?.brak_qty);
+  if (Number.isFinite(b) && b >= 0) return Math.round(b);
+  return Math.max(0, Math.round(Number(p?.stock) || 0));
+}
+
 /** Mahsulot nomi/kategoriya bo‘yicha izoh (faqat bo‘sh bo‘lsa to‘ldiriladi). */
 function buildAutoProductDescription(nameUz, category) {
   const n = String(nameUz || '').trim();
@@ -266,7 +288,7 @@ export default function SellerDashboard() {
     (view) => {
       if (view === PROFILE_VIEW_KEY) return 'Profil';
       if (view === 'products_add') return 'Mahsulot qo‘shish';
-      if (view === 'products_archive') return 'Sotuvda yo‘q';
+      if (view === 'products_archive') return 'Sotuvdan olingan';
       if (view === 'products_print') return 'Chek chiqarish';
       const found = menuItems.find((item) => item.key === view);
       return found ? found.label : 'Dashboard';
@@ -318,9 +340,14 @@ export default function SellerDashboard() {
   const [ordersOverviewProducts, setOrdersOverviewProducts] = useState([]);
   const [ordersOverviewRecent, setOrdersOverviewRecent] = useState([]);
   const [ordersViewSearch, setOrdersViewSearch] = useState('');
-  const [printProductName, setPrintProductName] = useState('');
-  const [printPrice, setPrintPrice] = useState('');
-  const [printQty, setPrintQty] = useState('1');
+  const [printSearchQuery, setPrintSearchQuery] = useState('');
+  const [receiptPrintDraft, setReceiptPrintDraft] = useState({
+    productName: '',
+    priceNumeric: 0,
+    qty: 1,
+  });
+  /** Qaysi sahifa uchun arxiv: chap — brak, o‘ng — sotuvdan olingan */
+  const [archiveTab, setArchiveTab] = useState('withdrawn');
 
   const hasLoadedOnceRef = useRef(false);
   const sellerProductImageSlotFileRefs = useRef({});
@@ -379,6 +406,7 @@ export default function SellerDashboard() {
     setProfileOpen(false);
     setNotificationsOpen(false);
     if (activeView !== 'orders') setOrdersViewSearch('');
+    if (activeView !== 'products_print') setPrintSearchQuery('');
   }, [activeView]);
 
   /** Nom/kategoriya kiritilganda izoh bo‘sh bo‘lsa — avtomatik matn. */
@@ -683,17 +711,53 @@ export default function SellerDashboard() {
 
   const productRowsForTable = useMemo(() => {
     if (activeView === 'products_archive') {
-      return catalogProducts.filter((row) => String(row?.status || '').trim().toLowerCase() !== 'active');
+      return catalogProducts;
     }
     if (activeView === 'products' || activeView === 'products_add') return catalogProducts;
     return products;
   }, [activeView, catalogProducts, products]);
 
   const filteredProducts = useMemo(() => {
+    let table = productRowsForTable;
+    if (activeView === 'products_archive') {
+      table =
+        archiveTab === 'brak'
+          ? catalogProducts.filter(isSellerProductBrak)
+          : catalogProducts.filter(isSellerWithdrawnProduct);
+    }
     const q = search.trim().toLowerCase();
-    if (!q) return productRowsForTable;
-    return productRowsForTable.filter((row) => `${row.name_uz || ''} ${row.category || ''} ${row.id}`.toLowerCase().includes(q));
-  }, [productRowsForTable, search]);
+    if (!q) return table;
+    return table.filter((row) => `${row.name_uz || ''} ${row.category || ''} ${row.id}`.toLowerCase().includes(q));
+  }, [productRowsForTable, search, activeView, catalogProducts, archiveTab]);
+
+  const printActiveCatalog = useMemo(
+    () =>
+      Array.isArray(catalogProducts)
+        ? catalogProducts.filter((p) => String(p?.status || '').trim().toLowerCase() === 'active')
+        : [],
+    [catalogProducts],
+  );
+
+  const printSearchMatches = useMemo(() => {
+    const q = printSearchQuery.trim().toLowerCase();
+    if (!q) return [];
+    return printActiveCatalog
+      .filter((row) =>
+        `${row.name_uz || ''} ${row.category || ''} ${row.id}`.toLowerCase().includes(q),
+      )
+      .slice(0, 50);
+  }, [printActiveCatalog, printSearchQuery]);
+
+  const printReceiptForProduct = useCallback((row) => {
+    const name = String(row?.name_uz || '').trim() || `Mahsulot #${row?.id}`;
+    const priceNumeric = Number(row?.price) || 0;
+    setReceiptPrintDraft({ productName: name, priceNumeric, qty: 1 });
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        window.print();
+      });
+    });
+  }, []);
 
   const topProducts = useMemo(() => {
     return [...products]
@@ -1587,20 +1651,43 @@ export default function SellerDashboard() {
 
               {(activeView === 'products' || activeView === 'products_archive') && (
               <article className="seller-panel-card">
-                <div className="seller-panel-head">
-                  <h4>{activeView === 'products_archive' ? 'Sotuvdan olib tashlangan' : 'Mahsulotlarim'}</h4>
+                <div className="seller-panel-head seller-archive-panel-head">
+                  <h4>{activeView === 'products_archive' ? 'Sotuvdan olingan' : 'Mahsulotlarim'}</h4>
                   {isDesktop && activeView === 'products' ? (
                     <div className="seller-products-head-actions">
                       <button type="button" className="seller-mini-btn" onClick={() => setActiveViewWithUrl('products_print')}>
                         Chek
                       </button>
                       <button type="button" className="seller-mini-btn" onClick={() => setActiveViewWithUrl('products_archive')}>
-                        Sotuvda yo&apos;q
+                        Sotuvdan
                       </button>
                     </div>
                   ) : null}
                   <input className="seller-search" placeholder="Qidirish..." value={search} onChange={(e) => setSearch(e.target.value)} />
                 </div>
+
+                {activeView === 'products_archive' ? (
+                  <div className="seller-archive-tabstrip" role="tablist" aria-label="Sotuvdan olingan va brak">
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={archiveTab === 'brak'}
+                      className={`seller-archive-tab${archiveTab === 'brak' ? ' is-active' : ''}`}
+                      onClick={() => setArchiveTab('brak')}
+                    >
+                      Brak mahsulotlar
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={archiveTab === 'withdrawn'}
+                      className={`seller-archive-tab${archiveTab === 'withdrawn' ? ' is-active' : ''}`}
+                      onClick={() => setArchiveTab('withdrawn')}
+                    >
+                      Sotuvdan olingan
+                    </button>
+                  </div>
+                ) : null}
 
                 <div className="seller-product-summary-wrap">
                   <div className="seller-product-summary-list" role="list" aria-label="Mahsulotlar ro'yxati">
@@ -1608,6 +1695,8 @@ export default function SellerDashboard() {
                       const sold = Math.max(0, Math.round(Number(row.sold_qty) || 0));
                       const stock = Math.max(0, Math.round(Number(row.stock) || 0));
                       const title = row.name_uz || `Mahsulot #${row.id}`;
+                      const archiveBrak = activeView === 'products_archive' && archiveTab === 'brak';
+
                       return (
                         <div key={row.id} className="seller-product-summary-row" role="listitem" aria-label={title}>
                           <div className="seller-product-summary-thumb">
@@ -1619,20 +1708,30 @@ export default function SellerDashboard() {
                               </span>
                             )}
                           </div>
-                          <dl className="seller-product-summary-metrics">
-                            <div className="seller-product-metric">
-                              <dt>Narx</dt>
-                              <dd>{formatCurrency(row.price)}</dd>
+                          {archiveBrak ? (
+                            <div className="seller-archive-brak-main">
+                              <strong className="seller-archive-brak-name">{title}</strong>
+                              <p className="seller-archive-brak-qty-line">
+                                <span>Brak soni</span>
+                                <strong>{sellerBrakQtyDisplay(row)} dona</strong>
+                              </p>
                             </div>
-                            <div className="seller-product-metric">
-                              <dt>Omborda</dt>
-                              <dd>{stock}</dd>
-                            </div>
-                            <div className="seller-product-metric">
-                              <dt>Sotilgan</dt>
-                              <dd>{sold}</dd>
-                            </div>
-                          </dl>
+                          ) : (
+                            <dl className="seller-product-summary-metrics">
+                              <div className="seller-product-metric">
+                                <dt>Narx</dt>
+                                <dd>{formatCurrency(row.price)}</dd>
+                              </div>
+                              <div className="seller-product-metric">
+                                <dt>Omborda</dt>
+                                <dd>{stock}</dd>
+                              </div>
+                              <div className="seller-product-metric">
+                                <dt>Sotilgan</dt>
+                                <dd>{sold}</dd>
+                              </div>
+                            </dl>
+                          )}
                         </div>
                       );
                     })}
@@ -1649,79 +1748,86 @@ export default function SellerDashboard() {
           {activeView === 'products_print' && (
             <>
               <article className="seller-panel-card seller-print-card">
-                <div className="seller-print-header">
+                <div className="seller-print-header seller-print-header--compact-row">
                   <button
                     type="button"
-                    className="seller-print-back"
+                    className="seller-print-back seller-print-back--icon-row"
                     onClick={() => setActiveViewWithUrl('products')}
-                    aria-label="Orqaga"
+                    aria-label="Ortga"
                   >
                     <i className="fas fa-arrow-left" aria-hidden />
-                    Ortga
                   </button>
                   <h4 className="seller-print-heading">Chek chiqarish</h4>
                 </div>
                 <div className="seller-print-card-inner">
-                  <p className="seller-muted seller-print-intro">
-                    Mahsulot nomi va narxi kiriting, keyin brauzer orqali chek chiqariladi.
+                  <label className="seller-field-wide seller-print-field seller-print-search-only">
+                    <span className="seller-print-label">Mahsulot qidiruv</span>
+                    <input
+                      className="seller-field seller-print-input"
+                      value={printSearchQuery}
+                      onChange={(e) => setPrintSearchQuery(e.target.value)}
+                      placeholder="Nomini yozing (sotuvdagi mahsulotlar)"
+                      autoComplete="off"
+                      aria-label="Mahsulot nomi bo'yicha qidirish"
+                    />
+                  </label>
+                  <p className="seller-muted seller-print-intro seller-print-intro--tight">
+                    Qidiruv natijasida mahsulotning chapidagi printer belgisini bosing — chek brauzerda ochiladi.
                   </p>
-                  <div className="seller-print-fields">
-                    <label className="seller-field-wide seller-print-field">
-                      <span className="seller-print-label">Mahsulot nomi</span>
-                      <input
-                        className="seller-field seller-print-input"
-                        value={printProductName}
-                        onChange={(e) => setPrintProductName(e.target.value)}
-                        placeholder="Masalan: yumshoq o‘yinchoq quyoncha"
-                        autoComplete="off"
-                      />
-                    </label>
-                    <div className="seller-print-two-col">
-                      <label className="seller-field-wide seller-print-field">
-                        <span className="seller-print-label">Narxi (so‘m)</span>
-                        <input
-                          className="seller-field seller-print-input"
-                          inputMode="decimal"
-                          value={printPrice}
-                          onChange={(e) => setPrintPrice(e.target.value)}
-                          placeholder="143000"
-                          autoComplete="off"
-                        />
-                      </label>
-                      <label className="seller-field-wide seller-print-field">
-                        <span className="seller-print-label">Soni</span>
-                        <input
-                          className="seller-field seller-print-input"
-                          inputMode="numeric"
-                          min={1}
-                          value={printQty}
-                          onChange={(e) => setPrintQty(e.target.value)}
-                          autoComplete="off"
-                        />
-                      </label>
-                    </div>
-                    <button
-                      type="button"
-                      className="seller-primary-btn seller-print-submit"
-                      onClick={() => window.print()}
-                    >
-                      Chek chiqarish
-                    </button>
+                  <div className="seller-print-results" role="list" aria-label="Qidiruv natijalari">
+                    {printSearchMatches.map((row) => {
+                      const title = row.name_uz || `Mahsulot #${row.id}`;
+                      return (
+                        <div key={row.id} className="seller-print-result-row" role="listitem">
+                          <button
+                            type="button"
+                            className="seller-print-trigger"
+                            onClick={() => printReceiptForProduct(row)}
+                            aria-label={`${title} uchun chek chiqarish`}
+                          >
+                            <i className="fas fa-print" aria-hidden />
+                          </button>
+                          <div className="seller-print-result-meta">
+                            <strong className="seller-print-result-title">{title}</strong>
+                            <span className="seller-print-result-price">{formatCurrency(row.price)}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <div className="seller-print-preview-label">Chek namunasi</div>
-                  <div id="seller-sale-receipt" className="seller-receipt-sheet seller-receipt-sheet--inline">
-                    <div className="seller-receipt-inner">
-                      <div className="seller-receipt-brand">MyShop</div>
-                      <div className="seller-receipt-seller">{sellerName}</div>
-                      <hr className="seller-receipt-rule" />
-                      <div className="seller-receipt-row"><span>Mahsulot</span><strong>{printProductName.trim() || '—'}</strong></div>
-                      <div className="seller-receipt-row"><span>Soni</span><strong>{printQty || '1'}</strong></div>
-                      <div className="seller-receipt-row"><span>Jami</span><strong>{printPrice ? formatCurrency(printPrice) : '—'}</strong></div>
-                      <div className="seller-receipt-foot">{formatDateLabel(todayIsoDate())}</div>
-                    </div>
-                  </div>
+                  {!printSearchQuery.trim() ? (
+                    <p className="seller-muted seller-print-hint-empty">Mahsulot nomini yozib qidirishni boshlang.</p>
+                  ) : null}
+                  {printSearchQuery.trim() && printSearchMatches.length === 0 ? (
+                    <p className="seller-empty seller-print-hint-empty">Tanlangan mahsulot topilmadi (faqat «sotuvda» aktivlar).</p>
+                  ) : null}
                 </div>
               </article>
+
+              <div id="seller-sale-receipt" className="seller-receipt-sheet seller-receipt-sheet--print-only" aria-hidden>
+                <div className="seller-receipt-inner">
+                  <div className="seller-receipt-brand">MyShop</div>
+                  <div className="seller-receipt-seller">{sellerName}</div>
+                  <hr className="seller-receipt-rule" />
+                  <div className="seller-receipt-row">
+                    <span>Mahsulot</span>
+                    <strong>{receiptPrintDraft.productName.trim() || '—'}</strong>
+                  </div>
+                  <div className="seller-receipt-row">
+                    <span>Soni</span>
+                    <strong>{Math.max(1, Math.round(Number(receiptPrintDraft.qty) || 1))}</strong>
+                  </div>
+                  <div className="seller-receipt-row">
+                    <span>Jami</span>
+                    <strong>
+                      {Number(receiptPrintDraft.priceNumeric) > 0
+                        ? formatCurrency(receiptPrintDraft.priceNumeric)
+                        : '—'}
+                    </strong>
+                  </div>
+                  <div className="seller-receipt-foot">{formatDateLabel(todayIsoDate())}</div>
+                </div>
+              </div>
             </>
           )}
 
@@ -2082,7 +2188,7 @@ export default function SellerDashboard() {
                 { key: 'products', icon: 'fa-box', label: 'Mahsulotlar' },
                 { key: 'products_add', icon: 'fa-plus', label: 'Qo‘shish', fab: true },
                 { key: 'products_print', icon: 'fa-print', label: 'Chek' },
-                { key: 'products_archive', icon: 'fa-archive', label: 'Sotuvda yo‘q' },
+                { key: 'products_archive', icon: 'fa-archive', label: 'Sotuvdan' },
               ].map((d) => {
                 const isActive =
                   activeView === d.key ||
