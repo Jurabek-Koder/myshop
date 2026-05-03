@@ -1752,28 +1752,20 @@ export default function SellerDashboard() {
           {activeView === 'products_print' && (
             <>
               <article className="seller-print-page seller-print-page--bare">
-                <div className="seller-print-header seller-print-header--compact-row">
-                  <button
-                    type="button"
-                    className="seller-print-back seller-print-back--icon-row"
-                    onClick={() => setActiveViewWithUrl('products')}
-                    aria-label="Ortga"
-                  >
-                    <i className="fas fa-arrow-left" aria-hidden />
-                  </button>
-                  <h4 className="seller-print-heading">Chek chiqarish</h4>
-                </div>
-                <div className="seller-print-inner-bare">
-                  <input
-                    type="search"
-                    className="seller-print-search-input"
-                    value={printSearchQuery}
-                    onChange={(e) => setPrintSearchQuery(e.target.value)}
-                    placeholder="Mahsulot nomi..."
-                    autoComplete="off"
-                    enterKeyHint="search"
-                    aria-label="Mahsulot nomi bo'yicha qidirish"
-                  />
+                <div className="seller-print-inner-bare seller-print-inner-bare--centered">
+                  <label className="seller-print-search-wrap">
+                    <span className="seller-print-screen-reader-label">Mahsulot nomi bo&apos;yicha qidirish</span>
+                    <i className="fas fa-search seller-print-search-icon" aria-hidden />
+                    <input
+                      type="search"
+                      className="seller-print-search-input"
+                      value={printSearchQuery}
+                      onChange={(e) => setPrintSearchQuery(e.target.value)}
+                      placeholder="Mahsulot nomi bo&apos;yicha qidirish..."
+                      autoComplete="off"
+                      enterKeyHint="search"
+                    />
+                  </label>
                   <div className="seller-print-results seller-print-results--bare" role="list" aria-label="Qidiruv natijalari">
                     {printSearchMatches.map((row) => {
                       const title = row.name_uz || `Mahsulot #${row.id}`;
