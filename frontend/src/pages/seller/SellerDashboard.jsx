@@ -1314,7 +1314,11 @@ export default function SellerDashboard() {
         </header>
         )}
 
-        <section className={`seller-content${isMyShopChatView ? ' seller-content--chat' : ''}`}>
+        <section
+          className={`seller-content${isMyShopChatView ? ' seller-content--chat' : ''}${
+            activeView === 'products_print' ? ' seller-content--print-bare' : ''
+          }`}
+        >
           {error && <div className="seller-error-box">{error}</div>}
 
           {activeView === 'dashboard' && (
@@ -1747,7 +1751,7 @@ export default function SellerDashboard() {
 
           {activeView === 'products_print' && (
             <>
-              <article className="seller-panel-card seller-print-card">
+              <article className="seller-print-page seller-print-page--bare">
                 <div className="seller-print-header seller-print-header--compact-row">
                   <button
                     type="button"
@@ -1759,48 +1763,46 @@ export default function SellerDashboard() {
                   </button>
                   <h4 className="seller-print-heading">Chek chiqarish</h4>
                 </div>
-                <div className="seller-print-card-inner">
-                  <label className="seller-field-wide seller-print-field seller-print-search-only">
-                    <span className="seller-print-label">Mahsulot qidiruv</span>
-                    <input
-                      className="seller-field seller-print-input"
-                      value={printSearchQuery}
-                      onChange={(e) => setPrintSearchQuery(e.target.value)}
-                      placeholder="Nomini yozing (sotuvdagi mahsulotlar)"
-                      autoComplete="off"
-                      aria-label="Mahsulot nomi bo'yicha qidirish"
-                    />
-                  </label>
-                  <p className="seller-muted seller-print-intro seller-print-intro--tight">
-                    Qidiruv natijasida mahsulotning chapidagi printer belgisini bosing — chek brauzerda ochiladi.
-                  </p>
-                  <div className="seller-print-results" role="list" aria-label="Qidiruv natijalari">
+                <div className="seller-print-inner-bare">
+                  <input
+                    type="search"
+                    className="seller-print-search-input"
+                    value={printSearchQuery}
+                    onChange={(e) => setPrintSearchQuery(e.target.value)}
+                    placeholder="Mahsulot nomi..."
+                    autoComplete="off"
+                    enterKeyHint="search"
+                    aria-label="Mahsulot nomi bo'yicha qidirish"
+                  />
+                  <div className="seller-print-results seller-print-results--bare" role="list" aria-label="Qidiruv natijalari">
                     {printSearchMatches.map((row) => {
                       const title = row.name_uz || `Mahsulot #${row.id}`;
                       return (
-                        <div key={row.id} className="seller-print-result-row" role="listitem">
+                        <div key={row.id} className="seller-print-result-row seller-print-result-row--bare" role="listitem">
+                          <div className="seller-print-result-thumb">
+                            {row.image_url ? (
+                              <img src={row.image_url} alt="" />
+                            ) : (
+                              <span className="seller-print-result-thumb-ph" aria-hidden>
+                                <i className="fas fa-image" />
+                              </span>
+                            )}
+                          </div>
+                          <div className="seller-print-result-text">
+                            <strong className="seller-print-result-title">{title}</strong>
+                          </div>
                           <button
                             type="button"
-                            className="seller-print-trigger"
+                            className="seller-print-trigger seller-print-trigger--bare"
                             onClick={() => printReceiptForProduct(row)}
-                            aria-label={`${title} uchun chek chiqarish`}
+                            aria-label={`${title} uchun chek`}
                           >
                             <i className="fas fa-print" aria-hidden />
                           </button>
-                          <div className="seller-print-result-meta">
-                            <strong className="seller-print-result-title">{title}</strong>
-                            <span className="seller-print-result-price">{formatCurrency(row.price)}</span>
-                          </div>
                         </div>
                       );
                     })}
                   </div>
-                  {!printSearchQuery.trim() ? (
-                    <p className="seller-muted seller-print-hint-empty">Mahsulot nomini yozib qidirishni boshlang.</p>
-                  ) : null}
-                  {printSearchQuery.trim() && printSearchMatches.length === 0 ? (
-                    <p className="seller-empty seller-print-hint-empty">Tanlangan mahsulot topilmadi (faqat «sotuvda» aktivlar).</p>
-                  ) : null}
                 </div>
               </article>
 
