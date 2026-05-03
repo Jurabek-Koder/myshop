@@ -13,7 +13,18 @@ import { AUDIENCE_CATEGORIES } from '../../constants/audienceCategories.js';
 import './SellerDashboard.css';
 
 const PROFILE_VIEW_KEY = 'profile';
-const SELLER_VIEW_KEYS = ['dashboard', 'products', 'orders', 'chat', 'finance', 'settings', 'profile'];
+const SELLER_VIEW_KEYS = [
+  'dashboard',
+  'products',
+  'products_add',
+  'products_archive',
+  'products_print',
+  'orders',
+  'chat',
+  'finance',
+  'settings',
+  PROFILE_VIEW_KEY,
+];
 const DEFAULT_SELLER_VIEW = 'dashboard';
 
 function normalizeSellerView(value) {
@@ -244,6 +255,9 @@ export default function SellerDashboard() {
   const pageTitle = useCallback(
     (view) => {
       if (view === PROFILE_VIEW_KEY) return 'Profil';
+      if (view === 'products_add') return 'Mahsulot qo‘shish';
+      if (view === 'products_archive') return 'Sotuvda yo‘q';
+      if (view === 'products_print') return 'Chek chiqarish';
       const found = menuItems.find((item) => item.key === view);
       return found ? found.label : 'Dashboard';
     },
@@ -288,6 +302,10 @@ export default function SellerDashboard() {
   const [sellerWithdrawMsg, setSellerWithdrawMsg] = useState('');
   const [sellerWithdrawErr, setSellerWithdrawErr] = useState(false);
   const [salesChartLoading, setSalesChartLoading] = useState(false);
+
+  const [printProductName, setPrintProductName] = useState('');
+  const [printPrice, setPrintPrice] = useState('');
+  const [printQty, setPrintQty] = useState('1');
 
   const hasLoadedOnceRef = useRef(false);
   const sellerProductImageSlotFileRefs = useRef({});
@@ -547,9 +565,14 @@ export default function SellerDashboard() {
 
   useEffect(() => {
     if (String(user?.role || '').toLowerCase() !== 'seller') return;
-    if (activeView !== 'products') return;
+    if (activeView !== 'products' && activeView !== 'products_add' && activeView !== 'products_archive') return;
     loadSellerCatalog();
   }, [user, activeView, loadSellerCatalog]);
+
+  useEffect(() => {
+    if (!isDesktop || activeView !== 'products_add') return;
+    setActiveViewWithUrl('products');
+  }, [isDesktop, activeView]);
 
   useEffect(() => {
     if (!user) return;
@@ -619,7 +642,13 @@ export default function SellerDashboard() {
     [form.price, form.operator_share_percent, form.site_fee_percent]
   );
 
-  const productRowsForTable = activeView === 'products' ? catalogProducts : products;
+  const productRowsForTable = useMemo(() => {
+    if (activeView === 'products_archive') {
+      return catalogProducts.filter((row) => String(row?.status || '').trim().toLowerCase() !== 'active');
+    }
+    if (activeView === 'products' || activeView === 'products_add') return catalogProducts;
+    return products;
+  }, [activeView, catalogProducts, products]);
 
   const filteredProducts = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -1389,12 +1418,18 @@ export default function SellerDashboard() {
             </>
           )}
 
-          {activeView === 'products' && (
+          {(activeView === 'products' || activeView === 'products_add' || activeView === 'products_archive') && (
             <>
+              {((isDesktop && activeView === 'products') || activeView === 'products_add') && (
               <article className="seller-panel-card">
                 <div className="seller-panel-head">
-                  <h4>Yangi mahsulot qo'shish</h4>
-                  <button type="button" onClick={() => setActiveViewWithUrl('dashboard')}>Dashboard</button>
+                  <h4>Yangi mahsulot qo&apos;shish</h4>
+                  <button
+                    type="button"
+                    onClick={() => setActiveViewWithUrl(!isDesktop ? 'products' : 'dashboard')}
+                  >
+                    {!isDesktop ? 'Mahsulotlar' : 'Dashboard'}
+                  </button>
                 </div>
 
                 <form className="seller-product-form" onSubmit={handleCreate}>
@@ -1559,10 +1594,22 @@ export default function SellerDashboard() {
                   </button>
                 </form>
               </article>
+              )}
 
+              {(activeView === 'products' || activeView === 'products_archive') && (
               <article className="seller-panel-card">
                 <div className="seller-panel-head">
-                  <h4>Mahsulotlarim</h4>
+                  <h4>{activeView === 'products_archive' ? 'Sotuvdan olib tashlangan' : 'Mahsulotlarim'}</h4>
+                  {isDesktop && activeView === 'products' ? (
+                    <div className="seller-products-head-actions">
+                      <button type="button" className="seller-mini-btn" onClick={() => setActiveViewWithUrl('products_print')}>
+                        Chek
+                      </button>
+                      <button type="button" className="seller-mini-btn" onClick={() => setActiveViewWithUrl('products_archive')}>
+                        Sotuvda yo&apos;q
+                      </button>
+                    </div>
+                  ) : null}
                   <input className="seller-search" placeholder="Qidirish..." value={search} onChange={(e) => setSearch(e.target.value)} />
                 </div>
 
@@ -1659,6 +1706,68 @@ export default function SellerDashboard() {
                   </table>
                 </div>
               </article>
+              )}
+            </>
+          )}
+
+          {activeView === 'products_print' && (
+            <>
+              <article className="seller-panel-card seller-print-card">
+                <div className="seller-panel-head">
+                  <h4>Chek chiqarish</h4>
+                  <button type="button" className="seller-mini-btn" onClick={() => setActiveViewWithUrl('products')}>
+                    Ortga
+                  </button>
+                </div>
+                <p className="seller-muted seller-print-intro">
+                  Mahsulot nomi va narxi kiriting, keyin brauzer orqali chek chiqariladi.
+                </p>
+                <div className="seller-print-fields">
+                  <label className="seller-field-wide">
+                    <span className="seller-print-label">Mahsulot nomi</span>
+                    <input
+                      className="seller-field"
+                      value={printProductName}
+                      onChange={(e) => setPrintProductName(e.target.value)}
+                      placeholder="Masalan: yumshoq o‘yinchoq quyoncha"
+                    />
+                  </label>
+                  <label className="seller-field-wide">
+                    <span className="seller-print-label">Narxi</span>
+                    <input
+                      className="seller-field"
+                      inputMode="decimal"
+                      value={printPrice}
+                      onChange={(e) => setPrintPrice(e.target.value)}
+                      placeholder="143000"
+                    />
+                  </label>
+                  <label className="seller-field-wide">
+                    <span className="seller-print-label">Soni</span>
+                    <input
+                      className="seller-field"
+                      inputMode="numeric"
+                      min={1}
+                      value={printQty}
+                      onChange={(e) => setPrintQty(e.target.value)}
+                    />
+                  </label>
+                  <button type="button" className="seller-primary-btn seller-field-wide seller-print-btn" onClick={() => window.print()}>
+                    Chek chiqarish
+                  </button>
+                </div>
+              </article>
+              <div id="seller-sale-receipt" className="seller-receipt-sheet">
+                <div className="seller-receipt-inner">
+                  <div className="seller-receipt-brand">MyShop</div>
+                  <div className="seller-receipt-seller">{sellerName}</div>
+                  <hr className="seller-receipt-rule" />
+                  <div className="seller-receipt-row"><span>Mahsulot</span><strong>{printProductName.trim() || '—'}</strong></div>
+                  <div className="seller-receipt-row"><span>Soni</span><strong>{printQty || '1'}</strong></div>
+                  <div className="seller-receipt-row"><span>Jami</span><strong>{printPrice ? formatCurrency(printPrice) : '—'}</strong></div>
+                  <div className="seller-receipt-foot">{formatDateLabel(todayIsoDate())}</div>
+                </div>
+              </div>
             </>
           )}
 
@@ -1878,6 +1987,39 @@ export default function SellerDashboard() {
             </article>
           )}
         </section>
+
+        {!isDesktop && !isMyShopChatView && (
+          <nav className="seller-mobile-dock seller-mobile-shell-dock" aria-label="Asosiy pastki menyu">
+            <div className="seller-mobile-dock-inner">
+              {[
+                { key: 'dashboard', icon: 'fa-home', label: 'Bosh sahifa' },
+                { key: 'products', icon: 'fa-box', label: 'Mahsulotlar' },
+                { key: 'products_add', icon: 'fa-plus', label: 'Qo‘shish', fab: true },
+                { key: 'products_print', icon: 'fa-print', label: 'Chek' },
+                { key: 'products_archive', icon: 'fa-archive', label: 'Sotuvda yo‘q' },
+              ].map((d) => {
+                const isActive =
+                  activeView === d.key ||
+                  (d.key === 'dashboard' && activeView === DEFAULT_SELLER_VIEW);
+                return (
+                  <button
+                    key={d.key}
+                    type="button"
+                    className={`seller-mobile-dock-item${isActive ? ' is-active' : ''}${d.fab ? ' seller-mobile-dock-item--fab' : ''}`}
+                    onClick={() => setActiveViewWithUrl(d.key)}
+                    aria-label={d.label}
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    <span className="seller-mobile-dock-icon-wrap" aria-hidden>
+                      <i className={`fas ${d.icon}`} />
+                    </span>
+                    <span className="seller-mobile-dock-label">{d.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </nav>
+        )}
       </main>
     </div>
   );
