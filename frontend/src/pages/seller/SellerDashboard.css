@@ -3235,6 +3235,10 @@
     gap: 0.75rem;
   }
 
+  .seller-archive-bare-list .seller-product-summary-row {
+    padding: 0.62rem 0;
+  }
+
   .seller-product-summary-metrics {
     grid-template-columns: 1fr;
     gap: 0.72rem;
@@ -3282,6 +3286,19 @@
   .seller-app.seller-mobile-shell:not(.seller-dark):not(.seller-chat-mode) .seller-product-metric dd {
     color: #0f766e;
   }
+
+  .seller-app.seller-mobile-shell:not(.seller-dark):not(.seller-chat-mode) .seller-archive-bare-list .seller-product-summary-row {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.1);
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .seller-app.seller-mobile-shell:not(.seller-dark):not(.seller-chat-mode) .seller-archive-bare-list .seller-product-summary-thumb {
+    background: rgba(253, 250, 240, 0.45);
+    border: 1px solid rgba(5, 100, 60, 0.12);
+  }
 }
 
 @media (max-width: 620px) {
@@ -3291,23 +3308,23 @@
 }
 
 /* Chek chiqarish — minimalist (faqat qidiruv + natijalar, karta/emas) */
-.seller-app:not(.seller-chat-mode):has(.seller-content--print-bare) {
+.seller-app:not(.seller-chat-mode):has(.seller-content--seller-bare-shell) {
   background: var(--seller-surface);
 }
 
-.seller-app.seller-dark:not(.seller-chat-mode):has(.seller-content--print-bare) {
+.seller-app.seller-dark:not(.seller-chat-mode):has(.seller-content--seller-bare-shell) {
   background: var(--seller-bg);
 }
 
 @media (max-width: 1024px) {
-  .seller-app.seller-mobile-shell:not(.seller-dark):not(.seller-chat-mode):has(.seller-content--print-bare) {
+  .seller-app.seller-mobile-shell:not(.seller-dark):not(.seller-chat-mode):has(.seller-content--seller-bare-shell) {
     background: #fff;
     border-left-color: rgba(5, 120, 75, 0.12);
     border-right-color: rgba(5, 120, 75, 0.12);
   }
 }
 
-.seller-content--print-bare {
+.seller-content--seller-bare-shell {
   padding-top: 1rem;
   padding-inline: clamp(1rem, 4vw, 1.35rem);
   padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
@@ -3316,7 +3333,7 @@
 }
 
 @media (max-width: 1024px) {
-  .seller-app.seller-mobile-shell:not(.seller-chat-mode) .seller-content--print-bare {
+  .seller-app.seller-mobile-shell:not(.seller-chat-mode) .seller-content--seller-bare-shell {
     padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
   }
 }
@@ -3432,6 +3449,25 @@
 .seller-print-results--bare {
   margin-top: 0.65rem;
   gap: 0;
+}
+
+/* «Sotuvdan» arxivi: qatorlar printer sahifasidagidek soddalik */
+.seller-archive-bare-list.seller-product-summary-list {
+  gap: 0;
+}
+
+.seller-archive-bare-list .seller-product-summary-row {
+  margin: 0;
+  padding: 0.58rem 0;
+  border-radius: 0;
+  border: none;
+  border-bottom: 1px solid var(--seller-border);
+  background: transparent;
+  box-sizing: border-box;
+}
+
+.seller-archive-bare-list .seller-product-summary-row:last-child {
+  border-bottom: none;
 }
 
 .seller-print-result-row--bare {
