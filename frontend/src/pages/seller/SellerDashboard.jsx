@@ -346,10 +346,6 @@ export default function SellerDashboard() {
     priceNumeric: 0,
     qty: 1,
   });
-  /** Qaysi sahifa uchun arxiv: chap — brak, o‘ng — sotuvdan olingan */
-  const [archiveTab, setArchiveTab] = useState('withdrawn');
-
-  const hasLoadedOnceRef = useRef(false);
   const sellerProductImageSlotFileRefs = useRef({});
   const videoFileInputRef = useRef(null);
 
@@ -720,16 +716,61 @@ export default function SellerDashboard() {
   const filteredProducts = useMemo(() => {
     let table = productRowsForTable;
     if (activeView === 'products_archive') {
-      table =
-        archiveTab === 'brak'
-          ? catalogProducts.filter(isSellerProductBrak)
-          : catalogProducts.filter(isSellerWithdrawnProduct);
+      table = catalogProducts.filter((p) => isSellerProductBrak(p) || isSellerWithdrawnProduct(p));
     }
     const q = search.trim().toLowerCase();
     if (!q) return table;
     return table.filter((row) => `${row.name_uz || ''} ${row.category || ''} ${row.id}`.toLowerCase().includes(q));
-  }, [productRowsForTable, search, activeView, catalogProducts, archiveTab]);
+  }, [productRowsForTable, search, activeView, catalogProducts]);
 
+  const productListSummaryNodes = useMemo(
+    () =>
+      filteredProducts.map((row) => {
+        const sold = Math.max(0, Math.round(Number(row.sold_qty) || 0));
+        const stock = Math.max(0, Math.round(Number(row.stock) || 0));
+        const title = row.name_uz || `Mahsulot #${row.id}`;
+        const archiveBrak = activeView === 'products_archive' && isSellerProductBrak(row);
+
+        return (
+          <div key={row.id} className="seller-product-summary-row" role="listitem" aria-label={title}>
+            <div className="seller-product-summary-thumb">
+              {row.image_url ? (
+                <img src={row.image_url} alt="" className="seller-product-summary-img" />
+              ) : (
+                <span className="seller-product-summary-placeholder" aria-hidden>
+                  <i className="fas fa-image" />
+                </span>
+              )}
+            </div>
+            {archiveBrak ? (
+              <div className="seller-archive-brak-main">
+                <strong className="seller-archive-brak-name">{title}</strong>
+                <p className="seller-archive-brak-qty-line">
+                  <span>Brak soni</span>
+                  <strong>{sellerBrakQtyDisplay(row)} dona</strong>
+                </p>
+              </div>
+            ) : (
+              <dl className="seller-product-summary-metrics">
+                <div className="seller-product-metric">
+                  <dt>Narx</dt>
+                  <dd>{formatCurrency(row.price)}</dd>
+                </div>
+                <div className="seller-product-metric">
+                  <dt>Omborda</dt>
+                  <dd>{stock}</dd>
+                </div>
+                <div className="seller-product-metric">
+                  <dt>Sotilgan</dt>
+                  <dd>{sold}</dd>
+                </div>
+              </dl>
+            )}
+          </div>
+        );
+      }),
+    [filteredProducts, activeView],
+  );
   const printActiveCatalog = useMemo(
     () =>
       Array.isArray(catalogProducts)
@@ -1316,7 +1357,9 @@ export default function SellerDashboard() {
 
         <section
           className={`seller-content${isMyShopChatView ? ' seller-content--chat' : ''}${
-            activeView === 'products_print' ? ' seller-content--print-bare' : ''
+            activeView === 'products_print' || activeView === 'products_archive'
+              ? ' seller-content--seller-bare-shell'
+              : ''
           }`}
         >
           {error && <div className="seller-error-box">{error}</div>}
@@ -1653,98 +1696,59 @@ export default function SellerDashboard() {
               </article>
               )}
 
-              {(activeView === 'products' || activeView === 'products_archive') && (
-              <article className="seller-panel-card">
-                <div className="seller-panel-head seller-archive-panel-head">
-                  <h4>{activeView === 'products_archive' ? 'Sotuvdan olingan' : 'Mahsulotlarim'}</h4>
-                  {isDesktop && activeView === 'products' ? (
-                    <div className="seller-products-head-actions">
-                      <button type="button" className="seller-mini-btn" onClick={() => setActiveViewWithUrl('products_print')}>
-                        Chek
-                      </button>
-                      <button type="button" className="seller-mini-btn" onClick={() => setActiveViewWithUrl('products_archive')}>
-                        Sotuvdan
-                      </button>
+              {activeView === 'products' && (
+                <article className="seller-panel-card">
+                  <div className="seller-panel-head seller-archive-panel-head">
+                    <h4>Mahsulotlarim</h4>
+                    {isDesktop ? (
+                      <div className="seller-products-head-actions">
+                        <button type="button" className="seller-mini-btn" onClick={() => setActiveViewWithUrl('products_print')}>
+                          Chek
+                        </button>
+                        <button type="button" className="seller-mini-btn" onClick={() => setActiveViewWithUrl('products_archive')}>
+                          Sotuvdan
+                        </button>
+                      </div>
+                    ) : null}
+                    <input className="seller-search" placeholder="Qidirish..." value={search} onChange={(e) => setSearch(e.target.value)} />
+                  </div>
+
+                  <div className="seller-product-summary-wrap">
+                    <div className="seller-product-summary-list" role="list" aria-label="Mahsulotlar ro'yxati">
+                      {productListSummaryNodes}
                     </div>
-                  ) : null}
-                  <input className="seller-search" placeholder="Qidirish..." value={search} onChange={(e) => setSearch(e.target.value)} />
-                </div>
-
-                {activeView === 'products_archive' ? (
-                  <div className="seller-archive-tabstrip" role="tablist" aria-label="Sotuvdan olingan va brak">
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={archiveTab === 'brak'}
-                      className={`seller-archive-tab${archiveTab === 'brak' ? ' is-active' : ''}`}
-                      onClick={() => setArchiveTab('brak')}
-                    >
-                      Brak mahsulotlar
-                    </button>
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={archiveTab === 'withdrawn'}
-                      className={`seller-archive-tab${archiveTab === 'withdrawn' ? ' is-active' : ''}`}
-                      onClick={() => setArchiveTab('withdrawn')}
-                    >
-                      Sotuvdan olingan
-                    </button>
+                    {filteredProducts.length === 0 && (
+                      <p className="seller-empty seller-product-summary-empty">Mahsulot topilmadi</p>
+                    )}
                   </div>
-                ) : null}
+                </article>
+              )}
 
-                <div className="seller-product-summary-wrap">
-                  <div className="seller-product-summary-list" role="list" aria-label="Mahsulotlar ro'yxati">
-                    {filteredProducts.map((row) => {
-                      const sold = Math.max(0, Math.round(Number(row.sold_qty) || 0));
-                      const stock = Math.max(0, Math.round(Number(row.stock) || 0));
-                      const title = row.name_uz || `Mahsulot #${row.id}`;
-                      const archiveBrak = activeView === 'products_archive' && archiveTab === 'brak';
-
-                      return (
-                        <div key={row.id} className="seller-product-summary-row" role="listitem" aria-label={title}>
-                          <div className="seller-product-summary-thumb">
-                            {row.image_url ? (
-                              <img src={row.image_url} alt="" className="seller-product-summary-img" />
-                            ) : (
-                              <span className="seller-product-summary-placeholder" aria-hidden>
-                                <i className="fas fa-image" />
-                              </span>
-                            )}
-                          </div>
-                          {archiveBrak ? (
-                            <div className="seller-archive-brak-main">
-                              <strong className="seller-archive-brak-name">{title}</strong>
-                              <p className="seller-archive-brak-qty-line">
-                                <span>Brak soni</span>
-                                <strong>{sellerBrakQtyDisplay(row)} dona</strong>
-                              </p>
-                            </div>
-                          ) : (
-                            <dl className="seller-product-summary-metrics">
-                              <div className="seller-product-metric">
-                                <dt>Narx</dt>
-                                <dd>{formatCurrency(row.price)}</dd>
-                              </div>
-                              <div className="seller-product-metric">
-                                <dt>Omborda</dt>
-                                <dd>{stock}</dd>
-                              </div>
-                              <div className="seller-product-metric">
-                                <dt>Sotilgan</dt>
-                                <dd>{sold}</dd>
-                              </div>
-                            </dl>
-                          )}
-                        </div>
-                      );
-                    })}
+              {activeView === 'products_archive' && (
+                <article className="seller-print-page seller-print-page--bare">
+                  <div className="seller-print-inner-bare seller-print-inner-bare--centered">
+                    <label className="seller-print-search-wrap">
+                      <span className="seller-print-screen-reader-label">Arxivda mahsulot bo&apos;yicha qidirish</span>
+                      <i className="fas fa-search seller-print-search-icon" aria-hidden />
+                      <input
+                        type="search"
+                        className="seller-print-search-input"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Mahsulot nomi bo'yicha qidirish..."
+                        autoComplete="off"
+                        enterKeyHint="search"
+                      />
+                    </label>
+                    <div
+                      className="seller-product-summary-list seller-archive-bare-list seller-print-results--bare"
+                      role="list"
+                      aria-label="Arxivdagi mahsulotlar"
+                    >
+                      {productListSummaryNodes}
+                    </div>
                   </div>
-                  {filteredProducts.length === 0 && (
-                    <p className="seller-empty seller-product-summary-empty">Mahsulot topilmadi</p>
-                  )}
-                </div>
-              </article>
+                </article>
               )}
             </>
           )}
