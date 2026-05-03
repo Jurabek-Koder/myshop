@@ -42,16 +42,18 @@
   position: fixed;
   inset: 0;
   z-index: 28;
-  background: rgba(15, 23, 42, 0.42);
+  background: rgba(15, 23, 42, 0.62);
   border: none;
   padding: 0;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: saturate(135%) blur(6px);
+  backdrop-filter: saturate(135%) blur(6px);
+  isolation: isolate;
 }
 
 html.theme-dark .packer-sidebar-backdrop--visible {
-  background: rgba(0, 0, 0, 0.52);
+  background: rgba(0, 0, 0, 0.68);
 }
 
 .packer-sidebar-backdrop--visible {
@@ -2224,6 +2226,8 @@ html.theme-dark .packer-sticky-count {
 .packer-items-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
   margin: 0 -0.25rem;
 }
 
