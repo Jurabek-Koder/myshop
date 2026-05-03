@@ -2936,6 +2936,105 @@
   align-items: center;
 }
 
+/* Buyurtmalar (seller overview) */
+.seller-orders-overview-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+}
+
+.seller-orders-overview-error {
+  margin: 0 0 0.75rem;
+  padding: 0.62rem 0.82rem;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+.seller-dark .seller-orders-overview-error {
+  background: rgba(239, 68, 68, 0.16);
+  color: #fca5a5;
+}
+
+.seller-orders-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  padding: 0.15rem 0 0;
+}
+
+@media (max-width: 720px) {
+  .seller-orders-summary-strip {
+    grid-template-columns: 1fr;
+  }
+}
+
+.seller-orders-summary-tile {
+  padding: 0.82rem 0.92rem;
+  border-radius: 14px;
+  border: 1px solid var(--seller-border);
+  background: color-mix(in srgb, var(--seller-surface) 92%, transparent);
+}
+
+.seller-orders-summary-tile span {
+  display: block;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--seller-muted);
+  margin-bottom: 0.38rem;
+}
+
+.seller-orders-summary-tile strong {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.seller-orders-summary-tile small {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+}
+
+.seller-orders-product-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  justify-content: center;
+}
+
+.seller-orders-product-name {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  line-height: 1.35;
+}
+
+.seller-orders-product-metrics {
+  margin-top: 0;
+}
+
+@media (max-width: 620px) {
+  .seller-orders-product-metrics {
+    margin-top: 0.12rem;
+  }
+}
+
+.seller-list-row-sub {
+  display: block;
+  font-size: 0.81rem;
+  margin-top: 0.22rem;
+  line-height: 1.3;
+}
+
 /* Mahsulotlar ro'yxati (qisqacha: rasm + narx + ombor + sotilgan) */
 .seller-product-summary-wrap {
   padding: 0.15rem 0 0.35rem;
