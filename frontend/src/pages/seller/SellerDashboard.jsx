@@ -154,15 +154,6 @@ function formatDateLabel(value) {
   return formatIsoDateLabelUz(iso);
 }
 
-function sellerProductStatusLine(row) {
-  const s = String(row?.status || 'pending').trim().toLowerCase();
-  if (s === 'active') return { text: 'Sotuvda', className: 'seller-status-ok' };
-  if (s === 'scheduled' || s === 'approved') {
-    return { text: 'Eski holat — admin «Mahsulotlar» dan yangilang', className: 'seller-status-wait' };
-  }
-  return { text: 'Admin tasdiqini kutilmoqda', className: 'seller-status-muted' };
-}
-
 function makeProductForm() {
   return {
     name_uz: '',
@@ -275,7 +266,6 @@ export default function SellerDashboard() {
 
   const [search, setSearch] = useState('');
   const [form, setForm] = useState(makeProductForm());
-  const [drafts, setDrafts] = useState({});
   const [productAdCreatives, setProductAdCreatives] = useState([]);
   const [creativeBusy, setCreativeBusy] = useState(false);
   const [suggestAssetsBusy, setSuggestAssetsBusy] = useState(false);
@@ -832,37 +822,6 @@ export default function SellerDashboard() {
     }
   };
 
-  const handleRowImageFile = async (productId, e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!String(file.type || '').startsWith('image/')) {
-      setError('Faqat rasm fayl tanlang.');
-      return;
-    }
-    if (file.size > MAX_IMAGE_BYTES) {
-      setError('Rasm hajmi 5MB dan oshmasligi kerak.');
-      return;
-    }
-    try {
-      const dataUrl = await fileToDataUrl(file);
-      setDrafts((p) => {
-        const prev = p[productId] || {};
-        return {
-          ...p,
-          [productId]: {
-            ...prev,
-            image_url: dataUrl,
-            image_gallery_json: JSON.stringify([dataUrl]),
-          },
-        };
-      });
-      setError('');
-    } catch (err) {
-      setError(err.message || 'Rasm yuklanmadi.');
-    }
-    e.target.value = '';
-  };
-
   const handleCreate = async (e) => {
     e.preventDefault();
     if (!form.name_uz.trim()) return setError('Mahsulot nomi kerak.');
@@ -899,46 +858,6 @@ export default function SellerDashboard() {
       setProductAdCreatives([]);
       setForm(makeProductForm());
       setActiveViewWithUrl('products');
-    });
-  };
-
-  const handleSave = async (id) => {
-    const draft = drafts[id];
-    if (!draft) return;
-
-    const share = calcShares(draft.price, draft.operator_share_percent, draft.site_fee_percent);
-    if (!share.valid) return setError('Operator ulushi va sayt foizi yig\'indisi 100% dan oshmasligi kerak.');
-
-    await runMutation(`save-${id}`, async () => {
-      const res = await request(`/seller/products/${id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          name_uz: String(draft.name_uz || '').trim(),
-          description_uz: String(draft.description_uz ?? '').trim() || null,
-          category: String(draft.category || '').trim() || null,
-          image_url: draft.image_url || null,
-          image_gallery_json:
-            draft.image_gallery_json != null && String(draft.image_gallery_json).trim() !== ''
-              ? draft.image_gallery_json
-              : draft.image_url
-                ? JSON.stringify([draft.image_url])
-                : null,
-          video_url: draft.video_url || null,
-          price: Number(draft.price) || 0,
-          stock: Number(draft.stock) || 0,
-          operator_share_percent: share.operatorPercent,
-          site_fee_percent: share.sitePercent,
-        }),
-      });
-      await ensureOk(res, 'Mahsulot saqlanmadi');
-    });
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm('Mahsulotni o\'chirasizmi?')) return;
-    await runMutation(`delete-${id}`, async () => {
-      const res = await request(`/seller/products/${id}`, { method: 'DELETE' });
-      await ensureOk(res, 'Mahsulot o\'chirilmadi');
     });
   };
 
@@ -1613,97 +1532,44 @@ export default function SellerDashboard() {
                   <input className="seller-search" placeholder="Qidirish..." value={search} onChange={(e) => setSearch(e.target.value)} />
                 </div>
 
-                <div className="seller-table-wrap">
-                  <table className="seller-table">
-                    <thead>
-                      <tr>
-                        <th>ID</th>
-                        <th>Rasm</th>
-                        <th>Nomi</th>
-                        <th>Holat</th>
-                        <th>Kategoriya</th>
-                        <th>Narx</th>
-                        <th>Stock</th>
-                        <th>Operator %</th>
-                        <th>Sayt %</th>
-                        <th>Seller summa</th>
-                        <th>Amal</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredProducts.map((row) => {
-                        const draft = drafts[row.id] || {
-                          name_uz: row.name_uz || '',
-                          description_uz: row.description_uz || '',
-                          category: row.category || '',
-                          image_url: row.image_url || '',
-                          image_gallery_json: row.image_gallery_json || null,
-                          video_url: row.video_url || '',
-                          price: row.price || 0,
-                          stock: row.stock || 0,
-                          operator_share_percent: row.operator_share_percent || 0,
-                          site_fee_percent: row.site_fee_percent || 0,
-                        };
-                        const share = calcShares(draft.price, draft.operator_share_percent, draft.site_fee_percent);
-                        const stLine = sellerProductStatusLine(row);
-
-                        return (
-                          <tr key={row.id}>
-                            <td>{row.id}</td>
-                            <td className="seller-table-thumb-cell">
-                              <div className="seller-table-thumb-wrap">
-                                {draft.image_url ? (
-                                  <img src={draft.image_url} alt="" className="seller-table-thumb" />
-                                ) : (
-                                  <span className="seller-table-thumb seller-table-thumb--empty"><i className="fas fa-image" /></span>
-                                )}
-                                <label className="seller-thumb-upload">
-                                  <input type="file" accept="image/*" className="seller-file-hidden" onChange={(e) => handleRowImageFile(row.id, e)} />
-                                  <span>Yangi rasm</span>
-                                </label>
-                              </div>
-                            </td>
-                            <td>
-                              <input className="seller-cell-input" value={draft.name_uz} onChange={(e) => setDrafts((p) => ({ ...p, [row.id]: { ...draft, name_uz: e.target.value } }))} />
-                              <textarea
-                                className="seller-cell-textarea"
-                                rows={2}
-                                placeholder="Izoh"
-                                value={draft.description_uz}
-                                onChange={(e) => setDrafts((p) => ({ ...p, [row.id]: { ...draft, description_uz: e.target.value } }))}
-                              />
-                            </td>
-                            <td><span className={`seller-status-pill ${stLine.className}`}>{stLine.text}</span></td>
-                            <td>
-                              <select className="seller-cell-input" value={draft.category} onChange={(e) => setDrafts((p) => ({ ...p, [row.id]: { ...draft, category: e.target.value } }))}>
-                                <option value="">Tanlang</option>
-                                {categoryOptionsFor(draft.category).map((item) => (
-                                  <option key={String(row.id) + '-' + item} value={item}>{item}</option>
-                                ))}
-                              </select>
-                            </td>
-                            <td><input className="seller-cell-input" type="number" min="0" value={draft.price} onChange={(e) => setDrafts((p) => ({ ...p, [row.id]: { ...draft, price: e.target.value } }))} /></td>
-                            <td><input className="seller-cell-input" type="number" min="0" value={draft.stock} onChange={(e) => setDrafts((p) => ({ ...p, [row.id]: { ...draft, stock: e.target.value } }))} /></td>
-                            <td><input className="seller-cell-input" type="number" min="0" max="100" value={draft.operator_share_percent} onChange={(e) => setDrafts((p) => ({ ...p, [row.id]: { ...draft, operator_share_percent: e.target.value } }))} /></td>
-                            <td><input className="seller-cell-input" type="number" min="0" max="100" value={draft.site_fee_percent} onChange={(e) => setDrafts((p) => ({ ...p, [row.id]: { ...draft, site_fee_percent: e.target.value } }))} /></td>
-                            <td><strong className="seller-net-text">{formatCurrency(share.sellerNet)}</strong></td>
-                            <td>
-                              <div className="seller-actions seller-actions-stack">
-                                <button type="button" className="seller-mini-btn" onClick={() => handleSave(row.id)} disabled={busyKey === `save-${row.id}`}>Saqlash</button>
-                                <button type="button" className="seller-mini-btn danger" onClick={() => handleDelete(row.id)} disabled={busyKey === `delete-${row.id}`}>O'chirish</button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-
-                      {filteredProducts.length === 0 && (
-                        <tr>
-                          <td className="seller-empty" colSpan={11}>Mahsulot topilmadi</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
+                <div className="seller-product-summary-wrap">
+                  <div className="seller-product-summary-list" role="list" aria-label="Mahsulotlar ro'yxati">
+                    {filteredProducts.map((row) => {
+                      const sold = Math.max(0, Math.round(Number(row.sold_qty) || 0));
+                      const stock = Math.max(0, Math.round(Number(row.stock) || 0));
+                      const title = row.name_uz || `Mahsulot #${row.id}`;
+                      return (
+                        <div key={row.id} className="seller-product-summary-row" role="listitem" aria-label={title}>
+                          <div className="seller-product-summary-thumb">
+                            {row.image_url ? (
+                              <img src={row.image_url} alt="" className="seller-product-summary-img" />
+                            ) : (
+                              <span className="seller-product-summary-placeholder" aria-hidden>
+                                <i className="fas fa-image" />
+                              </span>
+                            )}
+                          </div>
+                          <dl className="seller-product-summary-metrics">
+                            <div className="seller-product-metric">
+                              <dt>Narx</dt>
+                              <dd>{formatCurrency(row.price)}</dd>
+                            </div>
+                            <div className="seller-product-metric">
+                              <dt>Omborda</dt>
+                              <dd>{stock}</dd>
+                            </div>
+                            <div className="seller-product-metric">
+                              <dt>Sotilgan</dt>
+                              <dd>{sold}</dd>
+                            </div>
+                          </dl>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {filteredProducts.length === 0 && (
+                    <p className="seller-empty seller-product-summary-empty">Mahsulot topilmadi</p>
+                  )}
                 </div>
               </article>
               )}
@@ -1713,61 +1579,79 @@ export default function SellerDashboard() {
           {activeView === 'products_print' && (
             <>
               <article className="seller-panel-card seller-print-card">
-                <div className="seller-panel-head">
-                  <h4>Chek chiqarish</h4>
-                  <button type="button" className="seller-mini-btn" onClick={() => setActiveViewWithUrl('products')}>
+                <div className="seller-print-header">
+                  <button
+                    type="button"
+                    className="seller-print-back"
+                    onClick={() => setActiveViewWithUrl('products')}
+                    aria-label="Orqaga"
+                  >
+                    <i className="fas fa-arrow-left" aria-hidden />
                     Ortga
                   </button>
+                  <h4 className="seller-print-heading">Chek chiqarish</h4>
                 </div>
-                <p className="seller-muted seller-print-intro">
-                  Mahsulot nomi va narxi kiriting, keyin brauzer orqali chek chiqariladi.
-                </p>
-                <div className="seller-print-fields">
-                  <label className="seller-field-wide">
-                    <span className="seller-print-label">Mahsulot nomi</span>
-                    <input
-                      className="seller-field"
-                      value={printProductName}
-                      onChange={(e) => setPrintProductName(e.target.value)}
-                      placeholder="Masalan: yumshoq o‘yinchoq quyoncha"
-                    />
-                  </label>
-                  <label className="seller-field-wide">
-                    <span className="seller-print-label">Narxi</span>
-                    <input
-                      className="seller-field"
-                      inputMode="decimal"
-                      value={printPrice}
-                      onChange={(e) => setPrintPrice(e.target.value)}
-                      placeholder="143000"
-                    />
-                  </label>
-                  <label className="seller-field-wide">
-                    <span className="seller-print-label">Soni</span>
-                    <input
-                      className="seller-field"
-                      inputMode="numeric"
-                      min={1}
-                      value={printQty}
-                      onChange={(e) => setPrintQty(e.target.value)}
-                    />
-                  </label>
-                  <button type="button" className="seller-primary-btn seller-field-wide seller-print-btn" onClick={() => window.print()}>
-                    Chek chiqarish
-                  </button>
+                <div className="seller-print-card-inner">
+                  <p className="seller-muted seller-print-intro">
+                    Mahsulot nomi va narxi kiriting, keyin brauzer orqali chek chiqariladi.
+                  </p>
+                  <div className="seller-print-fields">
+                    <label className="seller-field-wide seller-print-field">
+                      <span className="seller-print-label">Mahsulot nomi</span>
+                      <input
+                        className="seller-field seller-print-input"
+                        value={printProductName}
+                        onChange={(e) => setPrintProductName(e.target.value)}
+                        placeholder="Masalan: yumshoq o‘yinchoq quyoncha"
+                        autoComplete="off"
+                      />
+                    </label>
+                    <div className="seller-print-two-col">
+                      <label className="seller-field-wide seller-print-field">
+                        <span className="seller-print-label">Narxi (so‘m)</span>
+                        <input
+                          className="seller-field seller-print-input"
+                          inputMode="decimal"
+                          value={printPrice}
+                          onChange={(e) => setPrintPrice(e.target.value)}
+                          placeholder="143000"
+                          autoComplete="off"
+                        />
+                      </label>
+                      <label className="seller-field-wide seller-print-field">
+                        <span className="seller-print-label">Soni</span>
+                        <input
+                          className="seller-field seller-print-input"
+                          inputMode="numeric"
+                          min={1}
+                          value={printQty}
+                          onChange={(e) => setPrintQty(e.target.value)}
+                          autoComplete="off"
+                        />
+                      </label>
+                    </div>
+                    <button
+                      type="button"
+                      className="seller-primary-btn seller-print-submit"
+                      onClick={() => window.print()}
+                    >
+                      Chek chiqarish
+                    </button>
+                  </div>
+                  <div className="seller-print-preview-label">Chek namunasi</div>
+                  <div id="seller-sale-receipt" className="seller-receipt-sheet seller-receipt-sheet--inline">
+                    <div className="seller-receipt-inner">
+                      <div className="seller-receipt-brand">MyShop</div>
+                      <div className="seller-receipt-seller">{sellerName}</div>
+                      <hr className="seller-receipt-rule" />
+                      <div className="seller-receipt-row"><span>Mahsulot</span><strong>{printProductName.trim() || '—'}</strong></div>
+                      <div className="seller-receipt-row"><span>Soni</span><strong>{printQty || '1'}</strong></div>
+                      <div className="seller-receipt-row"><span>Jami</span><strong>{printPrice ? formatCurrency(printPrice) : '—'}</strong></div>
+                      <div className="seller-receipt-foot">{formatDateLabel(todayIsoDate())}</div>
+                    </div>
+                  </div>
                 </div>
               </article>
-              <div id="seller-sale-receipt" className="seller-receipt-sheet">
-                <div className="seller-receipt-inner">
-                  <div className="seller-receipt-brand">MyShop</div>
-                  <div className="seller-receipt-seller">{sellerName}</div>
-                  <hr className="seller-receipt-rule" />
-                  <div className="seller-receipt-row"><span>Mahsulot</span><strong>{printProductName.trim() || '—'}</strong></div>
-                  <div className="seller-receipt-row"><span>Soni</span><strong>{printQty || '1'}</strong></div>
-                  <div className="seller-receipt-row"><span>Jami</span><strong>{printPrice ? formatCurrency(printPrice) : '—'}</strong></div>
-                  <div className="seller-receipt-foot">{formatDateLabel(todayIsoDate())}</div>
-                </div>
-              </div>
             </>
           )}
 
