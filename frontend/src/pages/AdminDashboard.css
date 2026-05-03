@@ -619,10 +619,18 @@
   position: fixed;
   inset: 0;
   z-index: 5200;
-  background: rgba(15, 23, 42, 0.45);
+  background: rgba(15, 23, 42, 0.62);
+  -webkit-backdrop-filter: saturate(140%) blur(6px);
+  backdrop-filter: saturate(140%) blur(6px);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  isolation: isolate;
 }
+
+.admin-dashboard.admin-dark .admin-bell-backdrop {
+  background: rgba(2, 6, 23, 0.78);
+}
+
 .admin-bell-dropdown {
   position: fixed;
   left: auto;
@@ -636,10 +644,13 @@
   background: var(--admin-surface);
   border: 1px solid var(--admin-border);
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(15, 23, 42, 0.06);
   z-index: 5201;
   box-sizing: border-box;
   -webkit-overflow-scrolling: touch;
+  isolation: isolate;
 }
 .admin-bell-head {
   padding: 0.75rem 1rem;
@@ -662,7 +673,14 @@
   border-bottom: 1px solid var(--admin-border);
 }
 .admin-bell-list li:last-child { border-bottom: none; }
-.admin-bell-list li.unread { background: rgba(34, 197, 94, 0.06); }
+.admin-bell-list li.unread {
+  background: #ecfdf3;
+  border-radius: 8px;
+}
+
+.admin-dashboard.admin-dark .admin-bell-list li.unread {
+  background: #152a22;
+}
 .admin-bell-item-title { font-weight: 600; margin-bottom: 0.25rem; overflow-wrap: anywhere; word-break: break-word; }
 .admin-bell-item-body { font-size: 0.9rem; color: var(--admin-muted); margin-bottom: 0.25rem; overflow-wrap: anywhere; word-break: break-word; }
 .admin-bell-item-date { font-size: 0.75rem; color: var(--admin-muted); margin-bottom: 0.5rem; }
@@ -742,6 +760,7 @@
   padding: 1.15rem 1.25rem 1.6rem;
   display: grid;
   gap: 1rem;
+  min-width: 0;
 }
 
 /* Superuser Chat — Telegram uslubi: topbar ostida qolgan balandlikni to‘ldiradi */
@@ -1103,6 +1122,7 @@
   background: var(--admin-surface);
   border-radius: 18px;
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+  min-width: 0;
 }
 
 .chart-head,
@@ -1621,6 +1641,9 @@
 .table-wrap {
   padding: 0.8rem;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
 }
 
 .table-wrap table {
