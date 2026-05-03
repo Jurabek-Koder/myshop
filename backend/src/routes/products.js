@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { db } from '../db/database.js';
-import { optionalAuth } from '../middleware/auth.js';
-import { authRequired, requireRole } from '../middleware/auth.js';
+import { authRequired, optionalAuth, requireRole } from '../middleware/auth.js';
 import { productValidation, idParam } from '../middleware/validate.js';
 
 const router = Router();
