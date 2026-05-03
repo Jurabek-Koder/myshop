@@ -622,12 +622,20 @@
   border: 1px solid var(--seller-border);
   border-radius: 10px;
   padding: 0.46rem 0.55rem;
-  background: rgba(59, 130, 246, 0.05);
+  background: #eef4ff;
 }
 
 .seller-notify-item.read {
-  opacity: 0.86;
-  background: transparent;
+  opacity: 0.95;
+  background: #f1f5f9;
+}
+
+.seller-dark .seller-notify-item {
+  background: #172339;
+}
+
+.seller-dark .seller-notify-item.read {
+  background: #141d30;
 }
 
 .seller-notify-item-head {
@@ -735,6 +743,7 @@
   display: grid;
   gap: 0.95rem;
   align-content: start;
+  min-width: 0;
 }
 
 .seller-main--chat {
@@ -912,6 +921,7 @@
   border-radius: 16px;
   overflow: hidden;
   box-shadow: var(--seller-shadow);
+  min-width: 0;
 }
 
 .seller-panel-head {
@@ -1451,6 +1461,9 @@
 .seller-table-wrap {
   width: 100%;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
   padding: 0.62rem;
 }
 
@@ -2345,9 +2358,16 @@
     position: fixed;
     inset: 0;
     z-index: 400;
-    background: rgba(0, 0, 0, 0.38);
+    background: rgba(15, 23, 42, 0.66);
+    -webkit-backdrop-filter: saturate(140%) blur(6px);
+    backdrop-filter: saturate(140%) blur(6px);
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
+    isolation: isolate;
+  }
+
+  .seller-dark .seller-dropdown-backdrop {
+    background: rgba(2, 6, 23, 0.78);
   }
 
   .seller-app {
@@ -2400,6 +2420,11 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    background: var(--seller-surface);
+    box-shadow:
+      var(--seller-shadow),
+      0 0 0 1px rgba(15, 23, 42, 0.06);
+    isolation: isolate;
   }
 
   .seller-notify-list {
