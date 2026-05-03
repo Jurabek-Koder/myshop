@@ -84,13 +84,24 @@ if (process.env.NODE_ENV === 'production') {
   const onRender = String(process.env.RENDER || '').trim().toLowerCase() === 'true';
 
   /** Render-da sukut diski ephemeral — ma’lumotlar qalqib ketmasligi uchun doimiy disk majburiy. */
+  const allowEphemeralExplicit =
+    String(process.env.MYSHOP_ALLOW_EPHEMERAL_DISK || '').trim() === '1' ||
+    String(process.env.MYSHOP_ALLOW_EPHEMERAL_DISK || '').trim().toLowerCase() === 'true';
+
   if (onRender && !persisted) {
-    console.error(
-      '[MyShop] Render requires MYSHOP_DATA_DIR (persistent disk mount). ' +
-        'SQLite must not live on ephemeral storage. Dashboard: add Disk, e.g. mount /var/data/myshop, env MYSHOP_DATA_DIR=/var/data/myshop. ' +
-        'Needs paid Web Service (disk not on Free). See render.yaml.',
-    );
-    process.exit(1);
+    if (allowEphemeralExplicit) {
+      console.warn(
+        '[MyShop] [RISK] MYSHOP_ALLOW_EPHEMERAL_DISK o‘rniga ishlayapmiz — ma’lumotlar Render ephemeral diskida, ' +
+          'uyqu/deploy/restart bilan yo‘qolishi mumkin. Doimilik uchun Persistent Disk va MYSHOP_DATA_DIR bering.',
+      );
+    } else {
+      console.error(
+        '[MyShop] Render requires MYSHOP_DATA_DIR (persistent disk mount). SQLite must not live on ephemeral storage. ' +
+          'Dashboard: Web Service → Disks → add disk, mount e.g. /var/data/myshop, then Env MYSHOP_DATA_DIR=/var/data/myshop. ' +
+          'Free plan often has no disk; upgrade or set MYSHOP_ALLOW_EPHEMERAL_DISK=1 only for demos (risk). See render.yaml.',
+      );
+      process.exit(1);
+    }
   }
 
   if (!persisted && !onRender) {
@@ -107,7 +118,10 @@ const adSlidesPublicDir = adSlidesUploadPath();
 fs.mkdirSync(adSlidesPublicDir, { recursive: true });
 app.use('/api/uploads/ad-slides', express.static(adSlidesPublicDir, { maxAge: '7d' }));
 
-/** Bosh sahifa reklama slaydlari — autentifikatsiyasiz */
+app.use(helmetMiddleware);
+app.use(corsMiddleware);
+
+/** Bosh sahifa bannerlari — corsMiddleware dan keyin (alohida static frontend domenlarida CORS ishlaydi) */
 app.get('/api/ad-slides', (_req, res) => {
   try {
     const rows = db
@@ -122,9 +136,6 @@ app.get('/api/ad-slides', (_req, res) => {
     res.status(500).json({ slides: [] });
   }
 });
-
-app.use(helmetMiddleware);
-app.use(corsMiddleware);
 app.use(globalRateLimiter);
 app.use(express.json(bodyParserConfig));
 app.use(express.urlencoded({ ...bodyParserConfig, extended: true }));
@@ -150,11 +161,17 @@ app.use('/api/staff-chat', staffChatMediaRoutes);
 
 app.get('/api/health', (_req, res) => {
   const dataDirPersisted = !!(process.env.MYSHOP_DATA_DIR && String(process.env.MYSHOP_DATA_DIR).trim());
+  const onRender = String(process.env.RENDER || '').trim().toLowerCase() === 'true';
+  const ephemeralOptInRender =
+    onRender &&
+    !dataDirPersisted &&
+    (String(process.env.MYSHOP_ALLOW_EPHEMERAL_DISK || '').trim() === '1' ||
+      String(process.env.MYSHOP_ALLOW_EPHEMERAL_DISK || '').trim().toLowerCase() === 'true');
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    /** true bo‘lsa SQLite va uploads doimiy diskda (production uchun zarur Render da) */
     dataDirPersisted,
+    ephemeralOptInRender,
   });
 });
 
