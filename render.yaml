@@ -1,0 +1,53 @@
+# =============================================================================
+# Render Blueprint — production: ma'lumotlar YO‘QOLMASIN / doimiy disk
+# -----------------------------------------------------------------------------
+# SQLite + yuklashlar FAQAT Persistent Disk ustida yozilganda deploy/restart
+# dan keyin ham qoladi. Ephemeral («vaqtinchalik») diskda yozsangiz — ma’lumot
+# uyqu/deploy bilan yo‘qoladi (ChatGPT nimani «Supabase qo‘sh» deb aytgani).
+#
+# ShARTLAR (Render dokumentatsiyasi):
+#   • Persistent Disk — faqat toʻlangan Web Service da (starter va yuqori).
+#   • Free Web Service ga disk Qo‘shy Olmaysiz va servis ishlamagan paytda uyqu-
+#     ga kiradi (~15 daq) — uyquni toʻliq OʻCHirish Free da Render imkoni bermaydi;
+#     doim ishlab turishi uchun toʻlangan rejimga chiqish kerak yoki boshqa host.
+#
+# Qo‘lda sozlash ham bo‘lishi mumkin:
+#   Dashboard → Web Service → Disks → Add (masalan name: myshop-data,
+#   mountPath: /var/data/myshop) → Env: MYSHOP_DATA_DIR=/var/data/myshop
+# Production da MYSHOP_ALLOW_EPHEMERAL_DISK=1 QOYMANG — xavfli demo rejim.
+#
+# Frontend alohida domen boʻlsa → API env: CORS_ORIGINS=https://frontend-....onrender.com
+# =============================================================================
+
+databases: []
+
+services:
+  - type: web
+    name: myshop
+    runtime: node
+    # Doimiy disk uchun Free emas — production uchun Starter+ kerak:
+    plan: starter
+    region: frankfurt
+
+    disk:
+      name: myshop-sqlite
+      mountPath: /var/data/myshop
+      sizeGB: 1
+
+    # Alohida static frontend: builddan oldin frontend/.env.production ga
+    # VITE_API_BASE_URL=https://<backend-host>.onrender.com
+    buildCommand: cd frontend && npm ci && npm run build && cd ../backend && npm ci
+    startCommand: cd backend && NODE_ENV=production node src/server.js
+    healthCheckPath: /api/health
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TZ
+        value: Asia/Tashkent
+      # SQLite + uploads shu yerda → restart/deploy dan keyin ham saqlanadi:
+      - key: MYSHOP_DATA_DIR
+        value: /var/data/myshop
+      # Qoʻshib qoʻying (majburiy xavfsizlik): JWT_ACCESS_SECRET, JWT_REFRESH_SECRET,
+      # MYSHOP_APP_SECRET_KEY, CORS_ORIGINS yoki FRONTEND_URL ...
+    # PORT — Render beradi.
