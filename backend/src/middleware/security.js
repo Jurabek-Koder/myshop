@@ -2,7 +2,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import mongoSanitize from 'express-mongo-sanitize';
-import { security } from '../config/security.js';
+import { security } from './config/security.js';
 
 export const helmetMiddleware = helmet({
   contentSecurityPolicy: false,
