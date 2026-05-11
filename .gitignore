@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Environment files (maxfiy — gitga TUSHIRMANG)
+.env
+.env.local
+.env.development
+.env.development.local
+.env.production
+.env.production.local
+.env.test.local
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+data/
+
+# Uploads (foydalanuvchi fayllari)
+uploads/
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Render / deploy
+.render-build-status
