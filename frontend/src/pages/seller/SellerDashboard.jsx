@@ -387,8 +387,20 @@ export default function SellerDashboard() {
   });
   const hasLoadedOnceRef = useRef(false);
   const sellerProductImageSlotFileRefs = useRef({});
-  const sellerProductBulkImagesRef = useRef(null);
   const videoFileInputRef = useRef(null);
+  const productFormRef = useRef(form);
+  const longPressNextImageTimerRef = useRef(null);
+
+  useEffect(() => {
+    productFormRef.current = form;
+  }, [form]);
+
+  useEffect(
+    () => () => {
+      if (longPressNextImageTimerRef.current) clearTimeout(longPressNextImageTimerRef.current);
+    },
+    [],
+  );
 
   const [isDesktop, setIsDesktop] = useState(() => {
     if (typeof window === 'undefined') return true;
@@ -1039,77 +1051,55 @@ export default function SellerDashboard() {
     }
   };
 
-  const handleProductBulkImagesFileSelect = async (e) => {
-    const input = e.target;
-    const list = input.files;
-    if (input) input.value = '';
-    if (!list?.length) return;
-
-    const rawFiles = Array.from(list);
-    const maxSlots = PRODUCT_IMAGE_SLOT_INDEXES.length;
-    const truncated = rawFiles.length > maxSlots;
-    const files = truncated ? rawFiles.slice(0, maxSlots) : rawFiles;
-
-    for (const file of files) {
-      if (!String(file.type || '').startsWith('image/')) {
-        setError('Barcha fayllar rasm bo‘lishi kerak.');
-        return;
-      }
-      if (file.size > MAX_IMAGE_BYTES) {
-        setError(`"${file.name}" — har bir rasm 5MB dan oshmasligi kerak.`);
-        return;
-      }
-    }
-
-    setProductAdCreatives([]);
-    try {
-      const pairs = await Promise.all(
-        files.map(async (file) => ({
-          dataUrl: await fileToDataUrl(file),
-          name: file.name,
-        })),
-      );
-
-      setForm((p) => {
-        const slots = [...p.image_slots];
-        const names = [...p.image_slot_names];
-        const checked = [...p.image_slot_checked];
-        pairs.forEach((pair, idx) => {
-          slots[idx] = pair.dataUrl;
-          names[idx] = pair.name;
-          checked[idx] = true;
-        });
-        let desc = p.description_uz;
-        if (!String(desc || '').trim()) {
-          const auto = buildAutoProductDescription(p.name_uz, p.category);
-          if (auto) desc = auto;
-        }
-        const next = {
-          ...p,
-          image_slots: slots,
-          image_slot_names: names,
-          image_slot_checked: checked,
-          description_uz: desc,
-        };
-        queueMicrotask(() => runSuggestInternetAssets(formatSearchQueryForSuggest(next)));
-        return next;
-      });
-      if (truncated) {
-        setError(`Bir tanlovda eng ko‘pi bilan ${maxSlots} ta rasm; ortiqchalari o‘tkazilmadi.`);
-      } else {
-        setError('');
-      }
-    } catch (err) {
-      setError(err.message || 'Rasmlar yuklanmadi.');
-    }
-  };
-
   const toggleProductImageSlotChecked = (slotIndex) => {
     setForm((p) => {
       const next = [...p.image_slot_checked];
       next[slotIndex] = !next[slotIndex];
       return { ...p, image_slot_checked: next };
     });
+  };
+
+  const cancelLongPressNextImageSlot = () => {
+    if (longPressNextImageTimerRef.current) {
+      clearTimeout(longPressNextImageTimerRef.current);
+      longPressNextImageTimerRef.current = null;
+    }
+  };
+
+  const scheduleLongPressNextImageSlot = (fromSlotIndex) => {
+    cancelLongPressNextImageSlot();
+    longPressNextImageTimerRef.current = setTimeout(() => {
+      longPressNextImageTimerRef.current = null;
+      const slots = productFormRef.current.image_slots;
+      let target = -1;
+      for (let j = fromSlotIndex + 1; j < PRODUCT_IMAGE_SLOT_INDEXES.length; j += 1) {
+        if (!slots[j]) {
+          target = j;
+          break;
+        }
+      }
+      if (target < 0) {
+        for (let j = 0; j < PRODUCT_IMAGE_SLOT_INDEXES.length; j += 1) {
+          if (!slots[j]) {
+            target = j;
+            break;
+          }
+        }
+      }
+      if (target < 0) {
+        setError('5 tagacha rasm: barcha slotlar band.');
+        return;
+      }
+      setError('');
+      sellerProductImageSlotFileRefs.current[target]?.click();
+    }, 3000);
+  };
+
+  const clearProductVideo = () => {
+    setProductAdCreatives([]);
+    setForm((p) => ({ ...p, video_url: '', video_file_name: '' }));
+    if (videoFileInputRef.current) videoFileInputRef.current.value = '';
+    setError('');
   };
 
   const handleVideoFileSelect = async (e) => {
@@ -1822,26 +1812,6 @@ export default function SellerDashboard() {
                   <div className="seller-field-wide seller-media-row">
                   <div className="seller-field-block seller-product-image-slots-wrap">
                     <span>Rasmlar (5 tagacha)</span>
-                    <div className="seller-product-images-bulk-actions">
-                      <input
-                        ref={sellerProductBulkImagesRef}
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        className="seller-product-images-bulk-file"
-                        aria-hidden
-                        tabIndex={-1}
-                        onChange={(ev) => void handleProductBulkImagesFileSelect(ev)}
-                      />
-                      <button
-                        type="button"
-                        className="seller-mini-btn seller-mini-btn-accent seller-product-images-bulk-btn"
-                        aria-label="Bir vaqtida bir nechta rasm tanlash, 5 tagacha"
-                        onClick={() => sellerProductBulkImagesRef.current?.click()}
-                      >
-                        Bir nechta rasm (5 tagacha)
-                      </button>
-                    </div>
                     <div className="seller-product-image-slots" role="group" aria-label="Mahsulot rasmlari">
                       {PRODUCT_IMAGE_SLOT_INDEXES.map((i) => {
                         const src = form.image_slots[i];
@@ -1869,6 +1839,17 @@ export default function SellerDashboard() {
                                 type="button"
                                 className={`seller-product-image-slot-add${src ? ' has-image' : ''}`}
                                 onClick={() => sellerProductImageSlotFileRefs.current[i]?.click()}
+                                onPointerDown={(ev) => {
+                                  if (!src) return;
+                                  if (ev.pointerType === 'mouse' && ev.button !== 0) return;
+                                  scheduleLongPressNextImageSlot(i);
+                                }}
+                                onPointerUp={cancelLongPressNextImageSlot}
+                                onPointerLeave={cancelLongPressNextImageSlot}
+                                onPointerCancel={cancelLongPressNextImageSlot}
+                                onContextMenu={(ev) => {
+                                  if (src) ev.preventDefault();
+                                }}
                               >
                                 {src ? (
                                   <img src={src} alt="" className="seller-product-image-slot-img" />
@@ -1896,7 +1877,7 @@ export default function SellerDashboard() {
                       })}
                     </div>
                     <small className="seller-field-hint">
-                      «Bir nechta rasm» bilan bir vaqtida 1 dan 5 tagacha tanlash mumkin (xohlasa kamroq). Har bir slotdan alohida ham tanlash mumkin.
+                      Slot ustidagi + — shu slot uchun rasm. Yuklangan rasm ustida 3 soniya bosib tursangiz, keyingi bo‘sh slot uchun tanlash ochiladi (5 tagacha).
                       2–5-slotlar 1-slot to‘ldirilgach internetdan (o‘xshash) rasmlar bilan avtomatik to‘ldiriladi.
                       Belgilanganlar ichidan eng kichik raqamli slot asosiy rasm. Har biri max 5MB.
                     </small>
@@ -1922,6 +1903,11 @@ export default function SellerDashboard() {
                       >
                         Video yuklash
                       </button>
+                      {String(form.video_url || '').trim() ? (
+                        <button type="button" className="seller-video-upload-btn seller-video-remove-btn" onClick={clearProductVideo}>
+                          Videoni o‘chirish
+                        </button>
+                      ) : null}
                     </div>
                     {String(form.video_url || '').trim() ? (
                       <div className="seller-video-preview">
