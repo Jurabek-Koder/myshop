@@ -2406,6 +2406,21 @@ export default function AdminDashboard() {
     setSearchParams(params, { replace: true });
   };
 
+  const handleSellerProductApprovedBellOpen = async (notif) => {
+    if (notif?.link_type !== 'seller_product_approved') return;
+    setSellerModFilter('active');
+    setActiveViewWithUrl('product_moderation');
+    setAdminNotificationsOpen(false);
+    try {
+      if (!notif.read_at) {
+        await request(`/admin/notifications/${notif.id}/read`, { method: 'PATCH' });
+        await loadAdminNotifications();
+      }
+    } catch (_) {
+      /* noop */
+    }
+  };
+
   const openCustomerDetail = useCallback((customerRow) => {
     const id = Number(customerRow?.id);
     if (!Number.isInteger(id) || id < 1) return;
@@ -3361,6 +3376,15 @@ export default function AdminDashboard() {
                               <div className="admin-bell-item-title">{n.title}</div>
                               <div className="admin-bell-item-body">{n.body}</div>
                               <div className="admin-bell-item-date">{formatDate(n.created_at)}</div>
+                              {n.link_type === 'seller_product_approved' && (
+                                <button
+                                  type="button"
+                                  className="btn-neo btn-sm"
+                                  onClick={() => void handleSellerProductApprovedBellOpen(n)}
+                                >
+                                  Tasdiqlangan mahsulotlarda ochish
+                                </button>
+                              )}
                               {n.link_type === 'seller_product_ai_target' && n.link_id && (
                                 <button
                                   type="button"
