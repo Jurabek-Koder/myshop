@@ -30,6 +30,40 @@ const PRODUCT_FIELDS = [
   'goes_live_at',
 ].join(', ');
 
+const PRODUCT_FIELDS_P = PRODUCT_FIELDS.split(', ')
+  .map((c) => `p.${c.trim()}`)
+  .join(', ');
+
+/** Yetkazilgan/yakunlangan buyurtmalar bo‘yicha sotilgan soni (bosh sahifa «ommabop» uchun). */
+const UNITS_SOLD_SELECT = `
+  COALESCE((
+    SELECT SUM(oi.quantity) FROM order_items oi
+    INNER JOIN orders o ON o.id = oi.order_id
+    WHERE oi.product_id = p.id
+    AND lower(trim(coalesce(o.status, ''))) IN ('delivered', 'completed')
+  ), 0) AS units_sold`;
+
+function notifySuperusersProductApproved({ productId, productName, actorUserId, actorLabel }) {
+  const supers = db
+    .prepare(`SELECT id FROM users WHERE (lower(trim(coalesce(role,''))) = 'superuser' OR role_id = 1)`)
+    .all();
+  const title = 'Mahsulot tasdiqlandi';
+  const body = `${actorLabel}: «${String(productName || '').slice(0, 120)}» sotuvga chiqarildi.`;
+  const ins = db.prepare(`
+    INSERT INTO user_notifications (user_id, title, body, link_type, link_id)
+    VALUES (?, ?, ?, ?, ?)
+  `);
+  for (const row of supers) {
+    const uid = Number(row.id);
+    if (!Number.isInteger(uid) || uid === Number(actorUserId)) continue;
+    try {
+      ins.run(uid, title, body, 'seller_product_approved', Number(productId));
+    } catch (e) {
+      console.warn('[products] user_notifications insert', e?.message || e);
+    }
+  }
+}
+
 function promoteScheduledProducts() {
   try {
     db.prepare(`
@@ -124,32 +158,32 @@ router.get('/', optionalAuth, (req, res) => {
   const q = req.query.q ? String(req.query.q).trim() : null;
 
   const forPublic = req.user?.role !== 'superuser' && req.user?.role !== 'admin' && req.user?.role !== 'seller';
-  let sql = `SELECT ${PRODUCT_FIELDS} FROM products WHERE 1=1`;
+  let sql = `SELECT ${PRODUCT_FIELDS_P}, ${UNITS_SOLD_SELECT} FROM products p WHERE 1=1`;
   const params = [];
 
   if (forPublic) {
-    sql += ' AND (status = ? OR status IS NULL)';
+    sql += ' AND (p.status = ? OR p.status IS NULL)';
     params.push('active');
-    sql += ` AND (warehouse_deleted_at IS NULL OR trim(coalesce(warehouse_deleted_at, '')) = '')`;
+    sql += ` AND (p.warehouse_deleted_at IS NULL OR trim(coalesce(p.warehouse_deleted_at, '')) = '')`;
   }
 
   if (category) {
-    sql += ' AND category = ?';
+    sql += ' AND p.category = ?';
     params.push(category);
   }
 
   if (Number.isInteger(sellerIdRaw) && sellerIdRaw > 0) {
-    sql += ' AND seller_id = ?';
+    sql += ' AND p.seller_id = ?';
     params.push(sellerIdRaw);
   }
 
   if (q && q.length > 0) {
-    sql += ' AND (name_uz LIKE ? OR name_ru LIKE ?)';
+    sql += ' AND (p.name_uz LIKE ? OR p.name_ru LIKE ?)';
     const like = '%' + q + '%';
     params.push(like, like);
   }
 
-  sql += ' ORDER BY created_at DESC';
+  sql += ' ORDER BY p.created_at DESC';
   let products = db.prepare(sql).all(...params);
 
   if (aksiyaOnly) {
@@ -163,7 +197,7 @@ router.get('/', optionalAuth, (req, res) => {
     });
   }
 
-  products = products.map(addSalePrice);
+  products = products.map((row) => addSalePrice({ ...row, units_sold: Number(row.units_sold) || 0 }));
   res.json({ products });
 });
 
@@ -393,6 +427,25 @@ router.patch('/:id', authRequired, requireRole('admin', 'superuser', 'seller'), 
     next.promotion_ends_at || null,
     req.params.id
   );
+
+  const prevStatus = String(existing.status ?? '').trim().toLowerCase();
+  const nextStatus = String(next.status ?? '').trim().toLowerCase();
+  const becameActive =
+    (req.user.role === 'admin' || req.user.role === 'superuser') &&
+    nextStatus === 'active' &&
+    prevStatus !== 'active';
+  if (becameActive) {
+    try {
+      notifySuperusersProductApproved({
+        productId: Number.parseInt(req.params.id, 10),
+        productName: next.name_uz,
+        actorUserId: req.user.id,
+        actorLabel: String(req.user.full_name || req.user.login || req.user.email || 'Administrator').slice(0, 160),
+      });
+    } catch (e) {
+      console.warn('[products] notifySuperusersProductApproved', e?.message || e);
+    }
+  }
 
   const product = db.prepare(`SELECT ${PRODUCT_FIELDS} FROM products WHERE id = ?`).get(req.params.id);
   res.json(product);
