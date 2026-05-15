@@ -335,14 +335,48 @@ export default function Home() {
 
   const formatPrice = (n) => new Intl.NumberFormat('uz-UZ').format(n) + ' so\'m';
 
-  const activeProducts = products.filter((p) => (p.status === 'active' || !p.status) && p.stock > 0);
-  /** API tartibi: created_at DESC — eng «yangi»lar boshida; FAQAT ko‘rinish: 15 ta keyingi qatorlar «barcha»da */
-  const newestProducts = activeProducts.slice(0, 15);
-  const newestIdSet = new Set(newestProducts.map((p) => p.id));
-  const activeAfterNewest = activeProducts.filter((p) => !newestIdSet.has(p.id));
-  const ommabop = activeAfterNewest.slice(0, 12);
+  const activeProducts = useMemo(
+    () =>
+      products
+        .filter((p) => (p.status === 'active' || !p.status) && p.stock > 0)
+        .map((p) => ({ ...p, units_sold: Number(p.units_sold) || 0 })),
+    [products],
+  );
+
+  /** Yangilar: created_at bo‘yicha eng yangi 15 ta */
+  const newestProducts = useMemo(() => {
+    const sorted = [...activeProducts].sort((a, b) =>
+      String(b.created_at || '').localeCompare(String(a.created_at || '')),
+    );
+    return sorted.slice(0, 15);
+  }, [activeProducts]);
+
+  const newestIdSet = useMemo(() => new Set(newestProducts.map((p) => p.id)), [newestProducts]);
+
+  /** Ommabop: yangi 15 tadan tashqari, sotuvi yuqori (units_sold) bo‘yicha 12 ta */
+  const activeAfterNewest = useMemo(
+    () => activeProducts.filter((p) => !newestIdSet.has(p.id)),
+    [activeProducts, newestIdSet],
+  );
+
+  const ommabop = useMemo(
+    () =>
+      [...activeAfterNewest]
+        .sort((a, b) => (b.units_sold || 0) - (a.units_sold || 0))
+        .slice(0, 12),
+    [activeAfterNewest],
+  );
+
   const ommabopDuplicated = [...ommabop, ...ommabop];
-  const gridProducts = activeAfterNewest;
+
+  /** Barcha mahsulotlar: avval sotuvi pastlari (ko‘rinadi), keyin qolganlar */
+  const gridProducts = useMemo(() => {
+    return [...activeProducts].sort((a, b) => {
+      const d = (a.units_sold || 0) - (b.units_sold || 0);
+      if (d !== 0) return d;
+      return String(b.created_at || '').localeCompare(String(a.created_at || ''));
+    });
+  }, [activeProducts]);
   const disabledProducts = products.filter((p) => (p.status === 'active' || !p.status) && p.stock <= 0);
 
   function ProductCard({ p, className = '', showAdd = true }) {
