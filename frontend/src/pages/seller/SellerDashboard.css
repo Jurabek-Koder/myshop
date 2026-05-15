@@ -1375,6 +1375,22 @@
   color: #bfdbfe;
 }
 
+.seller-video-remove-btn {
+  border-color: rgba(185, 28, 28, 0.35);
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.seller-video-remove-btn:hover {
+  border-color: rgba(185, 28, 28, 0.55);
+}
+
+.seller-dark .seller-video-remove-btn {
+  background: rgba(127, 29, 29, 0.35);
+  color: #fecaca;
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
 .seller-video-preview {
   width: 100%;
   min-width: 0;
