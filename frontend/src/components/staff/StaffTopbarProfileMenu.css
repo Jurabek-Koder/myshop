@@ -1,0 +1,211 @@
+.staff-profile-popover-wrap {
+  position: relative;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+/* Picker / operator / ombor: chip tugma. Seller: faqat `.seller-profile-btn` (SellerDashboard.css). */
+.staff-profile-popover-trigger:not(.seller-profile-btn) {
+  box-sizing: border-box;
+  margin: 0;
+  border: 1px solid rgba(59, 130, 246, 0.18);
+  background: #ffffff;
+  color: var(--text, #1e293b);
+  border-radius: 12px;
+  padding: 0.34rem 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  max-width: min(200px, 72vw);
+  min-height: 36px;
+  cursor: pointer;
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.theme-dark .staff-profile-popover-trigger:not(.seller-profile-btn) {
+  border-color: rgba(129, 164, 235, 0.22);
+  background: #101b31;
+  color: var(--text, #f1f5f9);
+}
+
+.staff-profile-popover-trigger:not(.seller-profile-btn):hover {
+  filter: brightness(0.97);
+}
+
+.theme-dark .staff-profile-popover-trigger:not(.seller-profile-btn):hover {
+  filter: brightness(1.08);
+}
+
+.staff-profile-popover-trigger.seller-profile-btn {
+  max-width: min(260px, 85vw);
+}
+
+.staff-profile-popover-avatar-img {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.staff-profile-popover-initials {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(152deg, #5eead4 0%, #34d399 35%, #10b981 70%, #059669 100%);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.theme-dark .staff-profile-popover-initials {
+  background: linear-gradient(152deg, #047857 0%, #065f46 48%, #064e3b 100%);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.staff-profile-popover-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.staff-profile-popover-chevron {
+  flex-shrink: 0;
+  font-size: 0.62rem;
+  opacity: 0.72;
+}
+
+.staff-profile-popover-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.staff-profile-popover-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 401;
+  min-width: 220px;
+  width: min(280px, calc(100vw - 2rem));
+  padding: 0.45rem;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(30, 41, 59, 0.82);
+  color: #e2e8f0;
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.38),
+    0 0 0 1px rgba(15, 23, 42, 0.35);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  isolation: isolate;
+}
+
+.staff-profile-popover-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.52rem 0.55rem;
+  margin: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #cbd5e1;
+  font-size: 0.88rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.staff-profile-popover-item i {
+  width: 1.1rem;
+  text-align: center;
+  opacity: 0.92;
+}
+
+.staff-profile-popover-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #f8fafc;
+}
+
+.staff-profile-popover-item--danger {
+  color: #fca5a5;
+}
+
+.staff-profile-popover-item--danger:hover {
+  background: rgba(239, 68, 68, 0.14);
+  color: #fecaca;
+}
+
+@media (max-width: 1024px) {
+  .staff-profile-popover-backdrop {
+    background: rgba(15, 23, 42, 0.66);
+    -webkit-backdrop-filter: saturate(140%) blur(6px);
+    backdrop-filter: saturate(140%) blur(6px);
+    isolation: isolate;
+  }
+
+  .theme-dark .staff-profile-popover-backdrop {
+    background: rgba(2, 6, 23, 0.78);
+  }
+
+  /* Menyu doim tugma / topbar ostida (markazda fixed emas) */
+  .staff-profile-popover-menu {
+    position: absolute;
+    left: auto;
+    right: 0;
+    top: calc(100% + 8px);
+    transform: none;
+    width: min(300px, calc(100vw - max(1rem, env(safe-area-inset-right, 0px)) - max(1rem, env(safe-area-inset-left, 0px))));
+    max-width: calc(100vw - 2rem);
+    max-height: min(
+      72dvh,
+      calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 5rem)
+    );
+    overflow-y: auto;
+    z-index: 401;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .picker-topbar,
+  .seller-topbar {
+    overflow: visible;
+  }
+
+  .picker-phone-frame:has(.staff-profile-popover-backdrop) .picker-topbar {
+    z-index: 800;
+  }
+
+  .picker-app.picker-mobile:has(.staff-profile-popover-backdrop),
+  .picker-phone-frame:has(.staff-profile-popover-backdrop) {
+    overflow: visible;
+  }
+
+  .picker-phone-frame:has(.staff-profile-popover-backdrop) .picker-topbar-inner,
+  .picker-phone-frame:has(.staff-profile-popover-backdrop) .picker-topbar-right {
+    overflow: visible;
+  }
+
+  .seller-app.seller-mobile-shell .seller-topbar-right {
+    overflow: visible;
+  }
+}
