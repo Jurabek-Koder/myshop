@@ -1,0 +1,1 @@
+const i={bellAriaOn:"Bildirishnomalar",bellAriaOff:"Bildirishnomalar o‘chirilgan (tovushsiz rejim)",staffTopbarNotifCaption:"Xabarlar",staffNotifSoundAria:"SMS / bildirishnoma ovozi",bellTitle:"Bildirishnomalar",bellEmpty:"Xabar yo‘q",modalClose:"Yopish"};export{i as S};
