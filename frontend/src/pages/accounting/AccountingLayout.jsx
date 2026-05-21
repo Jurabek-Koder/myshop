@@ -17,11 +17,11 @@ function formatBellDate(value) {
 /** Yon panel: ichki buxgalteriya sahifalari (rollik panellar emas). */
 const ACCOUNTING_SIDE_NAV = [
   { path: '/accounting', label: 'Bosh sahifa', icon: '🏠', end: true },
-  { path: '/accounting/packer', label: 'Packer', icon: '📦' },
-  { path: '/accounting/picker', label: 'Picker', icon: '🛒' },
+  { path: '/accounting/packer', label: 'Qadoqlovchilar', icon: '📦' },
+  { path: '/accounting/picker', label: 'Yig‘uvchilar', icon: '🛒' },
   { path: '/accounting/courier', label: 'Kuryer', icon: '🛵' },
   { path: '/accounting/operator', label: 'Operator', icon: '💬' },
-  { path: '/accounting/seller', label: 'Seller', icon: '🏪' },
+  { path: '/accounting/seller', label: 'Sotuvchilar', icon: '🏪' },
   { path: '/accounting/stats', label: 'Sayt statistikasi', icon: '📈' },
 ];
 

@@ -6,10 +6,10 @@ import AccountingWorkRoleFinancePage from './AccountingWorkRoleFinancePage.jsx';
 const FINANCE_KINDS = new Set(['picker', 'courier', 'operator', 'seller']);
 
 const SECTION_TITLES = {
-  picker: 'Picker',
+  picker: 'Yig‘uvchilar',
   courier: 'Kuryer',
   operator: 'Operator',
-  seller: 'Seller',
+  seller: 'Sotuvchilar',
 };
 
 /** Buxgalteriya ichidagi bo‘lim sahifalari (rollik panellar emas). */

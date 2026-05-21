@@ -1,10 +1,47 @@
 import { Router } from 'express';
+import axios from 'axios';
+import PDFDocument from 'pdfkit';
 import { authRequired, requireRole } from '../middleware/auth.js';
 import { db } from '../db/database.js';
 import { applyWithdrawalMarkPaid, applyWithdrawalReview } from '../lib/withdrawalRequestActions.js';
 
 const router = Router();
-router.use(authRequired, requireRole('accounting'));
+router.use(authRequired, requireRole('accounting', 'superuser'));
+
+function pad2(value) {
+  return String(value).padStart(2, '0');
+}
+
+function dateKey(date = new Date()) {
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+}
+
+function monthKey(date = new Date()) {
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}`;
+}
+
+function monthBounds(date = new Date()) {
+  const first = new Date(date.getFullYear(), date.getMonth(), 1);
+  const last = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  return { start: dateKey(first), end: dateKey(last), key: monthKey(date), lastDay: last.getDate() };
+}
+
+function addMonths(date, delta) {
+  return new Date(date.getFullYear(), date.getMonth() + delta, 1);
+}
+
+function asMoney(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? Math.max(0, n) : 0;
+}
+
+function safeJson(value) {
+  try {
+    return JSON.stringify(value ?? {});
+  } catch {
+    return '{}';
+  }
+}
 
 /** Sklad `work_roles` jadvalida packer — `alias` = `wr` / `wr2` … */
 function sqlIsPackerWorkRole(alias) {
@@ -80,6 +117,390 @@ function rowMatchesPortalWorkKind(workRole, kind) {
   return false;
 }
 
+function auditAccountingAction(actorUserId, action, entityType, entityId, details = {}) {
+  db.prepare(
+    `
+    INSERT INTO audit_logs (actor_user_id, action, entity_type, entity_id, details_json)
+    VALUES (?, ?, ?, ?, ?)
+  `,
+  ).run(actorUserId || null, action, entityType, entityId || null, safeJson(details));
+}
+
+function slugifyCategory(value, fallback) {
+  const raw = String(value || fallback || '')
+    .trim()
+    .toLowerCase()
+    .replace(/['‘’`]/g, '')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  return raw || String(fallback || 'category');
+}
+
+function ensureSuperuserEmployees() {
+  const superusers = db
+    .prepare(
+      `
+      SELECT id, full_name, phone, created_at
+      FROM users
+      WHERE (lower(trim(COALESCE(role, ''))) = 'superuser' OR role_id = 1)
+        AND lower(trim(COALESCE(status, 'active'))) != 'blocked'
+      ORDER BY id ASC
+    `,
+    )
+    .all();
+
+  const insert = db.prepare(
+    `
+    INSERT OR IGNORE INTO employees (user_id, full_name, phone, status, hired_at)
+    VALUES (?, ?, ?, 'active', ?)
+  `,
+  );
+  const update = db.prepare(
+    `
+    UPDATE employees
+    SET full_name = COALESCE(NULLIF(trim(?), ''), full_name),
+        phone = COALESCE(NULLIF(trim(?), ''), phone),
+        updated_at = datetime('now')
+    WHERE user_id = ?
+  `,
+  );
+  for (const user of superusers) {
+    insert.run(user.id, user.full_name || `Superuser #${user.id}`, user.phone || '', user.created_at || null);
+    update.run(user.full_name || '', user.phone || '', user.id);
+  }
+}
+
+function upsertPayrollCycle(employeeId, cycleType, periodStart, periodEnd, dueDate, expectedAmount) {
+  db.prepare(
+    `
+    INSERT OR IGNORE INTO payroll_cycles
+      (employee_id, cycle_type, period_start, period_end, due_date, expected_amount, paid_amount, status)
+    VALUES (?, ?, ?, ?, ?, ?, 0, 'pending')
+  `,
+  ).run(employeeId, cycleType, periodStart, periodEnd, dueDate, expectedAmount);
+
+  db.prepare(
+    `
+    UPDATE payroll_cycles
+    SET expected_amount = ?,
+        updated_at = datetime('now')
+    WHERE employee_id = ?
+      AND cycle_type = ?
+      AND period_start = ?
+      AND period_end = ?
+      AND status != 'paid'
+  `,
+  ).run(expectedAmount, employeeId, cycleType, periodStart, periodEnd);
+}
+
+function refreshPayrollCycleStatuses() {
+  db.prepare(
+    `
+    UPDATE payroll_cycles
+    SET paid_amount = COALESCE((
+      SELECT SUM(amount)
+      FROM salary_payments sp
+      WHERE sp.payroll_cycle_id = payroll_cycles.id
+    ), 0),
+    updated_at = datetime('now')
+  `,
+  ).run();
+
+  db.prepare(
+    `
+    UPDATE payroll_cycles
+    SET status = CASE
+      WHEN expected_amount > 0 AND paid_amount >= expected_amount THEN 'paid'
+      WHEN date(due_date) < date(?) THEN 'overdue'
+      ELSE 'pending'
+    END,
+    updated_at = datetime('now')
+  `,
+  ).run(dateKey());
+}
+
+function ensurePayrollCycles() {
+  ensureSuperuserEmployees();
+  const employees = db
+    .prepare(`SELECT id, monthly_salary FROM employees WHERE lower(trim(COALESCE(status, 'active'))) = 'active'`)
+    .all();
+  const months = [-1, 0, 1].map((delta) => monthBounds(addMonths(new Date(), delta)));
+
+  for (const employee of employees) {
+    const salary = asMoney(employee.monthly_salary);
+    const half = Math.round(salary / 2);
+    for (const m of months) {
+      upsertPayrollCycle(employee.id, 'advance', `${m.key}-01`, `${m.key}-15`, `${m.key}-15`, half);
+      upsertPayrollCycle(employee.id, 'salary', `${m.key}-16`, m.end, m.end, Math.max(0, salary - half));
+    }
+  }
+  refreshPayrollCycleStatuses();
+}
+
+function categoryTable(type) {
+  return type === 'income' ? 'income_categories' : 'expense_categories';
+}
+
+function defaultCategorySlug(type) {
+  return type === 'income' ? 'manual_income' : 'other_expenses';
+}
+
+function resolveCategory(type, categoryNameOrSlug) {
+  const table = categoryTable(type);
+  const fallback = defaultCategorySlug(type);
+  const value = String(categoryNameOrSlug || '').trim();
+  if (value) {
+    const existing = db
+      .prepare(`SELECT id, name, slug, color FROM ${table} WHERE lower(slug) = lower(?) OR lower(name) = lower(?) LIMIT 1`)
+      .get(value, value);
+    if (existing) return existing;
+    const slug = slugifyCategory(value, fallback);
+    db.prepare(`INSERT OR IGNORE INTO ${table} (name, slug) VALUES (?, ?)`).run(value, slug);
+    return db.prepare(`SELECT id, name, slug, color FROM ${table} WHERE slug = ? LIMIT 1`).get(slug);
+  }
+  return db.prepare(`SELECT id, name, slug, color FROM ${table} WHERE slug = ? LIMIT 1`).get(fallback);
+}
+
+function statusLabel(status) {
+  const s = String(status || '').toLowerCase();
+  if (s === 'paid') return 'To‘landi';
+  if (s === 'overdue') return 'Kechikkan';
+  return 'Kutilmoqda';
+}
+
+function cycleTypeLabel(cycleType) {
+  return String(cycleType).toLowerCase() === 'advance' ? 'Avans' : 'Oylik ish haqi';
+}
+
+function generateReceiptNumber(prefix = 'MSH') {
+  const stamp = new Date();
+  const datePart = `${stamp.getFullYear()}${pad2(stamp.getMonth() + 1)}${pad2(stamp.getDate())}`;
+  const count = db.prepare(`SELECT COUNT(*) AS c FROM receipts WHERE date(created_at) = date('now')`).get()?.c || 0;
+  return `${prefix}-${datePart}-${pad2(count + 1)}`;
+}
+
+async function notifyTelegram(chatId, text) {
+  const token = String(process.env.TELEGRAM_BOT_TOKEN || '').trim();
+  const target = String(chatId || process.env.ACCOUNTING_TELEGRAM_CHAT_ID || '').trim();
+  if (!token || !target) return { skipped: true };
+  try {
+    await axios.post(`https://api.telegram.org/bot${token}/sendMessage`, {
+      chat_id: target,
+      text,
+      parse_mode: 'HTML',
+      disable_web_page_preview: true,
+    });
+    return { ok: true };
+  } catch (e) {
+    console.warn('accounting telegram notification failed', e?.message || e);
+    return { ok: false };
+  }
+}
+
+function getOrderRevenueBetween(start, end) {
+  return (
+    Number(
+      db
+        .prepare(
+          `
+          SELECT COALESCE(SUM(total_amount), 0) AS s
+          FROM orders
+          WHERE date(created_at) BETWEEN date(?) AND date(?)
+            AND lower(trim(COALESCE(status, ''))) NOT IN ('cancelled', 'canceled', 'bekor', 'bekor_qilindi')
+            AND COALESCE(is_test, 0) = 0
+        `,
+        )
+        .get(start, end)?.s,
+    ) || 0
+  );
+}
+
+function getTransactionSum(type, start, end) {
+  return (
+    Number(
+      db
+        .prepare(
+          `
+          SELECT COALESCE(SUM(amount), 0) AS s
+          FROM financial_transactions
+          WHERE type = ?
+            AND date(transaction_date) BETWEEN date(?) AND date(?)
+        `,
+        )
+        .get(type, start, end)?.s,
+    ) || 0
+  );
+}
+
+function payrollPaidBetween(start, end) {
+  return (
+    Number(
+      db
+        .prepare(
+          `
+          SELECT COALESCE(SUM(amount), 0) AS s
+          FROM salary_payments
+          WHERE date(paid_at) BETWEEN date(?) AND date(?)
+        `,
+        )
+        .get(start, end)?.s,
+    ) || 0
+  );
+}
+
+function buildAccountingOverview() {
+  ensurePayrollCycles();
+  const current = monthBounds();
+  const prev = monthBounds(addMonths(new Date(), -1));
+  const manualIncome = getTransactionSum('income', current.start, current.end);
+  const orderRevenue = getOrderRevenueBetween(current.start, current.end);
+  const totalIncome = orderRevenue + manualIncome;
+  const totalExpenses = getTransactionSum('expense', current.start, current.end);
+  const payrollCost = payrollPaidBetween(current.start, current.end);
+  const previousIncome = getOrderRevenueBetween(prev.start, prev.end) + getTransactionSum('income', prev.start, prev.end);
+  const previousExpenses = getTransactionSum('expense', prev.start, prev.end);
+  const previousProfit = previousIncome - previousExpenses;
+  const netProfit = totalIncome - totalExpenses;
+
+  const trends = [];
+  for (let i = 5; i >= 0; i -= 1) {
+    const m = monthBounds(addMonths(new Date(), -i));
+    const income = getOrderRevenueBetween(m.start, m.end) + getTransactionSum('income', m.start, m.end);
+    const expense = getTransactionSum('expense', m.start, m.end);
+    const payroll = payrollPaidBetween(m.start, m.end);
+    trends.push({
+      month: m.key,
+      label: new Date(`${m.start}T00:00:00`).toLocaleDateString('uz-UZ', { month: 'short' }),
+      tushum: income,
+      xarajat: expense,
+      oylik: payroll,
+      foyda: income - expense,
+    });
+  }
+
+  const expenseBreakdown = db
+    .prepare(
+      `
+      SELECT COALESCE(ec.name, 'Boshqa xarajatlar') AS name,
+             COALESCE(ec.color, '#64748b') AS color,
+             COALESCE(SUM(ft.amount), 0) AS value
+      FROM financial_transactions ft
+      LEFT JOIN expense_categories ec ON ec.id = ft.category_id AND ft.category_type = 'expense'
+      WHERE ft.type = 'expense'
+        AND date(ft.transaction_date) BETWEEN date(?) AND date(?)
+      GROUP BY COALESCE(ec.name, 'Boshqa xarajatlar'), COALESCE(ec.color, '#64748b')
+      ORDER BY value DESC
+      LIMIT 8
+    `,
+    )
+    .all(current.start, current.end);
+
+  const payrollSummary = db
+    .prepare(
+      `
+      SELECT
+        COUNT(*) AS total_cycles,
+        SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END) AS paid_cycles,
+        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending_cycles,
+        SUM(CASE WHEN status = 'overdue' THEN 1 ELSE 0 END) AS overdue_cycles,
+        COALESCE(SUM(expected_amount - paid_amount), 0) AS remaining_total
+      FROM payroll_cycles
+      WHERE date(period_start) BETWEEN date(?) AND date(?)
+    `,
+    )
+    .get(current.start, current.end);
+
+  const upcomingPayroll = db
+    .prepare(
+      `
+      SELECT pc.id, pc.cycle_type, pc.due_date, pc.expected_amount, pc.paid_amount, pc.status,
+             e.full_name, e.monthly_salary
+      FROM payroll_cycles pc
+      JOIN employees e ON e.id = pc.employee_id
+      WHERE pc.status IN ('pending', 'overdue')
+      ORDER BY date(pc.due_date) ASC, pc.id ASC
+      LIMIT 8
+    `,
+    )
+    .all()
+    .map((row) => ({
+      ...row,
+      cycle_label: cycleTypeLabel(row.cycle_type),
+      status_label: statusLabel(row.status),
+      remaining_amount: Math.max(0, asMoney(row.expected_amount) - asMoney(row.paid_amount)),
+    }));
+
+  const recentFinancial = db
+    .prepare(
+      `
+      SELECT ft.id, ft.type, ft.title, ft.amount, ft.transaction_date AS occurred_at,
+             COALESCE(ec.name, ic.name, '') AS category_name
+      FROM financial_transactions ft
+      LEFT JOIN expense_categories ec ON ec.id = ft.category_id AND ft.category_type = 'expense'
+      LEFT JOIN income_categories ic ON ic.id = ft.category_id AND ft.category_type = 'income'
+      ORDER BY datetime(ft.created_at) DESC, ft.id DESC
+      LIMIT 10
+    `,
+    )
+    .all()
+    .map((x) => ({
+      id: `transaction-${x.id}`,
+      kind: x.type,
+      title: x.title,
+      subtitle: x.category_name || (x.type === 'income' ? 'Daromad' : 'Xarajat'),
+      amount: x.amount,
+      occurred_at: x.occurred_at,
+    }));
+
+  const recentPayroll = db
+    .prepare(
+      `
+      SELECT sp.id, sp.amount, sp.payment_type, sp.paid_at, e.full_name
+      FROM salary_payments sp
+      JOIN employees e ON e.id = sp.employee_id
+      ORDER BY datetime(sp.paid_at) DESC, sp.id DESC
+      LIMIT 10
+    `,
+    )
+    .all()
+    .map((x) => ({
+      id: `salary-${x.id}`,
+      kind: 'payroll',
+      title: `${x.full_name} — ${cycleTypeLabel(x.payment_type)}`,
+      subtitle: 'Ish haqi to‘lovi',
+      amount: x.amount,
+      occurred_at: x.paid_at,
+    }));
+
+  const activity = [...recentFinancial, ...recentPayroll]
+    .sort((a, b) => String(b.occurred_at || '').localeCompare(String(a.occurred_at || '')))
+    .slice(0, 12);
+
+  return {
+    period: current,
+    kpis: {
+      total_revenue: totalIncome,
+      total_expenses: totalExpenses,
+      net_profit: netProfit,
+      payroll_cost: payrollCost,
+      revenue_delta: previousIncome ? ((totalIncome - previousIncome) / previousIncome) * 100 : 0,
+      expense_delta: previousExpenses ? ((totalExpenses - previousExpenses) / previousExpenses) * 100 : 0,
+      profit_delta: previousProfit ? ((netProfit - previousProfit) / Math.abs(previousProfit)) * 100 : 0,
+    },
+    trends,
+    expense_breakdown: expenseBreakdown,
+    payroll_summary: {
+      total_cycles: Number(payrollSummary?.total_cycles) || 0,
+      paid_cycles: Number(payrollSummary?.paid_cycles) || 0,
+      pending_cycles: Number(payrollSummary?.pending_cycles) || 0,
+      overdue_cycles: Number(payrollSummary?.overdue_cycles) || 0,
+      remaining_total: Math.max(0, Number(payrollSummary?.remaining_total) || 0),
+    },
+    upcoming_payroll: upcomingPayroll,
+    activity,
+  };
+}
+
 /**
  * Buxgalteriya packer ro‘yxati:
  * 1) Faol staff packer + user + mos `work_roles` (ledger bilan bir xil bog‘lanish)
@@ -87,6 +508,376 @@ function rowMatchesPortalWorkKind(workRole, kind) {
  *    (superuser bazasida faqat ish rollari ko‘rinishi mumkin).
  * Har bir qator: `list_key` = `wr-<work_role_id>` (noyob), `work_role_id` majburiy.
  */
+
+router.get('/modern/categories', (_req, res) => {
+  const expense = db.prepare('SELECT id, name, slug, color FROM expense_categories ORDER BY id ASC').all();
+  const income = db.prepare('SELECT id, name, slug, color FROM income_categories ORDER BY id ASC').all();
+  res.json({ expense, income });
+});
+
+router.get('/modern/overview', (_req, res) => {
+  try {
+    res.json(buildAccountingOverview());
+  } catch (e) {
+    console.error('accounting modern overview', e);
+    res.status(500).json({ error: 'Moliyaviy boshqaruv paneli yuklanmadi.' });
+  }
+});
+
+router.get('/modern/payroll', (_req, res) => {
+  try {
+    ensurePayrollCycles();
+    const employees = db
+      .prepare(
+        `
+        SELECT e.id, e.user_id, e.full_name, e.phone, e.telegram_chat_id, e.monthly_salary, e.status,
+               COALESCE((
+                 SELECT sp.paid_at FROM salary_payments sp
+                 WHERE sp.employee_id = e.id
+                 ORDER BY datetime(sp.paid_at) DESC, sp.id DESC
+                 LIMIT 1
+               ), '') AS last_payment_at,
+               COALESCE((
+                 SELECT sp.amount FROM salary_payments sp
+                 WHERE sp.employee_id = e.id
+                 ORDER BY datetime(sp.paid_at) DESC, sp.id DESC
+                 LIMIT 1
+               ), 0) AS last_payment_amount
+        FROM employees e
+        WHERE lower(trim(COALESCE(e.status, 'active'))) = 'active'
+        ORDER BY e.full_name ASC
+      `,
+      )
+      .all();
+
+    const cyclesByEmployee = new Map();
+    const cycles = db
+      .prepare(
+        `
+        SELECT pc.*, e.full_name
+        FROM payroll_cycles pc
+        JOIN employees e ON e.id = pc.employee_id
+        WHERE date(pc.period_start) >= date('now', 'start of month', '-1 month')
+          AND date(pc.period_start) <= date('now', 'start of month', '+1 month')
+        ORDER BY date(pc.due_date) ASC, pc.id ASC
+      `,
+      )
+      .all()
+      .map((cycle) => ({
+        ...cycle,
+        cycle_label: cycleTypeLabel(cycle.cycle_type),
+        status_label: statusLabel(cycle.status),
+        remaining_amount: Math.max(0, asMoney(cycle.expected_amount) - asMoney(cycle.paid_amount)),
+      }));
+    for (const cycle of cycles) {
+      const list = cyclesByEmployee.get(cycle.employee_id) || [];
+      list.push(cycle);
+      cyclesByEmployee.set(cycle.employee_id, list);
+    }
+
+    const cards = employees.map((employee) => {
+      const employeeCycles = cyclesByEmployee.get(employee.id) || [];
+      const openCycles = employeeCycles.filter((c) => c.status !== 'paid');
+      const next = openCycles[0] || employeeCycles[0] || null;
+      const remaining = employeeCycles.reduce((sum, c) => sum + Math.max(0, asMoney(c.expected_amount) - asMoney(c.paid_amount)), 0);
+      const status = openCycles.some((c) => c.status === 'overdue') ? 'overdue' : openCycles.length ? 'pending' : 'paid';
+      return {
+        ...employee,
+        monthly_salary: asMoney(employee.monthly_salary),
+        last_payment_amount: asMoney(employee.last_payment_amount),
+        next_payment_date: next?.due_date || null,
+        next_cycle_id: next?.id || null,
+        next_cycle_type: next?.cycle_type || null,
+        next_cycle_label: next ? cycleTypeLabel(next.cycle_type) : '',
+        remaining_balance: remaining,
+        status,
+        status_label: statusLabel(status),
+        cycles: employeeCycles,
+      };
+    });
+
+    const payments = db
+      .prepare(
+        `
+        SELECT sp.id, sp.amount, sp.payment_type, sp.payment_method, sp.note, sp.paid_at, sp.receipt_id,
+               e.full_name,
+               r.receipt_number
+        FROM salary_payments sp
+        JOIN employees e ON e.id = sp.employee_id
+        LEFT JOIN receipts r ON r.id = sp.receipt_id
+        ORDER BY datetime(sp.paid_at) DESC, sp.id DESC
+        LIMIT 80
+      `,
+      )
+      .all()
+      .map((payment) => ({ ...payment, payment_label: cycleTypeLabel(payment.payment_type) }));
+
+    res.json({ employees: cards, cycles, payments });
+  } catch (e) {
+    console.error('accounting modern payroll', e);
+    res.status(500).json({ error: 'Ish haqi ma’lumotlari yuklanmadi.' });
+  }
+});
+
+router.patch('/modern/employees/:id', (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);
+  if (!Number.isFinite(id) || id < 1) return res.status(400).json({ error: 'Xodim ID noto‘g‘ri.' });
+  const monthlySalary = asMoney(req.body?.monthly_salary);
+  const telegramChatId = String(req.body?.telegram_chat_id || '').trim();
+  try {
+    const employee = db.prepare('SELECT id FROM employees WHERE id = ?').get(id);
+    if (!employee) return res.status(404).json({ error: 'Xodim topilmadi.' });
+    db.prepare(
+      `
+      UPDATE employees
+      SET monthly_salary = ?,
+          telegram_chat_id = ?,
+          updated_at = datetime('now')
+      WHERE id = ?
+    `,
+    ).run(monthlySalary, telegramChatId, id);
+    ensurePayrollCycles();
+    auditAccountingAction(req.user.id, 'employee_salary_updated', 'employee', id, { monthly_salary: monthlySalary });
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('accounting modern employee patch', e);
+    res.status(500).json({ error: 'Xodim ma’lumotlari saqlanmadi.' });
+  }
+});
+
+router.get('/modern/transactions', (req, res) => {
+  const type = String(req.query.type || '').trim().toLowerCase();
+  const search = String(req.query.search || '').trim();
+  const start = String(req.query.start || monthBounds().start).slice(0, 10);
+  const end = String(req.query.end || monthBounds().end).slice(0, 10);
+  const params = [start, end];
+  const clauses = ['date(ft.transaction_date) BETWEEN date(?) AND date(?)'];
+  if (type === 'income' || type === 'expense') {
+    clauses.push('ft.type = ?');
+    params.push(type);
+  }
+  if (search) {
+    clauses.push('(lower(ft.title) LIKE lower(?) OR lower(COALESCE(ft.note, "")) LIKE lower(?))');
+    params.push(`%${search}%`, `%${search}%`);
+  }
+  try {
+    const rows = db
+      .prepare(
+        `
+        SELECT ft.*, COALESCE(ec.name, ic.name, '') AS category_name,
+               COALESCE(ec.color, ic.color, '#64748b') AS category_color,
+               r.receipt_number
+        FROM financial_transactions ft
+        LEFT JOIN expense_categories ec ON ec.id = ft.category_id AND ft.category_type = 'expense'
+        LEFT JOIN income_categories ic ON ic.id = ft.category_id AND ft.category_type = 'income'
+        LEFT JOIN receipts r ON r.id = ft.receipt_id
+        WHERE ${clauses.join(' AND ')}
+        ORDER BY date(ft.transaction_date) DESC, ft.id DESC
+        LIMIT 300
+      `,
+      )
+      .all(...params);
+    res.json({ transactions: rows });
+  } catch (e) {
+    console.error('accounting modern transactions', e);
+    res.status(500).json({ error: 'Tranzaksiyalar yuklanmadi.' });
+  }
+});
+
+router.post('/modern/transactions', (req, res) => {
+  const type = String(req.body?.type || '').trim().toLowerCase();
+  if (type !== 'income' && type !== 'expense') return res.status(400).json({ error: 'Turi noto‘g‘ri.' });
+  const amount = asMoney(req.body?.amount);
+  if (amount <= 0) return res.status(400).json({ error: 'Summa 0 dan katta bo‘lishi kerak.' });
+  const title = String(req.body?.title || '').trim();
+  if (!title) return res.status(400).json({ error: 'Nomi majburiy.' });
+  const note = String(req.body?.note || '').trim();
+  const transactionDate = String(req.body?.transaction_date || dateKey()).slice(0, 10);
+  try {
+    const category = resolveCategory(type, req.body?.category_slug || req.body?.category_name);
+    const receiptNumber = generateReceiptNumber(type === 'income' ? 'MSH-IN' : 'MSH-EX');
+    const receiptResult = db
+      .prepare(
+        `
+        INSERT INTO receipts (receipt_number, entity_type, recipient_name, amount, payload_json, created_by)
+        VALUES (?, 'financial_transaction', ?, ?, ?, ?)
+      `,
+      )
+      .run(receiptNumber, title, amount, safeJson({ type, title, note, transaction_date: transactionDate }), req.user.id);
+
+    const result = db
+      .prepare(
+        `
+        INSERT INTO financial_transactions
+          (type, category_id, category_type, source, title, amount, note, transaction_date, created_by, receipt_id)
+        VALUES (?, ?, ?, 'manual', ?, ?, ?, ?, ?, ?)
+      `,
+      )
+      .run(type, category?.id || null, type, title, amount, note, transactionDate, req.user.id, receiptResult.lastInsertRowid);
+
+    db.prepare('UPDATE receipts SET entity_id = ? WHERE id = ?').run(result.lastInsertRowid, receiptResult.lastInsertRowid);
+    auditAccountingAction(req.user.id, 'financial_transaction_created', 'financial_transaction', result.lastInsertRowid, {
+      type,
+      amount,
+      title,
+    });
+    res.status(201).json({ ok: true, id: result.lastInsertRowid, receipt_id: receiptResult.lastInsertRowid });
+  } catch (e) {
+    console.error('accounting modern transaction create', e);
+    res.status(500).json({ error: 'Tranzaksiya saqlanmadi.' });
+  }
+});
+
+router.post('/modern/payroll/payments', async (req, res) => {
+  const employeeId = Number.parseInt(String(req.body?.employee_id || ''), 10);
+  const cycleId = Number.parseInt(String(req.body?.payroll_cycle_id || ''), 10);
+  const amount = asMoney(req.body?.amount);
+  const method = String(req.body?.payment_method || 'cash').trim() || 'cash';
+  const note = String(req.body?.note || '').trim();
+  if (!Number.isFinite(employeeId) || employeeId < 1) return res.status(400).json({ error: 'Xodim tanlanmagan.' });
+  if (!Number.isFinite(cycleId) || cycleId < 1) return res.status(400).json({ error: 'Payroll sikli tanlanmagan.' });
+  if (amount <= 0) return res.status(400).json({ error: 'To‘lov summasi 0 dan katta bo‘lishi kerak.' });
+
+  try {
+    ensurePayrollCycles();
+    const cycle = db
+      .prepare(
+        `
+        SELECT pc.*, e.full_name, e.telegram_chat_id
+        FROM payroll_cycles pc
+        JOIN employees e ON e.id = pc.employee_id
+        WHERE pc.id = ? AND pc.employee_id = ?
+      `,
+      )
+      .get(cycleId, employeeId);
+    if (!cycle) return res.status(404).json({ error: 'Payroll sikli topilmadi.' });
+
+    const receiptNumber = generateReceiptNumber('MSH-PAY');
+    const receiptResult = db
+      .prepare(
+        `
+        INSERT INTO receipts (receipt_number, entity_type, entity_id, recipient_name, amount, payload_json, created_by)
+        VALUES (?, 'salary_payment', NULL, ?, ?, ?, ?)
+      `,
+      )
+      .run(
+        receiptNumber,
+        cycle.full_name,
+        amount,
+        safeJson({ employee_id: employeeId, payroll_cycle_id: cycleId, cycle_type: cycle.cycle_type, payment_method: method, note }),
+        req.user.id,
+      );
+
+    const paymentResult = db
+      .prepare(
+        `
+        INSERT INTO salary_payments
+          (employee_id, payroll_cycle_id, amount, payment_type, payment_method, note, created_by, receipt_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      )
+      .run(employeeId, cycleId, amount, cycle.cycle_type, method, note, req.user.id, receiptResult.lastInsertRowid);
+    db.prepare('UPDATE receipts SET entity_id = ? WHERE id = ?').run(paymentResult.lastInsertRowid, receiptResult.lastInsertRowid);
+
+    const payrollCategory = resolveCategory('expense', 'employee_payroll');
+    db.prepare(
+      `
+      INSERT INTO financial_transactions
+        (type, category_id, category_type, source, title, amount, note, transaction_date, created_by, receipt_id)
+      VALUES ('expense', ?, 'expense', 'payroll', ?, ?, ?, date('now'), ?, ?)
+    `,
+    ).run(payrollCategory?.id || null, `${cycle.full_name} — ${cycleTypeLabel(cycle.cycle_type)}`, amount, note, req.user.id, receiptResult.lastInsertRowid);
+
+    refreshPayrollCycleStatuses();
+    auditAccountingAction(req.user.id, 'salary_payment_created', 'salary_payment', paymentResult.lastInsertRowid, {
+      employee_id: employeeId,
+      payroll_cycle_id: cycleId,
+      amount,
+    });
+
+    db.prepare(
+      `
+      INSERT INTO user_notifications (user_id, title, body, link_type, link_id)
+      SELECT user_id, ?, ?, 'salary_payment', ?
+      FROM employees
+      WHERE id = ? AND user_id IS NOT NULL
+    `,
+    ).run('Ish haqi to‘lovi', `${cycleTypeLabel(cycle.cycle_type)} uchun ${amount} UZS to‘landi.`, paymentResult.lastInsertRowid, employeeId);
+
+    void notifyTelegram(
+      cycle.telegram_chat_id,
+      `MyShop buxgalteriya\n${cycle.full_name}\n${cycleTypeLabel(cycle.cycle_type)}: ${amount} UZS\nHolat: to'landi`,
+    );
+
+    res.status(201).json({ ok: true, id: paymentResult.lastInsertRowid, receipt_id: receiptResult.lastInsertRowid });
+  } catch (e) {
+    console.error('accounting modern salary payment', e);
+    res.status(500).json({ error: 'Ish haqi to‘lovi saqlanmadi.' });
+  }
+});
+
+router.post('/modern/payroll/reminders', async (req, res) => {
+  try {
+    ensurePayrollCycles();
+    const cycles = db
+      .prepare(
+        `
+        SELECT pc.id, pc.cycle_type, pc.due_date, pc.expected_amount, pc.paid_amount, pc.status,
+               e.full_name, e.telegram_chat_id
+        FROM payroll_cycles pc
+        JOIN employees e ON e.id = pc.employee_id
+        WHERE pc.status IN ('pending', 'overdue')
+        ORDER BY date(pc.due_date) ASC
+        LIMIT 25
+      `,
+      )
+      .all();
+    for (const c of cycles) {
+      const remaining = Math.max(0, asMoney(c.expected_amount) - asMoney(c.paid_amount));
+      await notifyTelegram(
+        c.telegram_chat_id,
+        `MyShop eslatma\n${c.full_name}\n${cycleTypeLabel(c.cycle_type)}: ${remaining} UZS\nMuddat: ${c.due_date}\nHolat: ${statusLabel(c.status)}`,
+      );
+    }
+    auditAccountingAction(req.user.id, 'payroll_reminders_sent', 'payroll_cycle', null, { count: cycles.length });
+    res.json({ ok: true, sent: cycles.length });
+  } catch (e) {
+    console.error('accounting payroll reminders', e);
+    res.status(500).json({ error: 'Eslatmalar yuborilmadi.' });
+  }
+});
+
+router.get('/modern/receipts/:id', (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);
+  if (!Number.isFinite(id) || id < 1) return res.status(400).json({ error: 'Receipt ID noto‘g‘ri.' });
+  const receipt = db.prepare('SELECT * FROM receipts WHERE id = ?').get(id);
+  if (!receipt) return res.status(404).json({ error: 'Receipt topilmadi.' });
+  res.json({ receipt });
+});
+
+router.get('/modern/receipts/:id/pdf', (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);
+  if (!Number.isFinite(id) || id < 1) return res.status(400).json({ error: 'Receipt ID noto‘g‘ri.' });
+  const receipt = db.prepare('SELECT * FROM receipts WHERE id = ?').get(id);
+  if (!receipt) return res.status(404).json({ error: 'Receipt topilmadi.' });
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `inline; filename="${receipt.receipt_number}.pdf"`);
+  const doc = new PDFDocument({ size: 'A4', margin: 56 });
+  doc.pipe(res);
+  doc.fontSize(22).text('MyShop', { continued: true }).fontSize(12).text('  Buxgalteriya kvitansiyasi');
+  doc.moveDown();
+  doc.fontSize(16).text(`Kvitansiya: ${receipt.receipt_number}`);
+  doc.moveDown();
+  doc.fontSize(11).text(`Qabul qiluvchi: ${receipt.recipient_name || '-'}`);
+  doc.text(`Summa: ${new Intl.NumberFormat('uz-UZ').format(asMoney(receipt.amount))} ${receipt.currency || 'UZS'}`);
+  doc.text(`Sana: ${receipt.created_at}`);
+  doc.text(`Turi: ${receipt.entity_type}`);
+  doc.moveDown();
+  doc.text('Ushbu hujjat MyShop buxgalteriya tizimi orqali avtomatik yaratildi.');
+  doc.end();
+});
+
 router.get('/packers', (req, res) => {
   try {
     const staffLinked = db

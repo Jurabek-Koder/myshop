@@ -1,5 +1,6 @@
 import React, { Component, Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { PickerUiSettingsProvider } from './context/PickerUiSettingsContext';
@@ -110,7 +111,7 @@ function isWarehouseAdmin(user) {
 
 function isAccounting(user) {
   const role = String(user?.role || '').toLowerCase();
-  return role === 'accounting';
+  return role === 'accounting' || role === 'superuser' || user?.role_id === 1;
 }
 
 function GateCard({ title, message, children }) {
@@ -323,12 +324,15 @@ function AccountingRoute({ children }) {
   return children;
 }
 
+const queryClient = new QueryClient();
+
 export default function App() {
   return (
-    <ThemeProvider>
-      <PickerUiSettingsProvider>
-      <AuthProvider>
-        <CartProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <PickerUiSettingsProvider>
+        <AuthProvider>
+          <CartProvider>
         <Routes>
           {/* Kirish / ro‘yxat — Layoutsiz (header/footer yo‘q), to‘liq ekran; bo‘sh/oq ekran xatolarini kamaytiradi */}
           <Route
@@ -464,9 +468,10 @@ export default function App() {
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-        </CartProvider>
-      </AuthProvider>
-      </PickerUiSettingsProvider>
-    </ThemeProvider>
+          </CartProvider>
+        </AuthProvider>
+        </PickerUiSettingsProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
