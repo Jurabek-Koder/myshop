@@ -15,11 +15,13 @@ function readTheme() {
 
 function applyTheme(mode) {
   const root = document.documentElement;
-  root.classList.remove('theme-dark', 'theme-light');
+  root.classList.remove('theme-dark', 'theme-light', 'dark', 'light');
   if (mode === 'dark') {
     root.classList.add('theme-dark');
+    root.classList.add('dark');
   } else {
     root.classList.add('theme-light');
+    root.classList.add('light');
   }
   try {
     localStorage.setItem(THEME_KEY, mode);
