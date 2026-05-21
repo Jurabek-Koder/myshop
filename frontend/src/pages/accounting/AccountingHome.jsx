@@ -173,7 +173,7 @@ export default function AccountingHome() {
     <div className="acc-saas-shell">
       <section className="acc-hero">
         <div>
-          <span className="acc-eyebrow"><Sparkles size={16} /> Real-time buxgalteriya</span>
+          <span className="acc-eyebrow"><Sparkles size={16} /> Jonli buxgalteriya</span>
           <h1>Boshqaruv paneli</h1>
           <p>MyShop uchun daromad, xarajat, ish haqi, 15 kunlik avans sikllari va kvitansiyalar bir joyda.</p>
         </div>
@@ -290,7 +290,7 @@ export default function AccountingHome() {
         <article className="acc-panel">
           <div className="acc-panel-head">
             <div>
-              <h2>Payroll kalendar</h2>
+              <h2>Ish haqi kalendari</h2>
               <p>Yaqin to‘lov muddatlari</p>
             </div>
           </div>
@@ -319,12 +319,12 @@ export default function AccountingHome() {
             <div className="acc-table-actions">
               <label><Search size={15} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Qidirish" /></label>
               <button type="button" onClick={() => setModal({ type: 'transaction', flow: 'income' })}><Plus size={16} /> Daromad</button>
-              <button type="button" onClick={() => exportCsv(transactions)}><Download size={16} /> Excel CSV</button>
+              <button type="button" onClick={() => exportCsv(transactions)}><Download size={16} /> Excelga chiqarish</button>
             </div>
           </div>
           <div className="acc-table-wrap">
             <table className="acc-table">
-              <thead><tr><th>Nomi</th><th>Kategoriya</th><th>Turi</th><th>Summa</th><th>Sana</th><th>Receipt</th></tr></thead>
+              <thead><tr><th>Nomi</th><th>Kategoriya</th><th>Turi</th><th>Summa</th><th>Sana</th><th>Kvitansiya</th></tr></thead>
               <tbody>
                 {transactions.map((t) => (
                   <tr key={t.id}>
@@ -432,7 +432,7 @@ function SalaryModal({ employee, busy, error, onClose, onSubmit }) {
         <label>To‘lov usuli<select value={form.payment_method} onChange={(e) => setForm({ ...form, payment_method: e.target.value })}><option value="cash">Naqd</option><option value="card">Karta</option><option value="bank">Bank</option></select></label>
         <label>Izoh<textarea value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} /></label>
         {error && <p className="acc-form-error">{error}</p>}
-        <button disabled={busy || !form.payroll_cycle_id} type="submit"><Send size={17} /> {busy ? 'To‘lanmoqda...' : 'To‘lash va receipt yaratish'}</button>
+        <button disabled={busy || !form.payroll_cycle_id} type="submit"><Send size={17} /> {busy ? 'To‘lanmoqda...' : 'To‘lash va kvitansiya yaratish'}</button>
       </form>
     </Modal>
   );
