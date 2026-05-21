@@ -32,8 +32,14 @@ const ExpeditorDashboard = lazy(() => import('./pages/expeditor/ExpeditorDashboa
 const OrderReceiverDashboard = lazy(() => import('./pages/orderReceiver/OrderReceiverDashboard.jsx'));
 const WarehouseAdminDashboard = lazy(() => import('./pages/warehouseAdmin/WarehouseAdminDashboard.jsx'));
 const AccountingLayout = lazy(() => import('./pages/accounting/AccountingLayout.jsx'));
-import AccountingHome from './pages/accounting/AccountingHome.jsx';
-import AccountingStub from './pages/accounting/AccountingStub.jsx';
+const AccountingHome = lazy(() => import('./pages/accounting/AccountingHome.jsx'));
+const AccountingPayrollPage = lazy(() => import('./pages/accounting/AccountingPayrollPage.jsx'));
+const AccountingPeoplePage = lazy(() => import('./pages/accounting/AccountingPeoplePage.jsx'));
+const AccountingTransactionsPage = lazy(() => import('./pages/accounting/AccountingTransactionsPage.jsx'));
+const AccountingReportsPage = lazy(() => import('./pages/accounting/AccountingReportsPage.jsx'));
+const AccountingCalendarPage = lazy(() => import('./pages/accounting/AccountingCalendarPage.jsx'));
+const AccountingActivitiesPage = lazy(() => import('./pages/accounting/AccountingActivitiesPage.jsx'));
+const AccountingStub = lazy(() => import('./pages/accounting/AccountingStub.jsx'));
 
 class ErrorBoundary extends Component {
   state = { hasError: false, error: null };
@@ -459,8 +465,14 @@ export default function App() {
               </SuspensePanel>
             )}
           >
-            <Route index element={<AccountingHome />} />
-            <Route path=":section" element={<AccountingStub />} />
+            <Route index element={<SuspensePanel><AccountingHome /></SuspensePanel>} />
+            <Route path="payroll" element={<SuspensePanel><AccountingPayrollPage /></SuspensePanel>} />
+            <Route path="people" element={<SuspensePanel><AccountingPeoplePage /></SuspensePanel>} />
+            <Route path="transactions" element={<SuspensePanel><AccountingTransactionsPage /></SuspensePanel>} />
+            <Route path="reports" element={<SuspensePanel><AccountingReportsPage /></SuspensePanel>} />
+            <Route path="calendar" element={<SuspensePanel><AccountingCalendarPage /></SuspensePanel>} />
+            <Route path="activities" element={<SuspensePanel><AccountingActivitiesPage /></SuspensePanel>} />
+            <Route path=":section" element={<SuspensePanel><AccountingStub /></SuspensePanel>} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
