@@ -110,7 +110,7 @@ function isWarehouseAdmin(user) {
 
 function isAccounting(user) {
   const role = String(user?.role || '').toLowerCase();
-  return role === 'accounting';
+  return role === 'accounting' || isSuperuser(user);
 }
 
 function GateCard({ title, message, children }) {

@@ -2,9 +2,221 @@ import { Router } from 'express';
 import { authRequired, requireRole } from '../middleware/auth.js';
 import { db } from '../db/database.js';
 import { applyWithdrawalMarkPaid, applyWithdrawalReview } from '../lib/withdrawalRequestActions.js';
+import {
+  buildReceiptPdfBuffer,
+  buildReportPdfBuffer,
+  buildReportWorkbookBuffer,
+  createEmployee,
+  createFinancialTransaction,
+  getDashboardData,
+  getLookupData,
+  getPayrollOverview,
+  getReceiptById,
+  getReportsSummary,
+  listActivity,
+  listEmployees,
+  listTransactions,
+  recordSalaryPayment,
+  runAccountingAutomation,
+  updateEmployee,
+} from '../modules/accounting/service.js';
+import { safeJsonParse } from '../modules/accounting/utils.js';
 
 const router = Router();
-router.use(authRequired, requireRole('accounting'));
+router.use(authRequired, requireRole('accounting', 'superuser'));
+
+router.get('/dashboard', async (_req, res) => {
+  try {
+    const data = await getDashboardData();
+    res.json(data);
+  } catch (error) {
+    console.error('accounting dashboard', error);
+    res.status(error?.status || 500).json({ error: error?.message || 'Dashboard yuklanmadi.' });
+  }
+});
+
+router.get('/lookups', async (_req, res) => {
+  try {
+    const data = getLookupData();
+    res.json(data);
+  } catch (error) {
+    console.error('accounting lookups', error);
+    res.status(500).json({ error: 'Tanlov ma’lumotlari yuklanmadi.' });
+  }
+});
+
+router.get('/employees', async (req, res) => {
+  try {
+    const employees = await listEmployees({
+      search: req.query.search || '',
+      status: req.query.status || '',
+    });
+    res.json({ employees });
+  } catch (error) {
+    console.error('accounting employees list', error);
+    res.status(error?.status || 500).json({ error: error?.message || 'Xodimlar ro‘yxati yuklanmadi.' });
+  }
+});
+
+router.post('/employees', async (req, res) => {
+  try {
+    const employee = await createEmployee(req.body || {}, req.user?.id || null);
+    res.status(201).json({ employee });
+  } catch (error) {
+    console.error('accounting employee create', error);
+    res.status(error?.status || 500).json({ error: error?.message || 'Xodim yaratilmadi.' });
+  }
+});
+
+router.patch('/employees/:id', async (req, res) => {
+  try {
+    const id = Number.parseInt(req.params.id, 10);
+    if (!Number.isFinite(id) || id < 1) {
+      return res.status(400).json({ error: 'Noto‘g‘ri xodim ID.' });
+    }
+    const employee = await updateEmployee(id, req.body || {}, req.user?.id || null);
+    res.json({ employee });
+  } catch (error) {
+    console.error('accounting employee update', error);
+    res.status(error?.status || 500).json({ error: error?.message || 'Xodim yangilanmadi.' });
+  }
+});
+
+router.get('/payroll/overview', async (req, res) => {
+  try {
+    const data = await getPayrollOverview({ month: req.query.month || '' });
+    res.json(data);
+  } catch (error) {
+    console.error('accounting payroll overview', error);
+    res.status(error?.status || 500).json({ error: error?.message || 'Payroll ma’lumotlari yuklanmadi.' });
+  }
+});
+
+router.post('/payroll/pay', async (req, res) => {
+  try {
+    const data = await recordSalaryPayment(req.body || {}, req.user?.id || null);
+    res.status(201).json(data);
+  } catch (error) {
+    console.error('accounting payroll pay', error);
+    res.status(error?.status || 500).json({ error: error?.message || 'To‘lovni saqlab bo‘lmadi.' });
+  }
+});
+
+router.post('/payroll/automation/run', async (req, res) => {
+  try {
+    const result = await runAccountingAutomation({ actorUserId: req.user?.id || null, source: 'manual_route' });
+    res.json({ ok: true, result });
+  } catch (error) {
+    console.error('accounting automation run', error);
+    res.status(error?.status || 500).json({ error: error?.message || 'Avtomatik sinxronizatsiya ishga tushmadi.' });
+  }
+});
+
+router.get('/transactions', async (req, res) => {
+  try {
+    const transactions = await listTransactions({
+      direction: req.query.direction || '',
+      search: req.query.search || '',
+      from: req.query.from || '',
+      to: req.query.to || '',
+      includeSystemSales: String(req.query.include_system_sales || '1') !== '0',
+      limit: req.query.limit || 100,
+    });
+    res.json({ transactions });
+  } catch (error) {
+    console.error('accounting transactions list', error);
+    res.status(error?.status || 500).json({ error: error?.message || 'Tranzaksiyalar yuklanmadi.' });
+  }
+});
+
+router.post('/transactions', async (req, res) => {
+  try {
+    const transaction = await createFinancialTransaction(req.body || {}, req.user?.id || null);
+    res.status(201).json({ transaction });
+  } catch (error) {
+    console.error('accounting transaction create', error);
+    res.status(error?.status || 500).json({ error: error?.message || 'Tranzaksiya yaratilmadi.' });
+  }
+});
+
+router.get('/reports/summary', async (req, res) => {
+  try {
+    const report = await getReportsSummary({ from: req.query.from || '', to: req.query.to || '' });
+    res.json(report);
+  } catch (error) {
+    console.error('accounting report summary', error);
+    res.status(error?.status || 500).json({ error: error?.message || 'Hisobot yuklanmadi.' });
+  }
+});
+
+router.get('/reports/export', async (req, res) => {
+  try {
+    const report = await getReportsSummary({ from: req.query.from || '', to: req.query.to || '' });
+    const format = String(req.query.format || 'xlsx').trim().toLowerCase();
+    if (format === 'pdf') {
+      const buffer = await buildReportPdfBuffer(report);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename="myshop-accounting-report.pdf"');
+      return res.send(buffer);
+    }
+    const buffer = await buildReportWorkbookBuffer(report);
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader('Content-Disposition', 'attachment; filename="myshop-accounting-report.xlsx"');
+    return res.send(buffer);
+  } catch (error) {
+    console.error('accounting report export', error);
+    res.status(error?.status || 500).json({ error: error?.message || 'Hisobot eksport qilinmadi.' });
+  }
+});
+
+router.get('/activity', async (req, res) => {
+  try {
+    const activity = await listActivity({ limit: req.query.limit || 50 });
+    res.json({ activity });
+  } catch (error) {
+    console.error('accounting activity', error);
+    res.status(error?.status || 500).json({ error: error?.message || 'Faollik jurnali yuklanmadi.' });
+  }
+});
+
+router.get('/receipts/:id', (req, res) => {
+  try {
+    const id = Number.parseInt(req.params.id, 10);
+    if (!Number.isFinite(id) || id < 1) {
+      return res.status(400).json({ error: 'Noto‘g‘ri kvitansiya ID.' });
+    }
+    const receipt = getReceiptById(id);
+    if (!receipt) return res.status(404).json({ error: 'Kvitansiya topilmadi.' });
+    res.json({
+      receipt: {
+        ...receipt,
+        payload: safeJsonParse(receipt.payload_json, {}),
+      },
+    });
+  } catch (error) {
+    console.error('accounting receipt detail', error);
+    res.status(error?.status || 500).json({ error: error?.message || 'Kvitansiya yuklanmadi.' });
+  }
+});
+
+router.get('/receipts/:id/pdf', async (req, res) => {
+  try {
+    const id = Number.parseInt(req.params.id, 10);
+    if (!Number.isFinite(id) || id < 1) {
+      return res.status(400).json({ error: 'Noto‘g‘ri kvitansiya ID.' });
+    }
+    const buffer = await buildReceiptPdfBuffer(id);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="myshop-receipt-${id}.pdf"`);
+    res.send(buffer);
+  } catch (error) {
+    console.error('accounting receipt pdf', error);
+    res.status(error?.status || 500).json({ error: error?.message || 'Kvitansiya PDF yaratilmayapti.' });
+  }
+});
 
 /** Sklad `work_roles` jadvalida packer — `alias` = `wr` / `wr2` … */
 function sqlIsPackerWorkRole(alias) {

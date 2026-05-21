@@ -1,0 +1,115 @@
+.accounting-saas-app {
+  --ac-page-bg:
+    radial-gradient(circle at top left, rgba(59, 130, 246, 0.16), transparent 30%),
+    radial-gradient(circle at top right, rgba(168, 85, 247, 0.14), transparent 28%),
+    linear-gradient(180deg, #f8fafc 0%, #eef2ff 46%, #f8fafc 100%);
+  --ac-surface: rgba(255, 255, 255, 0.82);
+  --ac-surface-strong: rgba(255, 255, 255, 0.96);
+  --ac-surface-muted: rgba(248, 250, 252, 0.78);
+  --ac-border: rgba(148, 163, 184, 0.28);
+  --ac-foreground: #0f172a;
+  --ac-muted: #475569;
+  --ac-subtle: #64748b;
+  --ac-shadow:
+    0 24px 64px rgba(15, 23, 42, 0.12),
+    0 10px 24px rgba(59, 130, 246, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  --ac-glow: rgba(59, 130, 246, 0.16);
+  --ac-accent: #2563eb;
+  --ac-success: #16a34a;
+  --ac-warning: #ea580c;
+  --ac-danger: #dc2626;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--ac-page-bg);
+  color: var(--ac-foreground);
+}
+
+html.theme-dark .accounting-saas-app {
+  --ac-page-bg:
+    radial-gradient(circle at top left, rgba(59, 130, 246, 0.18), transparent 34%),
+    radial-gradient(circle at top right, rgba(168, 85, 247, 0.16), transparent 28%),
+    linear-gradient(180deg, #020617 0%, #0f172a 50%, #020617 100%);
+  --ac-surface: rgba(15, 23, 42, 0.72);
+  --ac-surface-strong: rgba(15, 23, 42, 0.92);
+  --ac-surface-muted: rgba(30, 41, 59, 0.76);
+  --ac-border: rgba(148, 163, 184, 0.18);
+  --ac-foreground: #e2e8f0;
+  --ac-muted: #cbd5e1;
+  --ac-subtle: #94a3b8;
+  --ac-shadow:
+    0 26px 64px rgba(2, 6, 23, 0.55),
+    0 10px 30px rgba(15, 23, 42, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --ac-glow: rgba(96, 165, 250, 0.12);
+  --ac-accent: #60a5fa;
+  --ac-success: #4ade80;
+  --ac-warning: #fb923c;
+  --ac-danger: #f87171;
+}
+
+.accounting-saas-app ::selection {
+  background: rgba(59, 130, 246, 0.22);
+}
+
+.accounting-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.accounting-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.38);
+  border-radius: 999px;
+}
+
+.accounting-grid-bg {
+  position: relative;
+}
+
+.accounting-grid-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+  background-size: 30px 30px;
+  mask-image: linear-gradient(180deg, rgba(255, 255, 255, 0.55), transparent 92%);
+}
+
+.accounting-side-nav-active {
+  background:
+    linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(99, 102, 241, 0.1)),
+    rgba(255, 255, 255, 0.44);
+  border-color: rgba(59, 130, 246, 0.2);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.12);
+}
+
+html.theme-dark .accounting-side-nav-active {
+  background:
+    linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(99, 102, 241, 0.16)),
+    rgba(15, 23, 42, 0.52);
+}
+
+.accounting-mobile-nav-safe {
+  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+}
+
+.accounting-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.58);
+  backdrop-filter: blur(12px);
+  z-index: 1000;
+}
+
+.accounting-dialog-content {
+  position: fixed;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  width: min(92vw, 760px);
+  max-height: min(88vh, 860px);
+  overflow: auto;
+  z-index: 1001;
+}

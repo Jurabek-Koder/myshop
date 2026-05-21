@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import bcrypt from 'bcryptjs';
 import { getSqlitePath } from '../config/dataPaths.js';
 import { HOME_BENEFITS_DEFAULT } from '../config/homeBenefitsDefaults.js';
+import { initAccountingSchema } from '../modules/accounting/schema.js';
 
 const dbPath = getSqlitePath();
 export const db = new Database(dbPath);
@@ -1157,6 +1158,7 @@ export function initDatabase() {
   }
 
   try {
+    initAccountingSchema(db);
     ensureLocalAccountingPackerDemo();
   } catch (e) {
     console.warn('[MyShop] ensureLocalAccountingPackerDemo:', e?.message || e);
@@ -1201,6 +1203,11 @@ export function getUserAllowedPages(user) {
     return [
       '/',
       '/accounting',
+      '/accounting/payroll',
+      '/accounting/transactions',
+      '/accounting/reports',
+      '/accounting/employees',
+      '/accounting/activity',
       '/accounting/packer',
       '/accounting/picker',
       '/accounting/courier',

@@ -2,6 +2,11 @@ import React from 'react';
 import { Navigate, useParams } from 'react-router-dom';
 import AccountingPackerPage from './AccountingPackerPage.jsx';
 import AccountingWorkRoleFinancePage from './AccountingWorkRoleFinancePage.jsx';
+import AccountingPayrollPage from './AccountingPayrollPage.jsx';
+import AccountingTransactionsPage from './AccountingTransactionsPage.jsx';
+import AccountingReportsPage from './AccountingReportsPage.jsx';
+import AccountingEmployeesPage from './AccountingEmployeesPage.jsx';
+import AccountingActivityPage from './AccountingActivityPage.jsx';
 
 const FINANCE_KINDS = new Set(['picker', 'courier', 'operator', 'seller']);
 
@@ -18,17 +23,15 @@ export default function AccountingStub() {
   const key = String(section || '')
     .toLowerCase()
     .trim();
+  if (key === 'payroll') return <AccountingPayrollPage />;
+  if (key === 'transactions') return <AccountingTransactionsPage />;
+  if (key === 'reports') return <AccountingReportsPage />;
+  if (key === 'employees') return <AccountingEmployeesPage />;
+  if (key === 'activity') return <AccountingActivityPage />;
   if (key === 'packer') return <AccountingPackerPage />;
 
   if (key === 'stats') {
-    return (
-      <div className="accounting-surface-page">
-        <div className="accounting-surface-card accounting-stats-empty-card" aria-label="Sayt statistikasi">
-          <div className="accounting-surface-card-accent" aria-hidden />
-          <div className="accounting-surface-card-inner accounting-stats-empty-inner" />
-        </div>
-      </div>
-    );
+    return <Navigate to="/accounting/reports" replace />;
   }
 
   if (FINANCE_KINDS.has(key)) {

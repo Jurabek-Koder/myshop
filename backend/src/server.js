@@ -45,6 +45,7 @@ import twilioWebhookRoutes from './routes/twilioWebhook.js';
 import leadsRoutes from './routes/leads.js';
 import staffChatMediaRoutes from './routes/staffChatMedia.js';
 import { security } from './config/security.js';
+import { startAccountingScheduler } from './modules/accounting/scheduler.js';
 
 const app = express();
 /** Render/nginx orqali HTTPS — Twilio webhook signature URL uchun */
@@ -93,6 +94,7 @@ const PORT = await resolveListenPort();
 
 initDatabase();
 scheduleSupabaseMirrorSync(db);
+startAccountingScheduler();
 
 if (process.env.NODE_ENV === 'production') {
   const persisted = !!(process.env.MYSHOP_DATA_DIR && String(process.env.MYSHOP_DATA_DIR).trim());

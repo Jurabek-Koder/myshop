@@ -1,0 +1,8 @@
+@layer theme, base, components, utilities;
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@source "../pages/accounting/**/*.{js,jsx}";
+@source "../components/accounting/**/*.{js,jsx}";
+@source "../lib/accounting/**/*.{js,jsx}";
