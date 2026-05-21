@@ -316,7 +316,8 @@ function AccountingRoute({ children }) {
   if (!user || authStatus === 'expired' || authStatus === 'guest') {
     return <SessionGate message={authMessage} onRetry={retrySession} />;
   }
-  if (!isAccounting(user) || authStatus === 'forbidden') {
+  if (!isAccounting(user) && !isSuperuser(user)) {
+    if (authStatus === 'forbidden') return <ForbiddenGate message="Buxgalteriya paneli faqat buxgalteriya roli uchun." />;
     return <ForbiddenGate message="Buxgalteriya paneli faqat buxgalteriya roli uchun." />;
   }
 
@@ -454,22 +455,12 @@ export default function App() {
             element={(
               <SuspensePanel>
                 <AccountingRoute>
-                  <AccountingApp />
+                  <AccountingLayout />
                 </AccountingRoute>
               </SuspensePanel>
             )}
           >
-            <Route index element={<DashboardPage />} />
-            <Route path="payroll" element={<PayrollPage />} />
-            <Route path="employees" element={<EmployeesPage />} />
-            <Route path="transactions" element={<TransactionsPage />} />
-            <Route path="reports" element={<ReportsPage />} />
-            <Route path="calendar" element={<CalendarPage />} />
-            <Route path="packer" element={<AccountingStub />} />
-            <Route path="picker" element={<AccountingStub />} />
-            <Route path="courier" element={<AccountingStub />} />
-            <Route path="operator" element={<AccountingStub />} />
-            <Route path="seller" element={<AccountingStub />} />
+            <Route index element={<AccountingHome />} />
             <Route path=":section" element={<AccountingStub />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
