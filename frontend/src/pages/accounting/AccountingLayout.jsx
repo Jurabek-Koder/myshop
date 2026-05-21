@@ -1,307 +1,162 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
-import { usePickerUiSettings } from '../../context/PickerUiSettingsContext';
-import StaffTopbarBellCluster, { StaffNotifModalHeader } from '../../components/staff/StaffTopbarBellCluster';
-import StaffTopbarProfileMenu from '../../components/staff/StaffTopbarProfileMenu';
-import { formatDateTimeUz } from '../../utils/uzbekistanTime.js';
-import '../picker/PickerDashboard.css';
-import '../warehouseAdmin/WarehouseAdminDashboard.css';
+import React, { useMemo, useState } from 'react';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { BarChart3, FileText, HandCoins, LayoutDashboard, Moon, Sun, Wallet } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext.jsx';
+import { useTheme } from '../../context/ThemeContext.jsx';
+import { cn } from './cn.js';
+import './accounting.tailwind.css';
 import './AccountingDashboard.css';
 
-function formatBellDate(value) {
-  return formatDateTimeUz(value, { empty: '-' });
-}
-
-/** Yon panel: ichki buxgalteriya sahifalari (rollik panellar emas). */
-const ACCOUNTING_SIDE_NAV = [
-  { path: '/accounting', label: 'Bosh sahifa', icon: '🏠', end: true },
-  { path: '/accounting/packer', label: 'Packer', icon: '📦' },
-  { path: '/accounting/picker', label: 'Picker', icon: '🛒' },
-  { path: '/accounting/courier', label: 'Kuryer', icon: '🛵' },
-  { path: '/accounting/operator', label: 'Operator', icon: '💬' },
-  { path: '/accounting/seller', label: 'Seller', icon: '🏪' },
-  { path: '/accounting/stats', label: 'Sayt statistikasi', icon: '📈' },
+const NAV_ITEMS = [
+  { path: '/accounting', label: 'Boshqaruv paneli', icon: LayoutDashboard, end: true },
+  { path: '/accounting/payroll', label: 'Ish haqi boshqaruvi', icon: HandCoins },
+  { path: '/accounting/transactions', label: 'Daromad va xarajatlar', icon: Wallet },
+  { path: '/accounting/reports', label: 'Hisobotlar', icon: FileText },
+  { path: '/accounting/analytics', label: 'Moliyaviy tahlil', icon: BarChart3 },
 ];
 
-function isAccountingSideNavActive(pathname, navPath, endOnly) {
-  const p = String(pathname || '/').replace(/\/+$/, '') || '/';
-  const n = String(navPath || '').replace(/\/+$/, '') || '/';
-  if (endOnly || n === '/accounting') return p === '/accounting';
-  return p === n || p.startsWith(`${n}/`);
+function navIsActive(pathname, path, end = false) {
+  if (end) return pathname === path;
+  return pathname === path || pathname.startsWith(`${path}/`);
 }
 
-/** Buxgalteriya qobig‘i — topbar, yon menyu, `<Outlet />` ichida sahifa. */
 export default function AccountingLayout() {
-  const { user, logout, request } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [queryClient] = useState(() => new QueryClient());
+  const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const { theme, toggleTheme } = useTheme();
-  const {
-    notificationsEnabled,
-    setNotificationsEnabled,
-    t: pickerUiT,
-  } = usePickerUiSettings();
 
-  const who = String(user?.full_name || user?.login || '').trim();
-  const displayName = who || 'Buxgalter';
-  const isDark = theme === 'dark';
-
-  const [sidePanelOpen, setSidePanelOpen] = useState(false);
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [bellBusyId, setBellBusyId] = useState(null);
-
-  const loadNotifications = useCallback(async () => {
-    try {
-      const res = await request('/accounting/portal/notifications');
-      const d = res.ok ? await res.json() : { notifications: [] };
-      setNotifications(d.notifications || []);
-    } catch (_) {
-      setNotifications([]);
-    }
-  }, [request]);
-
-  useEffect(() => {
-    void loadNotifications();
-  }, [loadNotifications, notificationsOpen]);
-
-  const handleApproveWithdrawal = useCallback(
-    async (notif) => {
-      if (notif?.link_type !== 'withdrawal' || !notif?.link_id) return;
-      setBellBusyId(notif.id);
-      try {
-        const res = await request(`/accounting/portal/withdrawal-requests/${notif.link_id}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ status: 'approved', note: '' }),
-        });
-        if (res.ok) {
-          await request(`/accounting/portal/notifications/${notif.id}/read`, { method: 'PATCH' });
-          await loadNotifications();
-        }
-      } finally {
-        setBellBusyId(null);
-      }
-    },
-    [request, loadNotifications],
-  );
-
-  const handleMarkPaid = useCallback(
-    async (notif) => {
-      if (notif?.link_type !== 'withdrawal_payout' || !notif?.link_id) return;
-      setBellBusyId(notif.id);
-      try {
-        const res = await request(`/accounting/portal/withdrawal-requests/${notif.link_id}/mark-paid`, {
-          method: 'PATCH',
-          body: JSON.stringify({}),
-        });
-        if (res.ok) {
-          await request(`/accounting/portal/notifications/${notif.id}/read`, { method: 'PATCH' });
-          await loadNotifications();
-        }
-      } finally {
-        setBellBusyId(null);
-      }
-    },
-    [request, loadNotifications],
-  );
-
-  const unreadCount = notifications.filter((n) => !n.read_at).length;
-
-  const closeSidebar = useCallback(() => setSidePanelOpen(false), []);
+  const displayName = useMemo(() => {
+    const who = String(user?.full_name || user?.login || '').trim();
+    return who || 'Buxgalter';
+  }, [user]);
 
   return (
-    <div className="picker-app picker-mobile warehouse-admin-shell accounting-panel-shell">
-      <div className="picker-phone-frame">
-        <header className="picker-topbar no-print warehouse-admin-topbar">
-          <div className="picker-topbar-inner">
-            <button
-              type="button"
-              className="picker-topbar-hamburger warehouse-admin-topbar-hamburger"
-              onClick={() => setSidePanelOpen((v) => !v)}
-              aria-label={sidePanelOpen ? pickerUiT.ariaSideClose : pickerUiT.ariaSideOpen}
-              aria-expanded={sidePanelOpen}
-            >
-              <span className="picker-hamburger-icon" />
-            </button>
-            <span className="picker-topbar-logo">MyShop · Buxgalteriya</span>
-            <div className="picker-topbar-right">
-              <StaffTopbarBellCluster
-                t={pickerUiT}
-                notificationsEnabled={notificationsEnabled}
-                notificationsOpen={notificationsOpen}
-                setNotificationsOpen={setNotificationsOpen}
-                unreadCount={unreadCount}
-                onBellOpenChange={(open) => {
-                  if (open) setProfileMenuOpen(false);
-                }}
-              >
-                {notificationsOpen && (
-                  <>
-                    <div
-                      className="picker-bell-backdrop"
-                      onClick={() => setNotificationsOpen(false)}
-                      aria-hidden="true"
-                    />
-                    <div className="picker-bell-dropdown">
-                      <StaffNotifModalHeader
-                        t={pickerUiT}
-                        notificationsEnabled={notificationsEnabled}
-                        setNotificationsEnabled={setNotificationsEnabled}
-                      />
-                      {notifications.length === 0 ? (
-                        <p className="picker-bell-empty">Xabar yo‘q</p>
-                      ) : (
-                        <ul className="accounting-bell-list picker-bell-list">
-                          {notifications.map((n) => (
-                            <li key={n.id} className={n.read_at ? '' : 'unread'}>
-                              <div className="accounting-bell-item">
-                                <div className="accounting-bell-item-title">{n.title}</div>
-                                <div className="accounting-bell-item-body">{n.body}</div>
-                                <div className="accounting-bell-item-date">{formatBellDate(n.created_at)}</div>
-                                {n.link_type === 'withdrawal' && n.link_id && (
-                                  <button
-                                    type="button"
-                                    className="btn btn-success btn-sm accounting-bell-action"
-                                    disabled={bellBusyId === n.id}
-                                    onClick={() => {
-                                      handleApproveWithdrawal(n);
-                                      setNotificationsOpen(false);
-                                    }}
-                                  >
-                                    {bellBusyId === n.id ? '...' : 'Tasdiqlash'}
-                                  </button>
-                                )}
-                                {n.link_type === 'withdrawal_payout' && n.link_id && (
-                                  <button
-                                    type="button"
-                                    className="btn btn-primary btn-sm accounting-bell-action"
-                                    disabled={bellBusyId === n.id}
-                                    onClick={() => {
-                                      handleMarkPaid(n);
-                                      setNotificationsOpen(false);
-                                    }}
-                                  >
-                                    {bellBusyId === n.id ? '...' : 'Pul berildi'}
-                                  </button>
-                                )}
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  </>
-                )}
-              </StaffTopbarBellCluster>
-              <div className="picker-topbar-profile-slot">
-                <StaffTopbarProfileMenu
-                  name={displayName}
-                  avatarUrl={user?.avatar_url || undefined}
-                  open={profileMenuOpen}
-                  onOpenChange={(next) => {
-                    setProfileMenuOpen(next);
-                    if (next) setNotificationsOpen(false);
-                  }}
-                  labels={{
-                    home: pickerUiT.navHome,
-                    profile: pickerUiT.navProfile,
-                    settings: pickerUiT.navSettings,
-                    logout: pickerUiT.logout,
-                  }}
-                  onHome={() => navigate('/accounting')}
-                  onProfile={() => navigate('/profile')}
-                  onSettings={() => navigate('/profile')}
-                  onLogout={() => {
-                    logout();
-                    navigate('/');
-                  }}
-                />
-              </div>
+    <QueryClientProvider client={queryClient}>
+      <div className="accounting-shell min-h-dvh pb-20 md:pb-0">
+        <div className="mx-auto flex min-h-dvh max-w-[1600px]">
+          <aside
+            className={cn(
+              'accounting-sidebar fixed inset-y-0 left-0 z-40 w-72 border-r border-white/10 bg-slate-950/80 p-4 backdrop-blur-xl transition-transform md:static md:translate-x-0',
+              menuOpen ? 'translate-x-0' : '-translate-x-full',
+            )}
+          >
+            <div className="mb-6 rounded-2xl border border-indigo-300/20 bg-indigo-500/10 p-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-indigo-200">myshop finance</p>
+              <h1 className="mt-2 text-lg font-semibold text-white">Buxgalteriya SaaS panel</h1>
+              <p className="mt-1 text-sm text-indigo-100/90">{displayName}</p>
             </div>
-          </div>
-        </header>
 
-        <aside className={`picker-side-panel ${sidePanelOpen ? 'open' : ''}`} aria-hidden={!sidePanelOpen}>
-          <div className="picker-side-panel-inner">
-            <div className="picker-side-panel-head">Bo&apos;limlar</div>
-            <p className="courier-side-intro operator-side-intro">
-              <strong>{displayName}</strong>
-              <span className="courier-side-meta">Buxgalteriya</span>
-            </p>
-            <nav className="picker-side-panel-nav" aria-label="Buxgalteriya bo‘limlari">
-              {ACCOUNTING_SIDE_NAV.map((item) => (
-                <button
-                  key={item.path}
-                  type="button"
-                  className={`picker-side-panel-item${
-                    isAccountingSideNavActive(location.pathname, item.path, item.end)
-                      ? ' picker-side-panel-item-active'
-                      : ''
-                  }`}
-                  onClick={() => {
-                    navigate(item.path);
-                    closeSidebar();
-                  }}
-                >
-                  <span className="picker-side-panel-item-icon" aria-hidden>
-                    {item.icon}
-                  </span>
-                  <span>{item.label}</span>
-                </button>
-              ))}
-            </nav>
-            <div className="picker-side-panel-footer">
-              <div className="picker-side-panel-theme-row">
-                <span className="picker-side-panel-theme-label">
-                  <span
-                    className={`picker-side-panel-theme-icon${isDark ? ' picker-side-panel-theme-icon--moon' : ''}`}
-                    aria-hidden
+            <nav className="space-y-1.5" aria-label="Buxgalteriya navigatsiyasi">
+              {NAV_ITEMS.map((item) => {
+                const Icon = item.icon;
+                const active = navIsActive(location.pathname, item.path, item.end);
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setMenuOpen(false)}
+                    className={cn(
+                      'flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm transition',
+                      active
+                        ? 'border-indigo-300/30 bg-indigo-500/20 text-white'
+                        : 'border-transparent text-slate-300 hover:border-white/15 hover:bg-white/5 hover:text-white',
+                    )}
                   >
-                    {isDark ? '🌙' : '☀️'}
-                  </span>
-                  <span className="picker-side-panel-theme-text">
-                    {isDark ? pickerUiT.themeMoonLabel : pickerUiT.themeSunLabel}
-                  </span>
-                </span>
-                <button
-                  type="button"
-                  className={`picker-ios-theme-toggle ${isDark ? 'picker-ios-theme-toggle-dark' : ''}`}
-                  onClick={toggleTheme}
-                  role="switch"
-                  aria-checked={isDark}
-                  aria-label="Mavzu"
-                >
-                  <span className="picker-ios-theme-thumb" />
-                </button>
-              </div>
+                    <Icon size={17} />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+
+            <div className="mt-8 space-y-2 rounded-2xl border border-white/10 bg-white/5 p-3">
               <button
                 type="button"
-                className="picker-side-panel-logout"
+                onClick={toggleTheme}
+                className="flex w-full items-center justify-between rounded-xl border border-white/10 px-3 py-2 text-sm text-slate-100 hover:bg-white/10"
+              >
+                <span>{theme === 'dark' ? 'Qorong‘i rejim' : 'Yorug‘ rejim'}</span>
+                {theme === 'dark' ? <Moon size={16} /> : <Sun size={16} />}
+              </button>
+              <button
+                type="button"
                 onClick={() => {
                   logout();
                   navigate('/');
                 }}
+                className="w-full rounded-xl border border-rose-300/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-100 hover:bg-rose-500/20"
               >
                 Chiqish
               </button>
             </div>
-          </div>
-        </aside>
-        <div
-          className={`picker-side-panel-overlay ${sidePanelOpen ? 'show' : ''}`}
-          aria-hidden={!sidePanelOpen}
-          onClick={closeSidebar}
-        />
+          </aside>
 
-        <main className="picker-main warehouse-admin-main accounting-main">
-          <div className="warehouse-admin-page accounting-page">
-            <Outlet />
+          {menuOpen ? (
+            <button
+              type="button"
+              className="fixed inset-0 z-30 bg-black/50 md:hidden"
+              onClick={() => setMenuOpen(false)}
+              aria-label="Menyuni yopish"
+            />
+          ) : null}
+
+          <div className="flex min-h-dvh flex-1 flex-col">
+            <header className="sticky top-0 z-20 border-b border-white/10 bg-slate-950/70 px-4 py-3 backdrop-blur-xl md:px-6">
+              <div className="flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => setMenuOpen(true)}
+                  className="rounded-xl border border-white/20 px-3 py-1.5 text-sm text-slate-200 md:hidden"
+                >
+                  Bo‘limlar
+                </button>
+                <div>
+                  <p className="text-sm text-slate-400">Moliyaviy boshqaruv markazi</p>
+                  <p className="text-base font-semibold text-white">Assalomu alaykum, {displayName}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className="hidden rounded-xl border border-white/20 p-2 text-slate-200 hover:bg-white/10 md:inline-flex"
+                  aria-label="Mavzuni almashtirish"
+                >
+                  {theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
+                </button>
+              </div>
+            </header>
+
+            <main className="flex-1 px-4 py-4 md:px-6 md:py-6">
+              <Outlet />
+            </main>
           </div>
-        </main>
+        </div>
+
+        <nav className="accounting-mobile-nav fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-slate-950/90 px-2 py-2 backdrop-blur-xl md:hidden">
+          <div className="grid grid-cols-4 gap-2">
+            {NAV_ITEMS.slice(0, 4).map((item) => {
+              const Icon = item.icon;
+              const active = navIsActive(location.pathname, item.path, item.end);
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={cn(
+                    'flex flex-col items-center gap-1 rounded-lg px-1 py-1.5 text-[11px]',
+                    active ? 'bg-indigo-500/20 text-white' : 'text-slate-400',
+                  )}
+                >
+                  <Icon size={16} />
+                  <span className="truncate">{item.label.split(' ')[0]}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
       </div>
-    </div>
+    </QueryClientProvider>
   );
 }

@@ -2,9 +2,139 @@ import { Router } from 'express';
 import { authRequired, requireRole } from '../middleware/auth.js';
 import { db } from '../db/database.js';
 import { applyWithdrawalMarkPaid, applyWithdrawalReview } from '../lib/withdrawalRequestActions.js';
+import {
+  createFinancialTransaction,
+  getAccountingDashboardSnapshot,
+  getFinancialReportSummary,
+  getReceiptFileByNumber,
+  listFinancialTransactions,
+  listPayrollCalendar,
+  listPayrollEmployees,
+  recordPayrollPayment,
+} from '../modules/accounting/accounting.service.js';
 
 const router = Router();
-router.use(authRequired, requireRole('accounting'));
+router.use(authRequired, requireRole('accounting', 'superuser'));
+
+router.get('/dashboard', (req, res) => {
+  try {
+    const rangeDays = Number.parseInt(String(req.query.range_days ?? '30'), 10);
+    const payload = getAccountingDashboardSnapshot({ rangeDays });
+    res.json(payload);
+  } catch (e) {
+    console.error('accounting dashboard', e);
+    res.status(500).json({ error: 'Boshqaruv paneli maʼlumotlari yuklanmadi.' });
+  }
+});
+
+router.get('/payroll/employees', (req, res) => {
+  try {
+    const employees = listPayrollEmployees();
+    res.json({ employees });
+  } catch (e) {
+    console.error('accounting payroll employees', e);
+    res.status(500).json({ error: 'Xodimlar ish haqi ro‘yxati yuklanmadi.' });
+  }
+});
+
+router.get('/payroll/calendar', (req, res) => {
+  try {
+    const days = Number.parseInt(String(req.query.days ?? '45'), 10);
+    const events = listPayrollCalendar({ days });
+    res.json({ events });
+  } catch (e) {
+    console.error('accounting payroll calendar', e);
+    res.status(500).json({ error: 'Ish haqi kalendari yuklanmadi.' });
+  }
+});
+
+
+router.get('/payroll/cycles', (req, res) => {
+  try {
+    const days = Number.parseInt(String(req.query.days ?? '60'), 10);
+    const cycles = listPayrollCalendar({ days });
+    res.json({ cycles });
+  } catch (e) {
+    console.error('accounting payroll cycles', e);
+    res.status(500).json({ error: 'Ish haqi sikllari yuklanmadi.' });
+  }
+});
+
+router.post('/payroll/payments', async (req, res) => {
+  try {
+    const result = await recordPayrollPayment({ payload: req.body, actorUser: req.user });
+    if (!result.ok) return res.status(result.status).json({ error: result.error });
+    return res.status(201).json({ payment: result.payment });
+  } catch (e) {
+    console.error('accounting payroll payment create', e);
+    return res.status(500).json({ error: 'To‘lovni saqlashda xatolik yuz berdi.' });
+  }
+});
+
+router.get('/receipts/:receiptNumber/pdf', (req, res) => {
+  try {
+    const receiptNumber = String(req.params.receiptNumber || '').trim();
+    const result = getReceiptFileByNumber(receiptNumber);
+    if (!result.ok) return res.status(result.status).json({ error: result.error });
+    return res.download(result.path, `${receiptNumber}.pdf`);
+  } catch (e) {
+    console.error('accounting receipt pdf', e);
+    return res.status(500).json({ error: 'Kvitansiya PDF faylini olishda xatolik.' });
+  }
+});
+
+router.get('/transactions', (req, res) => {
+  try {
+    const transactions = listFinancialTransactions({
+      query: req.query.q,
+      type: req.query.type,
+      categoryKey: req.query.category_key,
+      from: req.query.from,
+      to: req.query.to,
+    });
+    res.json({ transactions });
+  } catch (e) {
+    console.error('accounting transactions list', e);
+    res.status(500).json({ error: 'Tranzaksiyalar ro‘yxati yuklanmadi.' });
+  }
+});
+
+router.post('/transactions', (req, res) => {
+  try {
+    const result = createFinancialTransaction({ payload: req.body, actorUserId: req.user.id });
+    if (!result.ok) return res.status(result.status).json({ error: result.error });
+    return res.status(201).json({ transaction: result.transaction });
+  } catch (e) {
+    console.error('accounting transactions create', e);
+    return res.status(500).json({ error: 'Tranzaksiya yaratishda xatolik.' });
+  }
+});
+
+router.get('/reports/summary', (req, res) => {
+  try {
+    const rangeDays = Number.parseInt(String(req.query.range_days ?? '30'), 10);
+    const report = getFinancialReportSummary({ rangeDays });
+    return res.json(report);
+  } catch (e) {
+    console.error('accounting reports summary', e);
+    return res.status(500).json({ error: 'Hisobot maʼlumotlari yuklanmadi.' });
+  }
+});
+
+router.get('/meta/categories', (req, res) => {
+  try {
+    const expenseCategories = db
+      .prepare(`SELECT id, name_key, label_uz FROM expense_categories ORDER BY label_uz COLLATE NOCASE ASC`)
+      .all();
+    const incomeCategories = db
+      .prepare(`SELECT id, name_key, label_uz FROM income_categories ORDER BY label_uz COLLATE NOCASE ASC`)
+      .all();
+    res.json({ expense_categories: expenseCategories, income_categories: incomeCategories });
+  } catch (e) {
+    console.error('accounting categories', e);
+    res.status(500).json({ error: 'Kategoriyalar ro‘yxatini olishda xatolik.' });
+  }
+});
 
 /** Sklad `work_roles` jadvalida packer — `alias` = `wr` / `wr2` … */
 function sqlIsPackerWorkRole(alias) {

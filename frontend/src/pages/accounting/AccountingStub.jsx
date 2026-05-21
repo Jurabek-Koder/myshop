@@ -2,6 +2,9 @@ import React from 'react';
 import { Navigate, useParams } from 'react-router-dom';
 import AccountingPackerPage from './AccountingPackerPage.jsx';
 import AccountingWorkRoleFinancePage from './AccountingWorkRoleFinancePage.jsx';
+import AccountingPayrollPage from './AccountingPayrollPage.jsx';
+import AccountingTransactionsPage from './AccountingTransactionsPage.jsx';
+import AccountingReportsPage from './AccountingReportsPage.jsx';
 
 const FINANCE_KINDS = new Set(['picker', 'courier', 'operator', 'seller']);
 
@@ -18,6 +21,12 @@ export default function AccountingStub() {
   const key = String(section || '')
     .toLowerCase()
     .trim();
+
+  if (key === 'payroll') return <AccountingPayrollPage />;
+  if (key === 'transactions') return <AccountingTransactionsPage />;
+  if (key === 'reports') return <AccountingReportsPage />;
+  if (key === 'analytics') return <AccountingReportsPage analyticsMode />;
+
   if (key === 'packer') return <AccountingPackerPage />;
 
   if (key === 'stats') {

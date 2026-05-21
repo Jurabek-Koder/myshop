@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import bcrypt from 'bcryptjs';
 import { getSqlitePath } from '../config/dataPaths.js';
 import { HOME_BENEFITS_DEFAULT } from '../config/homeBenefitsDefaults.js';
+import { initAccountingSchema } from '../modules/accounting/accountingSchema.js';
 
 const dbPath = getSqlitePath();
 export const db = new Database(dbPath);
@@ -1161,6 +1162,12 @@ export function initDatabase() {
   } catch (e) {
     console.warn('[MyShop] ensureLocalAccountingPackerDemo:', e?.message || e);
   }
+
+  try {
+    initAccountingSchema(db);
+  } catch (e) {
+    console.warn('[MyShop] initAccountingSchema:', e?.message || e);
+  }
 }
 
 /** Sklad ish ro‘yi bo‘yicha tarix: jarima, mukofot, balans. */
@@ -1201,6 +1208,10 @@ export function getUserAllowedPages(user) {
     return [
       '/',
       '/accounting',
+      '/accounting/analytics',
+      '/accounting/payroll',
+      '/accounting/transactions',
+      '/accounting/reports',
       '/accounting/packer',
       '/accounting/picker',
       '/accounting/courier',
