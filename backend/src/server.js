@@ -44,6 +44,7 @@ import operatorAiCallWebhookRoutes from './routes/operatorAiCallWebhook.js';
 import twilioWebhookRoutes from './routes/twilioWebhook.js';
 import leadsRoutes from './routes/leads.js';
 import staffChatMediaRoutes from './routes/staffChatMedia.js';
+import { schedulePayrollMaintenance } from './lib/accountingPayroll.js';
 import { security } from './config/security.js';
 
 const app = express();
@@ -93,6 +94,7 @@ const PORT = await resolveListenPort();
 
 initDatabase();
 scheduleSupabaseMirrorSync(db);
+schedulePayrollMaintenance();
 
 if (process.env.NODE_ENV === 'production') {
   const persisted = !!(process.env.MYSHOP_DATA_DIR && String(process.env.MYSHOP_DATA_DIR).trim());

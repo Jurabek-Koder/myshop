@@ -2,9 +2,131 @@ import { Router } from 'express';
 import { authRequired, requireRole } from '../middleware/auth.js';
 import { db } from '../db/database.js';
 import { applyWithdrawalMarkPaid, applyWithdrawalReview } from '../lib/withdrawalRequestActions.js';
+import {
+  createFinancialTransaction,
+  createSalaryPayment,
+  getDashboardPayload,
+  getReceipt,
+  getReportPayload,
+  listCategories,
+  listFinancialTransactions,
+  listPayrollEmployees,
+  listReceipts,
+  streamReceiptPdf,
+  upsertEmployee,
+} from '../lib/accountingPayroll.js';
 
 const router = Router();
 router.use(authRequired, requireRole('accounting'));
+
+router.get('/dashboard', (_req, res) => {
+  try {
+    res.json(getDashboardPayload());
+  } catch (e) {
+    console.error('accounting dashboard', e);
+    res.status(500).json({ error: 'Boshqaruv paneli ma’lumotlari yuklanmadi.' });
+  }
+});
+
+router.get('/payroll', (_req, res) => {
+  try {
+    res.json(listPayrollEmployees());
+  } catch (e) {
+    console.error('accounting payroll', e);
+    res.status(500).json({ error: 'Ish haqi ma’lumotlari yuklanmadi.' });
+  }
+});
+
+router.post('/employees', (req, res) => {
+  try {
+    const result = upsertEmployee(req.body || {}, req.user?.id);
+    if (!result.ok) return res.status(result.status || 400).json({ error: result.error });
+    res.json(result);
+  } catch (e) {
+    console.error('accounting employee upsert', e);
+    res.status(500).json({ error: 'Xodim saqlanmadi.' });
+  }
+});
+
+router.post('/salary-payments', async (req, res) => {
+  try {
+    const result = await createSalaryPayment(req.body || {}, req.user?.id);
+    if (!result.ok) return res.status(result.status || 400).json({ error: result.error });
+    res.json(result);
+  } catch (e) {
+    console.error('accounting salary payment', e);
+    res.status(500).json({ error: 'Ish haqi to‘lovi saqlanmadi.' });
+  }
+});
+
+router.get('/categories', (_req, res) => {
+  try {
+    res.json(listCategories());
+  } catch (e) {
+    console.error('accounting categories', e);
+    res.status(500).json({ error: 'Kategoriyalar yuklanmadi.' });
+  }
+});
+
+router.get('/transactions', (req, res) => {
+  try {
+    res.json(listFinancialTransactions(req.query || {}));
+  } catch (e) {
+    console.error('accounting transactions', e);
+    res.status(500).json({ error: 'Operatsiyalar yuklanmadi.' });
+  }
+});
+
+router.post('/transactions', (req, res) => {
+  try {
+    const result = createFinancialTransaction(req.body || {}, req.user?.id);
+    if (!result.ok) return res.status(result.status || 400).json({ error: result.error });
+    res.json(result);
+  } catch (e) {
+    console.error('accounting transaction create', e);
+    res.status(500).json({ error: 'Operatsiya saqlanmadi.' });
+  }
+});
+
+router.get('/reports', (req, res) => {
+  try {
+    res.json(getReportPayload(req.query || {}));
+  } catch (e) {
+    console.error('accounting reports', e);
+    res.status(500).json({ error: 'Hisobot yuklanmadi.' });
+  }
+});
+
+router.get('/receipts', (req, res) => {
+  try {
+    res.json({ receipts: listReceipts(req.query || {}) });
+  } catch (e) {
+    console.error('accounting receipts', e);
+    res.status(500).json({ error: 'Cheklar yuklanmadi.' });
+  }
+});
+
+router.get('/receipts/:id', (req, res) => {
+  try {
+    const receipt = getReceipt(req.params.id);
+    if (!receipt) return res.status(404).json({ error: 'Chek topilmadi.' });
+    res.json({ receipt });
+  } catch (e) {
+    console.error('accounting receipt', e);
+    res.status(500).json({ error: 'Chek yuklanmadi.' });
+  }
+});
+
+router.get('/receipts/:id/pdf', (req, res) => {
+  try {
+    const receipt = getReceipt(req.params.id);
+    if (!receipt) return res.status(404).json({ error: 'Chek topilmadi.' });
+    streamReceiptPdf(receipt, res);
+  } catch (e) {
+    console.error('accounting receipt pdf', e);
+    if (!res.headersSent) res.status(500).json({ error: 'PDF chek yaratilmadi.' });
+  }
+});
 
 /** Sklad `work_roles` jadvalida packer — `alias` = `wr` / `wr2` … */
 function sqlIsPackerWorkRole(alias) {

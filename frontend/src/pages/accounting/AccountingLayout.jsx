@@ -16,13 +16,16 @@ function formatBellDate(value) {
 
 /** Yon panel: ichki buxgalteriya sahifalari (rollik panellar emas). */
 const ACCOUNTING_SIDE_NAV = [
-  { path: '/accounting', label: 'Bosh sahifa', icon: '🏠', end: true },
-  { path: '/accounting/packer', label: 'Packer', icon: '📦' },
-  { path: '/accounting/picker', label: 'Picker', icon: '🛒' },
-  { path: '/accounting/courier', label: 'Kuryer', icon: '🛵' },
-  { path: '/accounting/operator', label: 'Operator', icon: '💬' },
-  { path: '/accounting/seller', label: 'Seller', icon: '🏪' },
-  { path: '/accounting/stats', label: 'Sayt statistikasi', icon: '📈' },
+  { path: '/accounting', label: 'Boshqaruv paneli', icon: '🏠', end: true },
+  { path: '/accounting/payroll', label: 'Ish haqi boshqaruvi', icon: '💳' },
+  { path: '/accounting/transactions', label: 'Xarajat va tushumlar', icon: '📒' },
+  { path: '/accounting/reports', label: 'Moliyaviy hisobotlar', icon: '📈' },
+  { path: '/accounting/receipts', label: 'Cheklar', icon: '🧾' },
+  { path: '/accounting/packer', label: 'Packer balanslari', icon: '📦' },
+  { path: '/accounting/picker', label: 'Picker balanslari', icon: '🛒' },
+  { path: '/accounting/courier', label: 'Kuryer balanslari', icon: '🛵' },
+  { path: '/accounting/operator', label: 'Operator balanslari', icon: '💬' },
+  { path: '/accounting/seller', label: 'Seller balanslari', icon: '🏪' },
 ];
 
 function isAccountingSideNavActive(pathname, navPath, endOnly) {
@@ -301,6 +304,22 @@ export default function AccountingLayout() {
             <Outlet />
           </div>
         </main>
+
+        <nav className="accounting-bottom-nav no-print" aria-label="Buxgalteriya tezkor navigatsiya">
+          {ACCOUNTING_SIDE_NAV.slice(0, 5).map((item) => (
+            <button
+              key={item.path}
+              type="button"
+              className={`accounting-bottom-nav-item${
+                isAccountingSideNavActive(location.pathname, item.path, item.end) ? ' accounting-bottom-nav-item-active' : ''
+              }`}
+              onClick={() => navigate(item.path)}
+            >
+              <span aria-hidden>{item.icon}</span>
+              <span>{item.label.split(' ')[0]}</span>
+            </button>
+          ))}
+        </nav>
       </div>
     </div>
   );

@@ -382,6 +382,149 @@ export function initDatabase() {
   `);
 
   db.exec(`
+    CREATE TABLE IF NOT EXISTS employees (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER UNIQUE REFERENCES users(id) ON DELETE SET NULL,
+      full_name TEXT NOT NULL,
+      phone TEXT,
+      position TEXT NOT NULL DEFAULT 'Superuser',
+      monthly_salary REAL NOT NULL DEFAULT 0,
+      salary_currency TEXT NOT NULL DEFAULT 'UZS',
+      advance_percent REAL NOT NULL DEFAULT 50,
+      status TEXT NOT NULL DEFAULT 'active',
+      telegram_chat_id TEXT,
+      notes TEXT,
+      hired_at TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_employees_status ON employees(status);
+    CREATE INDEX IF NOT EXISTS idx_employees_user ON employees(user_id);
+
+    CREATE TABLE IF NOT EXISTS expense_categories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      code TEXT UNIQUE NOT NULL,
+      color TEXT NOT NULL DEFAULT '#ef4444',
+      icon TEXT NOT NULL DEFAULT 'Receipt',
+      active INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_expense_categories_active ON expense_categories(active);
+
+    CREATE TABLE IF NOT EXISTS income_categories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      code TEXT UNIQUE NOT NULL,
+      color TEXT NOT NULL DEFAULT '#10b981',
+      icon TEXT NOT NULL DEFAULT 'TrendingUp',
+      active INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_income_categories_active ON income_categories(active);
+
+    CREATE TABLE IF NOT EXISTS payroll_cycles (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      cycle_year INTEGER NOT NULL,
+      cycle_month INTEGER NOT NULL,
+      phase TEXT NOT NULL CHECK(phase IN ('advance', 'salary')),
+      period_start TEXT NOT NULL,
+      period_end TEXT NOT NULL,
+      due_date TEXT NOT NULL,
+      gross_amount REAL NOT NULL DEFAULT 0,
+      paid_amount REAL NOT NULL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('paid', 'pending', 'overdue')),
+      closed_at TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(employee_id, cycle_year, cycle_month, phase)
+    );
+    CREATE INDEX IF NOT EXISTS idx_payroll_cycles_employee ON payroll_cycles(employee_id, cycle_year, cycle_month);
+    CREATE INDEX IF NOT EXISTS idx_payroll_cycles_status_due ON payroll_cycles(status, due_date);
+
+    CREATE TABLE IF NOT EXISTS salary_payments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      cycle_id INTEGER NOT NULL REFERENCES payroll_cycles(id) ON DELETE CASCADE,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      amount REAL NOT NULL,
+      payment_type TEXT NOT NULL CHECK(payment_type IN ('advance', 'salary', 'bonus', 'correction')),
+      payment_method TEXT NOT NULL DEFAULT 'cash',
+      note TEXT,
+      paid_at TEXT NOT NULL DEFAULT (datetime('now')),
+      created_by INTEGER REFERENCES users(id),
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_salary_payments_employee ON salary_payments(employee_id, paid_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_salary_payments_cycle ON salary_payments(cycle_id);
+
+    CREATE TABLE IF NOT EXISTS financial_transactions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      type TEXT NOT NULL CHECK(type IN ('income', 'expense')),
+      category_id INTEGER,
+      category_code TEXT,
+      source TEXT NOT NULL DEFAULT 'manual',
+      title TEXT NOT NULL,
+      amount REAL NOT NULL,
+      currency TEXT NOT NULL DEFAULT 'UZS',
+      transaction_date TEXT NOT NULL DEFAULT (date('now')),
+      note TEXT,
+      linked_salary_payment_id INTEGER REFERENCES salary_payments(id) ON DELETE SET NULL,
+      created_by INTEGER REFERENCES users(id),
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_financial_transactions_date ON financial_transactions(transaction_date DESC);
+    CREATE INDEX IF NOT EXISTS idx_financial_transactions_type ON financial_transactions(type, transaction_date DESC);
+    CREATE INDEX IF NOT EXISTS idx_financial_transactions_source ON financial_transactions(source);
+
+    CREATE TABLE IF NOT EXISTS receipts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      receipt_no TEXT UNIQUE NOT NULL,
+      kind TEXT NOT NULL CHECK(kind IN ('salary', 'advance', 'income', 'expense')),
+      employee_id INTEGER REFERENCES employees(id) ON DELETE SET NULL,
+      salary_payment_id INTEGER REFERENCES salary_payments(id) ON DELETE SET NULL,
+      financial_transaction_id INTEGER REFERENCES financial_transactions(id) ON DELETE SET NULL,
+      payload_json TEXT NOT NULL DEFAULT '{}',
+      created_by INTEGER REFERENCES users(id),
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_receipts_kind_created ON receipts(kind, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_receipts_employee ON receipts(employee_id, created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      actor_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      action TEXT NOT NULL,
+      entity_type TEXT NOT NULL,
+      entity_id INTEGER,
+      summary TEXT NOT NULL DEFAULT '',
+      payload_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON audit_logs(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON audit_logs(entity_type, entity_id);
+  `);
+
+  for (const row of [
+    ['Product sales', 'product_sales', '#2563eb', 'ShoppingBag'],
+    ['Manual income', 'manual_income', '#10b981', 'PlusCircle'],
+    ['Service income', 'service_income', '#14b8a6', 'BriefcaseBusiness'],
+  ]) {
+    db.prepare('INSERT OR IGNORE INTO income_categories (name, code, color, icon) VALUES (?, ?, ?, ?)').run(...row);
+  }
+
+  for (const row of [
+    ['Shop expenses', 'shop_expenses', '#f97316', 'Store'],
+    ['Employee payroll', 'employee_payroll', '#8b5cf6', 'WalletCards'],
+    ['Utilities', 'utilities', '#0ea5e9', 'Zap'],
+    ['Transport', 'transport', '#64748b', 'Truck'],
+    ['Other expenses', 'other_expenses', '#ef4444', 'Receipt'],
+  ]) {
+    db.prepare('INSERT OR IGNORE INTO expense_categories (name, code, color, icon) VALUES (?, ?, ?, ?)').run(...row);
+  }
+
+  db.exec(`
     CREATE TABLE IF NOT EXISTS ad_slides (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       sort_order INTEGER NOT NULL DEFAULT 0,
@@ -884,6 +1027,10 @@ export function initDatabase() {
   db.prepare('INSERT OR IGNORE INTO pages (path, label_uz) VALUES (?, ?)').run('/qabul', 'Buyurtma qabul qiluvchi paneli');
   db.prepare('INSERT OR IGNORE INTO pages (path, label_uz) VALUES (?, ?)').run('/warehouse-admin', 'Ombor admin paneli');
   db.prepare('INSERT OR IGNORE INTO pages (path, label_uz) VALUES (?, ?)').run('/accounting', 'Buxgalteriya paneli');
+  db.prepare('INSERT OR IGNORE INTO pages (path, label_uz) VALUES (?, ?)').run('/accounting/payroll', 'Ish haqi boshqaruvi');
+  db.prepare('INSERT OR IGNORE INTO pages (path, label_uz) VALUES (?, ?)').run('/accounting/transactions', 'Xarajat va tushumlar');
+  db.prepare('INSERT OR IGNORE INTO pages (path, label_uz) VALUES (?, ?)').run('/accounting/reports', 'Moliyaviy hisobotlar');
+  db.prepare('INSERT OR IGNORE INTO pages (path, label_uz) VALUES (?, ?)').run('/accounting/receipts', 'Cheklar');
   db.prepare('INSERT OR IGNORE INTO pages (path, label_uz) VALUES (?, ?)').run('/profile', 'Profil');
   const customerRoleIdForProfile = db.prepare('SELECT id FROM roles WHERE lower(name) = ?').get('customer')?.id;
   if (customerRoleIdForProfile != null) {
@@ -925,6 +1072,13 @@ export function initDatabase() {
       db.prepare('INSERT INTO roles (name) VALUES (?)').run(name);
       const rid = db.prepare('SELECT id FROM roles WHERE name = ?').get(name).id;
       db.prepare('INSERT INTO role_pages (role_id, page_path) VALUES (?, ?)').run(rid, pagePath);
+    }
+  }
+
+  const accountingRole = db.prepare('SELECT id FROM roles WHERE name = ?').get('accounting');
+  if (accountingRole?.id) {
+    for (const pagePath of ['/accounting/payroll', '/accounting/transactions', '/accounting/reports', '/accounting/receipts']) {
+      db.prepare('INSERT OR IGNORE INTO role_pages (role_id, page_path) VALUES (?, ?)').run(accountingRole.id, pagePath);
     }
   }
 
@@ -1201,6 +1355,10 @@ export function getUserAllowedPages(user) {
     return [
       '/',
       '/accounting',
+      '/accounting/payroll',
+      '/accounting/transactions',
+      '/accounting/reports',
+      '/accounting/receipts',
       '/accounting/packer',
       '/accounting/picker',
       '/accounting/courier',
