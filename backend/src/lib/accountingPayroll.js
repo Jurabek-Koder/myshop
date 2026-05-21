@@ -136,6 +136,15 @@ function buildEmployeeCode(seedValue) {
   return `EMP-${String(seedValue || Date.now()).padStart(4, '0')}`;
 }
 
+function resolveSafeUniqueValue(selectStatement, candidateValue, existingId = null, fallbackValue = null) {
+  if (candidateValue == null) return fallbackValue ?? null;
+  const owner = selectStatement.get(candidateValue);
+  if (owner && Number(owner.id) !== Number(existingId)) {
+    return fallbackValue ?? null;
+  }
+  return candidateValue;
+}
+
 export function logAccountingAudit({ actorUserId = null, action, entityType, entityId = null, payload = null }) {
   if (!action || !entityType) return;
   db.prepare(
@@ -269,11 +278,25 @@ export function syncAccountingEmployees() {
       (userId ? selectByUser.get(userId) : null) ||
       (staffMemberId ? selectByStaff.get(staffMemberId) : null);
 
+    const safeUserId = resolveSafeUniqueValue(selectByUser, userId, existing?.id, existing?.user_id ?? null);
+    const safeWorkRoleId = resolveSafeUniqueValue(
+      selectByWorkRole,
+      workRoleId,
+      existing?.id,
+      existing?.work_role_id ?? null,
+    );
+    const safeStaffMemberId = resolveSafeUniqueValue(
+      selectByStaff,
+      staffMemberId,
+      existing?.id,
+      existing?.staff_member_id ?? null,
+    );
+
     if (existing) {
       updateEmployee.run(
-        userId ?? existing.user_id ?? null,
-        workRoleId ?? existing.work_role_id ?? null,
-        staffMemberId ?? existing.staff_member_id ?? null,
+        safeUserId,
+        safeWorkRoleId,
+        safeStaffMemberId,
         fullName,
         existing.phone || phone || '',
         existing.department || defaults.department,
@@ -300,9 +323,9 @@ export function syncAccountingEmployees() {
     const fallbackSalary = Number(row.total_amount) > 100_000 ? Number(row.total_amount) : defaults.monthlySalary;
     const result = insertEmployee.run(
       buildEmployeeCode(userId || workRoleId || staffMemberId || Date.now()),
-      userId,
-      workRoleId,
-      staffMemberId,
+      safeUserId,
+      safeWorkRoleId,
+      safeStaffMemberId,
       fullName,
       defaults.department,
       defaults.jobTitle,

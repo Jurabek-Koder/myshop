@@ -534,7 +534,7 @@ export default function AccountingHome() {
             })}
           </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 }
