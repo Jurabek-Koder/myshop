@@ -33,6 +33,7 @@ import adminRoutes from './routes/admin.js';
 import rolesRoutes from './routes/roles.js';
 import portalRoutes from './routes/portal.js';
 import accountingPortalRoutes from './routes/accountingPortal.js';
+import accountingPayrollRoutes from './routes/accountingPayroll.js';
 import sellerRoutes from './routes/seller.js';
 import courierRoutes from './routes/courier.js';
 import operatorRoutes from './routes/operator.js';

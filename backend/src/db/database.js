@@ -1201,6 +1201,11 @@ export function getUserAllowedPages(user) {
     return [
       '/',
       '/accounting',
+      '/accounting/payroll',
+      '/accounting/employees',
+      '/accounting/transactions',
+      '/accounting/reports',
+      '/accounting/calendar',
       '/accounting/packer',
       '/accounting/picker',
       '/accounting/courier',

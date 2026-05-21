@@ -454,12 +454,22 @@ export default function App() {
             element={(
               <SuspensePanel>
                 <AccountingRoute>
-                  <AccountingLayout />
+                  <AccountingApp />
                 </AccountingRoute>
               </SuspensePanel>
             )}
           >
-            <Route index element={<AccountingHome />} />
+            <Route index element={<DashboardPage />} />
+            <Route path="payroll" element={<PayrollPage />} />
+            <Route path="employees" element={<EmployeesPage />} />
+            <Route path="transactions" element={<TransactionsPage />} />
+            <Route path="reports" element={<ReportsPage />} />
+            <Route path="calendar" element={<CalendarPage />} />
+            <Route path="packer" element={<AccountingStub />} />
+            <Route path="picker" element={<AccountingStub />} />
+            <Route path="courier" element={<AccountingStub />} />
+            <Route path="operator" element={<AccountingStub />} />
+            <Route path="seller" element={<AccountingStub />} />
             <Route path=":section" element={<AccountingStub />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -56,6 +56,8 @@ export default defineConfig(({ mode }) => {
             if (!id.includes('node_modules')) return undefined;
             if (id.includes('react-dom') || id.includes('/react/') || id.includes('\\react\\')) return 'react-vendor';
             if (id.includes('react-router')) return 'router';
+            if (id.includes('recharts') || id.includes('d3-') || id.includes('victory')) return 'charts';
+            if (id.includes('lucide-react')) return 'icons';
             return 'vendor';
           },
         },
