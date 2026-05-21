@@ -1,40 +1,34 @@
 import React from 'react';
 import { Navigate, useParams } from 'react-router-dom';
-import AccountingPackerPage from './AccountingPackerPage.jsx';
-import AccountingWorkRoleFinancePage from './AccountingWorkRoleFinancePage.jsx';
+import {
+  ActivitySection,
+  CalendarSection,
+  PayrollSection,
+  ReportsMiniHighlights,
+  ReportsSection,
+  TransactionsSection,
+} from './AccountingSections.jsx';
 
-const FINANCE_KINDS = new Set(['picker', 'courier', 'operator', 'seller']);
-
-const SECTION_TITLES = {
-  picker: 'Picker',
-  courier: 'Kuryer',
-  operator: 'Operator',
-  seller: 'Seller',
+const LEGACY_TO_SECTION = {
+  packer: 'payroll',
+  picker: 'payroll',
+  courier: 'payroll',
+  operator: 'payroll',
+  seller: 'transactions',
+  stats: 'reports',
 };
 
-/** Buxgalteriya ichidagi bo‘lim sahifalari (rollik panellar emas). */
 export default function AccountingStub() {
   const { section } = useParams();
-  const key = String(section || '')
-    .toLowerCase()
-    .trim();
-  if (key === 'packer') return <AccountingPackerPage />;
+  const raw = String(section || '').trim().toLowerCase();
+  const key = LEGACY_TO_SECTION[raw] || raw;
 
-  if (key === 'stats') {
-    return (
-      <div className="accounting-surface-page">
-        <div className="accounting-surface-card accounting-stats-empty-card" aria-label="Sayt statistikasi">
-          <div className="accounting-surface-card-accent" aria-hidden />
-          <div className="accounting-surface-card-inner accounting-stats-empty-inner" />
-        </div>
-      </div>
-    );
-  }
-
-  if (FINANCE_KINDS.has(key)) {
-    const title = SECTION_TITLES[key] || key;
-    return <AccountingWorkRoleFinancePage kind={key} title={title} />;
-  }
+  if (key === 'payroll') return <PayrollSection />;
+  if (key === 'transactions') return <TransactionsSection />;
+  if (key === 'reports') return <ReportsSection />;
+  if (key === 'calendar') return <CalendarSection />;
+  if (key === 'activity') return <ActivitySection />;
+  if (key === 'summary') return <ReportsMiniHighlights />;
 
   return <Navigate to="/accounting" replace />;
 }

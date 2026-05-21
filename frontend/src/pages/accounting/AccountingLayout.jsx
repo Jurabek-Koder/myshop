@@ -1,307 +1,644 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  Activity,
+  Bell,
+  CalendarClock,
+  CreditCard,
+  Landmark,
+  LayoutDashboard,
+  Menu,
+  Moon,
+  Plus,
+  ReceiptText,
+  SunMedium,
+  Wallet,
+  X,
+} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { usePickerUiSettings } from '../../context/PickerUiSettingsContext';
-import StaffTopbarBellCluster, { StaffNotifModalHeader } from '../../components/staff/StaffTopbarBellCluster';
-import StaffTopbarProfileMenu from '../../components/staff/StaffTopbarProfileMenu';
-import { formatDateTimeUz } from '../../utils/uzbekistanTime.js';
-import '../picker/PickerDashboard.css';
-import '../warehouseAdmin/WarehouseAdminDashboard.css';
+import {
+  useAccountingNotifications,
+  useApproveWithdrawal,
+  useCreatePayrollPayment,
+  useCreateTransaction,
+  useFinancialTransactions,
+  useMarkNotificationRead,
+  useMarkWithdrawalPaid,
+  usePayrollEmployees,
+} from '../../lib/accountingApi.js';
+import { formatDateTime, formatMoney, initials } from './accountingFormatters.js';
+import { useAccountingUiStore } from '../../stores/accountingUiStore.js';
 import './AccountingDashboard.css';
 
-function formatBellDate(value) {
-  return formatDateTimeUz(value, { empty: '-' });
-}
-
-/** Yon panel: ichki buxgalteriya sahifalari (rollik panellar emas). */
-const ACCOUNTING_SIDE_NAV = [
-  { path: '/accounting', label: 'Bosh sahifa', icon: '🏠', end: true },
-  { path: '/accounting/packer', label: 'Packer', icon: '📦' },
-  { path: '/accounting/picker', label: 'Picker', icon: '🛒' },
-  { path: '/accounting/courier', label: 'Kuryer', icon: '🛵' },
-  { path: '/accounting/operator', label: 'Operator', icon: '💬' },
-  { path: '/accounting/seller', label: 'Seller', icon: '🏪' },
-  { path: '/accounting/stats', label: 'Sayt statistikasi', icon: '📈' },
+export const ACCOUNTING_NAV_ITEMS = [
+  {
+    path: '/accounting',
+    label: 'Boshqaruv paneli',
+    description: 'Analitika va real-time KPI',
+    icon: LayoutDashboard,
+    end: true,
+  },
+  {
+    path: '/accounting/payroll',
+    label: 'Ish haqi boshqaruvi',
+    description: 'Avans, oylik va xodimlar',
+    icon: Wallet,
+  },
+  {
+    path: '/accounting/transactions',
+    label: 'Daromad va xarajatlar',
+    description: 'Moliyaviy oqimlar va filtrlash',
+    icon: Landmark,
+  },
+  {
+    path: '/accounting/reports',
+    label: 'Hisobotlar',
+    description: 'Export va rentabellik tahlili',
+    icon: ReceiptText,
+  },
+  {
+    path: '/accounting/calendar',
+    label: 'Payroll kalendari',
+    description: "Muddatlar va kechikkan to'lovlar",
+    icon: CalendarClock,
+  },
+  {
+    path: '/accounting/activity',
+    label: 'Faollik jurnali',
+    description: "Oxirgi o'zgarishlar va audit",
+    icon: Activity,
+  },
 ];
 
-function isAccountingSideNavActive(pathname, navPath, endOnly) {
-  const p = String(pathname || '/').replace(/\/+$/, '') || '/';
-  const n = String(navPath || '').replace(/\/+$/, '') || '/';
-  if (endOnly || n === '/accounting') return p === '/accounting';
-  return p === n || p.startsWith(`${n}/`);
+const NOTIFICATION_ACTIONS = {
+  withdrawal: 'Tasdiqlash',
+  withdrawal_payout: "Pul o'tkazildi",
+};
+
+function getPageMeta(pathname) {
+  const matched = ACCOUNTING_NAV_ITEMS.find((item) => {
+    if (item.end) return pathname === item.path;
+    return pathname === item.path || pathname.startsWith(`${item.path}/`);
+  });
+  return matched || ACCOUNTING_NAV_ITEMS[0];
 }
 
-/** Buxgalteriya qobig‘i — topbar, yon menyu, `<Outlet />` ichida sahifa. */
-export default function AccountingLayout() {
-  const { user, logout, request } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { theme, toggleTheme } = useTheme();
-  const {
-    notificationsEnabled,
-    setNotificationsEnabled,
-    t: pickerUiT,
-  } = usePickerUiSettings();
+function NotificationActionButton({ item, approveMutation, markPaidMutation, markReadMutation }) {
+  const pending = approveMutation.isPending || markPaidMutation.isPending || markReadMutation.isPending;
 
-  const who = String(user?.full_name || user?.login || '').trim();
-  const displayName = who || 'Buxgalter';
-  const isDark = theme === 'dark';
+  if (item.link_type === 'withdrawal' && item.link_id) {
+    return (
+      <button
+        type="button"
+        className="accounting-mini-button accounting-mini-button--primary"
+        disabled={pending}
+        onClick={() => approveMutation.mutate({ withdrawalId: item.link_id, status: 'approved', note: '' })}
+      >
+        {NOTIFICATION_ACTIONS.withdrawal}
+      </button>
+    );
+  }
 
-  const [sidePanelOpen, setSidePanelOpen] = useState(false);
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [bellBusyId, setBellBusyId] = useState(null);
-
-  const loadNotifications = useCallback(async () => {
-    try {
-      const res = await request('/accounting/portal/notifications');
-      const d = res.ok ? await res.json() : { notifications: [] };
-      setNotifications(d.notifications || []);
-    } catch (_) {
-      setNotifications([]);
-    }
-  }, [request]);
-
-  useEffect(() => {
-    void loadNotifications();
-  }, [loadNotifications, notificationsOpen]);
-
-  const handleApproveWithdrawal = useCallback(
-    async (notif) => {
-      if (notif?.link_type !== 'withdrawal' || !notif?.link_id) return;
-      setBellBusyId(notif.id);
-      try {
-        const res = await request(`/accounting/portal/withdrawal-requests/${notif.link_id}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ status: 'approved', note: '' }),
-        });
-        if (res.ok) {
-          await request(`/accounting/portal/notifications/${notif.id}/read`, { method: 'PATCH' });
-          await loadNotifications();
-        }
-      } finally {
-        setBellBusyId(null);
-      }
-    },
-    [request, loadNotifications],
-  );
-
-  const handleMarkPaid = useCallback(
-    async (notif) => {
-      if (notif?.link_type !== 'withdrawal_payout' || !notif?.link_id) return;
-      setBellBusyId(notif.id);
-      try {
-        const res = await request(`/accounting/portal/withdrawal-requests/${notif.link_id}/mark-paid`, {
-          method: 'PATCH',
-          body: JSON.stringify({}),
-        });
-        if (res.ok) {
-          await request(`/accounting/portal/notifications/${notif.id}/read`, { method: 'PATCH' });
-          await loadNotifications();
-        }
-      } finally {
-        setBellBusyId(null);
-      }
-    },
-    [request, loadNotifications],
-  );
-
-  const unreadCount = notifications.filter((n) => !n.read_at).length;
-
-  const closeSidebar = useCallback(() => setSidePanelOpen(false), []);
+  if (item.link_type === 'withdrawal_payout' && item.link_id) {
+    return (
+      <button
+        type="button"
+        className="accounting-mini-button accounting-mini-button--primary"
+        disabled={pending}
+        onClick={() => markPaidMutation.mutate(item.link_id)}
+      >
+        {NOTIFICATION_ACTIONS.withdrawal_payout}
+      </button>
+    );
+  }
 
   return (
-    <div className="picker-app picker-mobile warehouse-admin-shell accounting-panel-shell">
-      <div className="picker-phone-frame">
-        <header className="picker-topbar no-print warehouse-admin-topbar">
-          <div className="picker-topbar-inner">
+    <button
+      type="button"
+      className="accounting-mini-button"
+      disabled={pending}
+      onClick={() => markReadMutation.mutate(item.id)}
+    >
+      O'qildi
+    </button>
+  );
+}
+
+function TransactionModal() {
+  const { transactionModal, closeTransactionModal } = useAccountingUiStore();
+  const { data: transactionData } = useFinancialTransactions({ limit: 12 });
+  const mutation = useCreateTransaction();
+  const [form, setForm] = useState({
+    direction: 'expense',
+    category_slug: 'shop_expense',
+    source_type: 'shop_expense',
+    title: '',
+    amount: '',
+    payment_method: 'bank',
+    occurred_at: new Date().toISOString().slice(0, 10),
+    counterparty: '',
+    note: '',
+  });
+
+  const categories = transactionData?.categories || { income: [], expense: [] };
+  const directionCategories = form.direction === 'income' ? categories.income : categories.expense;
+
+  useEffect(() => {
+    if (!transactionModal.open) return;
+    const defaults = transactionModal.defaults || {};
+    setForm({
+      direction: defaults.direction || 'expense',
+      category_slug: defaults.category_slug || (defaults.direction === 'income' ? 'manual_income' : 'shop_expense'),
+      source_type: defaults.source_type || (defaults.direction === 'income' ? 'manual_income' : 'shop_expense'),
+      title: '',
+      amount: '',
+      payment_method: 'bank',
+      occurred_at: new Date().toISOString().slice(0, 10),
+      counterparty: '',
+      note: '',
+    });
+  }, [transactionModal]);
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    await mutation.mutateAsync({
+      ...form,
+      amount: Number(form.amount),
+      source_type:
+        form.source_type ||
+        (form.direction === 'income'
+          ? form.category_slug || 'manual_income'
+          : form.category_slug || 'shop_expense'),
+      occurred_at: `${form.occurred_at} 10:00:00`,
+    });
+    closeTransactionModal();
+  }
+
+  return (
+    <AnimatePresence>
+      {transactionModal.open ? (
+        <motion.div className="accounting-modal-root" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <button type="button" className="accounting-modal-backdrop" onClick={closeTransactionModal} aria-label="Yopish" />
+          <motion.div
+            className="accounting-modal-card"
+            initial={{ y: 24, opacity: 0, scale: 0.98 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 24, opacity: 0, scale: 0.98 }}
+          >
+            <div className="accounting-modal-head">
+              <div>
+                <h3>Yangi moliyaviy yozuv</h3>
+                <p>Daromad yoki xarajat yozuvini qo'shing.</p>
+              </div>
+              <button type="button" className="accounting-icon-button" onClick={closeTransactionModal} aria-label="Yopish">
+                <X size={18} />
+              </button>
+            </div>
+            <form className="accounting-form-grid" onSubmit={handleSubmit}>
+              <label>
+                <span>Yo'nalish</span>
+                <select
+                  value={form.direction}
+                  onChange={(event) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      direction: event.target.value,
+                      category_slug: event.target.value === 'income' ? 'manual_income' : 'shop_expense',
+                      source_type: event.target.value === 'income' ? 'manual_income' : 'shop_expense',
+                    }))
+                  }
+                >
+                  <option value="expense">Xarajat</option>
+                  <option value="income">Daromad</option>
+                </select>
+              </label>
+              <label>
+                <span>Kategoriya</span>
+                <select
+                  value={form.category_slug}
+                  onChange={(event) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      category_slug: event.target.value,
+                      source_type: event.target.value,
+                    }))
+                  }
+                >
+                  {directionCategories.map((item) => (
+                    <option key={item.slug} value={item.slug}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="accounting-form-grid--wide">
+                <span>Sarlavha</span>
+                <input
+                  value={form.title}
+                  onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
+                  placeholder="Masalan, studio ijarasi"
+                  required
+                />
+              </label>
+              <label>
+                <span>Summa</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={form.amount}
+                  onChange={(event) => setForm((prev) => ({ ...prev, amount: event.target.value }))}
+                  placeholder="0"
+                  required
+                />
+              </label>
+              <label>
+                <span>Sana</span>
+                <input
+                  type="date"
+                  value={form.occurred_at}
+                  onChange={(event) => setForm((prev) => ({ ...prev, occurred_at: event.target.value }))}
+                />
+              </label>
+              <label>
+                <span>To'lov usuli</span>
+                <select
+                  value={form.payment_method}
+                  onChange={(event) => setForm((prev) => ({ ...prev, payment_method: event.target.value }))}
+                >
+                  <option value="bank">Bank</option>
+                  <option value="transfer">O'tkazma</option>
+                  <option value="cash">Naqd</option>
+                  <option value="card">Karta</option>
+                </select>
+              </label>
+              <label>
+                <span>Tomon</span>
+                <input
+                  value={form.counterparty}
+                  onChange={(event) => setForm((prev) => ({ ...prev, counterparty: event.target.value }))}
+                  placeholder="Yetkazib beruvchi yoki mijoz"
+                />
+              </label>
+              <label className="accounting-form-grid--wide">
+                <span>Izoh</span>
+                <textarea
+                  rows={3}
+                  value={form.note}
+                  onChange={(event) => setForm((prev) => ({ ...prev, note: event.target.value }))}
+                  placeholder="Qo'shimcha ma'lumot"
+                />
+              </label>
+              {mutation.error ? <div className="accounting-form-error">{mutation.error.message}</div> : null}
+              <div className="accounting-modal-actions">
+                <button type="button" className="accounting-secondary-button" onClick={closeTransactionModal}>
+                  Bekor qilish
+                </button>
+                <button type="submit" className="accounting-primary-button" disabled={mutation.isPending}>
+                  {mutation.isPending ? 'Saqlanmoqda...' : 'Saqlash'}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
+  );
+}
+
+function PaymentModal() {
+  const { paymentModal, closePaymentModal } = useAccountingUiStore();
+  const { data: employeesData } = usePayrollEmployees({});
+  const mutation = useCreatePayrollPayment();
+  const [form, setForm] = useState({
+    employee_id: '',
+    phase: 'salary',
+    amount: '',
+    payment_method: 'bank',
+    month_key: new Date().toISOString().slice(0, 7),
+    note: '',
+  });
+
+  useEffect(() => {
+    if (!paymentModal.open) return;
+    setForm({
+      employee_id: paymentModal.defaults?.employee_id ? String(paymentModal.defaults.employee_id) : '',
+      phase: paymentModal.defaults?.phase || 'salary',
+      amount: '',
+      payment_method: 'bank',
+      month_key: new Date().toISOString().slice(0, 7),
+      note: '',
+    });
+  }, [paymentModal]);
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    await mutation.mutateAsync({
+      ...form,
+      employee_id: Number(form.employee_id),
+      amount: Number(form.amount),
+    });
+    closePaymentModal();
+  }
+
+  return (
+    <AnimatePresence>
+      {paymentModal.open ? (
+        <motion.div className="accounting-modal-root" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <button type="button" className="accounting-modal-backdrop" onClick={closePaymentModal} aria-label="Yopish" />
+          <motion.div
+            className="accounting-modal-card"
+            initial={{ y: 24, opacity: 0, scale: 0.98 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 24, opacity: 0, scale: 0.98 }}
+          >
+            <div className="accounting-modal-head">
+              <div>
+                <h3>Ish haqi to'lovi</h3>
+                <p>Avans yoki oylik ish haqi yozuvini kiriting.</p>
+              </div>
+              <button type="button" className="accounting-icon-button" onClick={closePaymentModal} aria-label="Yopish">
+                <X size={18} />
+              </button>
+            </div>
+            <form className="accounting-form-grid" onSubmit={handleSubmit}>
+              <label className="accounting-form-grid--wide">
+                <span>Xodim</span>
+                <select
+                  value={form.employee_id}
+                  onChange={(event) => setForm((prev) => ({ ...prev, employee_id: event.target.value }))}
+                  required
+                >
+                  <option value="">Xodimni tanlang</option>
+                  {(employeesData?.employees || []).map((employee) => (
+                    <option key={employee.id} value={employee.id}>
+                      {employee.full_name} - {formatMoney(employee.monthly_salary)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>Bosqich</span>
+                <select value={form.phase} onChange={(event) => setForm((prev) => ({ ...prev, phase: event.target.value }))}>
+                  <option value="advance">Avans</option>
+                  <option value="salary">Oylik ish haqi</option>
+                </select>
+              </label>
+              <label>
+                <span>Oy</span>
+                <input
+                  type="month"
+                  value={form.month_key}
+                  onChange={(event) => setForm((prev) => ({ ...prev, month_key: event.target.value }))}
+                />
+              </label>
+              <label>
+                <span>Summa</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={form.amount}
+                  onChange={(event) => setForm((prev) => ({ ...prev, amount: event.target.value }))}
+                  required
+                />
+              </label>
+              <label>
+                <span>To'lov usuli</span>
+                <select
+                  value={form.payment_method}
+                  onChange={(event) => setForm((prev) => ({ ...prev, payment_method: event.target.value }))}
+                >
+                  <option value="bank">Bank</option>
+                  <option value="transfer">O'tkazma</option>
+                  <option value="cash">Naqd</option>
+                  <option value="card">Karta</option>
+                </select>
+              </label>
+              <label className="accounting-form-grid--wide">
+                <span>Izoh</span>
+                <textarea
+                  rows={3}
+                  value={form.note}
+                  onChange={(event) => setForm((prev) => ({ ...prev, note: event.target.value }))}
+                  placeholder="Izoh yoki to'lov maqsadi"
+                />
+              </label>
+              {mutation.error ? <div className="accounting-form-error">{mutation.error.message}</div> : null}
+              <div className="accounting-modal-actions">
+                <button type="button" className="accounting-secondary-button" onClick={closePaymentModal}>
+                  Bekor qilish
+                </button>
+                <button type="submit" className="accounting-primary-button" disabled={mutation.isPending}>
+                  {mutation.isPending ? 'Yozilmoqda...' : "To'lovni yozish"}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
+  );
+}
+
+export default function AccountingLayout() {
+  const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const currentPage = useMemo(() => getPageMeta(location.pathname), [location.pathname]);
+  const notificationsQuery = useAccountingNotifications();
+  const unreadCount = (notificationsQuery.data?.notifications || []).filter((item) => !item.read_at).length;
+  const approveMutation = useApproveWithdrawal();
+  const markPaidMutation = useMarkWithdrawalPaid();
+  const markReadMutation = useMarkNotificationRead();
+  const { openTransactionModal, openPaymentModal } = useAccountingUiStore();
+
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
+
+  const displayName = String(user?.full_name || user?.login || 'Buxgalter').trim();
+  const userRole = String(user?.role || '').trim().toLowerCase();
+  const isDark = theme === 'dark';
+
+  return (
+    <div className="accounting-shell">
+      <div className="accounting-shell__backdrop" aria-hidden />
+      <AnimatePresence>
+        {sidebarOpen ? (
+          <motion.button
+            type="button"
+            className="accounting-shell__overlay"
+            onClick={() => setSidebarOpen(false)}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            aria-label="Yon menyuni yopish"
+          />
+        ) : null}
+      </AnimatePresence>
+
+      <aside className={`accounting-sidebar${sidebarOpen ? ' is-open' : ''}`}>
+        <div className="accounting-brand">
+          <div className="accounting-brand__badge">MS</div>
+          <div>
+            <span>MyShop Finance OS</span>
+            <small>Premium accounting workspace</small>
+          </div>
+        </div>
+
+        <div className="accounting-profile-card">
+          <div className="accounting-profile-card__avatar">{initials(displayName)}</div>
+          <div>
+            <strong>{displayName}</strong>
+            <small>{userRole === 'superuser' ? 'Superuser / moliya nazorati' : 'Buxgalteriya operatori'}</small>
+          </div>
+        </div>
+
+        <nav className="accounting-nav" aria-label="Buxgalteriya bo'limlari">
+          {ACCOUNTING_NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            return (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                end={item.end}
+                className={({ isActive }) => `accounting-nav__item${isActive ? ' is-active' : ''}`}
+              >
+                <span className="accounting-nav__icon">
+                  <Icon size={18} />
+                </span>
+                <span>
+                  <strong>{item.label}</strong>
+                  <small>{item.description}</small>
+                </span>
+              </NavLink>
+            );
+          })}
+        </nav>
+
+        <div className="accounting-sidebar__footer">
+          <button type="button" className="accounting-sidebar__ghost" onClick={toggleTheme}>
+            {isDark ? <SunMedium size={16} /> : <Moon size={16} />}
+            <span>{isDark ? "Yorug' mavzu" : 'Tungi mavzu'}</span>
+          </button>
+          <button
+            type="button"
+            className="accounting-sidebar__ghost"
+            onClick={() => {
+              logout();
+              navigate('/');
+            }}
+          >
+            <X size={16} />
+            <span>Chiqish</span>
+          </button>
+        </div>
+      </aside>
+
+      <div className="accounting-app">
+        <header className="accounting-topbar">
+          <div className="accounting-topbar__left">
+            <button type="button" className="accounting-icon-button accounting-mobile-only" onClick={() => setSidebarOpen(true)}>
+              <Menu size={18} />
+            </button>
+            <div>
+              <div className="accounting-kicker">MyShop bugalteriya platformasi</div>
+              <h1>{currentPage.label}</h1>
+              <p>{currentPage.description}</p>
+            </div>
+          </div>
+
+          <div className="accounting-topbar__actions">
             <button
               type="button"
-              className="picker-topbar-hamburger warehouse-admin-topbar-hamburger"
-              onClick={() => setSidePanelOpen((v) => !v)}
-              aria-label={sidePanelOpen ? pickerUiT.ariaSideClose : pickerUiT.ariaSideOpen}
-              aria-expanded={sidePanelOpen}
+              className="accounting-secondary-button accounting-topbar__quick"
+              onClick={() => openTransactionModal({ direction: 'expense' })}
             >
-              <span className="picker-hamburger-icon" />
+              <Plus size={16} />
+              Xarajat
             </button>
-            <span className="picker-topbar-logo">MyShop · Buxgalteriya</span>
-            <div className="picker-topbar-right">
-              <StaffTopbarBellCluster
-                t={pickerUiT}
-                notificationsEnabled={notificationsEnabled}
-                notificationsOpen={notificationsOpen}
-                setNotificationsOpen={setNotificationsOpen}
-                unreadCount={unreadCount}
-                onBellOpenChange={(open) => {
-                  if (open) setProfileMenuOpen(false);
-                }}
-              >
-                {notificationsOpen && (
-                  <>
-                    <div
-                      className="picker-bell-backdrop"
-                      onClick={() => setNotificationsOpen(false)}
-                      aria-hidden="true"
-                    />
-                    <div className="picker-bell-dropdown">
-                      <StaffNotifModalHeader
-                        t={pickerUiT}
-                        notificationsEnabled={notificationsEnabled}
-                        setNotificationsEnabled={setNotificationsEnabled}
-                      />
-                      {notifications.length === 0 ? (
-                        <p className="picker-bell-empty">Xabar yo‘q</p>
+            <button
+              type="button"
+              className="accounting-primary-button accounting-topbar__quick"
+              onClick={() => openPaymentModal({ phase: 'salary' })}
+            >
+              <CreditCard size={16} />
+              Ish haqi
+            </button>
+            <div className="accounting-notification-wrap">
+              <button type="button" className="accounting-icon-button" onClick={() => setNotificationsOpen((prev) => !prev)}>
+                <Bell size={18} />
+                {unreadCount ? <span className="accounting-badge">{unreadCount}</span> : null}
+              </button>
+              <AnimatePresence>
+                {notificationsOpen ? (
+                  <motion.div
+                    className="accounting-notification-panel"
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 12 }}
+                  >
+                    <div className="accounting-notification-panel__head">
+                      <div>
+                        <strong>Bildirishnomalar</strong>
+                        <small>Withdrawal oqimi va tizim eslatmalari</small>
+                      </div>
+                      <button type="button" className="accounting-icon-button" onClick={() => setNotificationsOpen(false)}>
+                        <X size={16} />
+                      </button>
+                    </div>
+                    <div className="accounting-notification-list">
+                      {(notificationsQuery.data?.notifications || []).length ? (
+                        notificationsQuery.data.notifications.map((item) => (
+                          <div key={item.id} className={`accounting-notification-item${item.read_at ? '' : ' is-unread'}`}>
+                            <div>
+                              <strong>{item.title}</strong>
+                              <p>{item.body}</p>
+                              <small>{formatDateTime(item.created_at)}</small>
+                            </div>
+                            <NotificationActionButton
+                              item={item}
+                              approveMutation={approveMutation}
+                              markPaidMutation={markPaidMutation}
+                              markReadMutation={markReadMutation}
+                            />
+                          </div>
+                        ))
                       ) : (
-                        <ul className="accounting-bell-list picker-bell-list">
-                          {notifications.map((n) => (
-                            <li key={n.id} className={n.read_at ? '' : 'unread'}>
-                              <div className="accounting-bell-item">
-                                <div className="accounting-bell-item-title">{n.title}</div>
-                                <div className="accounting-bell-item-body">{n.body}</div>
-                                <div className="accounting-bell-item-date">{formatBellDate(n.created_at)}</div>
-                                {n.link_type === 'withdrawal' && n.link_id && (
-                                  <button
-                                    type="button"
-                                    className="btn btn-success btn-sm accounting-bell-action"
-                                    disabled={bellBusyId === n.id}
-                                    onClick={() => {
-                                      handleApproveWithdrawal(n);
-                                      setNotificationsOpen(false);
-                                    }}
-                                  >
-                                    {bellBusyId === n.id ? '...' : 'Tasdiqlash'}
-                                  </button>
-                                )}
-                                {n.link_type === 'withdrawal_payout' && n.link_id && (
-                                  <button
-                                    type="button"
-                                    className="btn btn-primary btn-sm accounting-bell-action"
-                                    disabled={bellBusyId === n.id}
-                                    onClick={() => {
-                                      handleMarkPaid(n);
-                                      setNotificationsOpen(false);
-                                    }}
-                                  >
-                                    {bellBusyId === n.id ? '...' : 'Pul berildi'}
-                                  </button>
-                                )}
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
+                        <div className="accounting-empty-inline">Yangi bildirishnoma yo'q.</div>
                       )}
                     </div>
-                  </>
-                )}
-              </StaffTopbarBellCluster>
-              <div className="picker-topbar-profile-slot">
-                <StaffTopbarProfileMenu
-                  name={displayName}
-                  avatarUrl={user?.avatar_url || undefined}
-                  open={profileMenuOpen}
-                  onOpenChange={(next) => {
-                    setProfileMenuOpen(next);
-                    if (next) setNotificationsOpen(false);
-                  }}
-                  labels={{
-                    home: pickerUiT.navHome,
-                    profile: pickerUiT.navProfile,
-                    settings: pickerUiT.navSettings,
-                    logout: pickerUiT.logout,
-                  }}
-                  onHome={() => navigate('/accounting')}
-                  onProfile={() => navigate('/profile')}
-                  onSettings={() => navigate('/profile')}
-                  onLogout={() => {
-                    logout();
-                    navigate('/');
-                  }}
-                />
-              </div>
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
             </div>
           </div>
         </header>
 
-        <aside className={`picker-side-panel ${sidePanelOpen ? 'open' : ''}`} aria-hidden={!sidePanelOpen}>
-          <div className="picker-side-panel-inner">
-            <div className="picker-side-panel-head">Bo&apos;limlar</div>
-            <p className="courier-side-intro operator-side-intro">
-              <strong>{displayName}</strong>
-              <span className="courier-side-meta">Buxgalteriya</span>
-            </p>
-            <nav className="picker-side-panel-nav" aria-label="Buxgalteriya bo‘limlari">
-              {ACCOUNTING_SIDE_NAV.map((item) => (
-                <button
-                  key={item.path}
-                  type="button"
-                  className={`picker-side-panel-item${
-                    isAccountingSideNavActive(location.pathname, item.path, item.end)
-                      ? ' picker-side-panel-item-active'
-                      : ''
-                  }`}
-                  onClick={() => {
-                    navigate(item.path);
-                    closeSidebar();
-                  }}
-                >
-                  <span className="picker-side-panel-item-icon" aria-hidden>
-                    {item.icon}
-                  </span>
-                  <span>{item.label}</span>
-                </button>
-              ))}
-            </nav>
-            <div className="picker-side-panel-footer">
-              <div className="picker-side-panel-theme-row">
-                <span className="picker-side-panel-theme-label">
-                  <span
-                    className={`picker-side-panel-theme-icon${isDark ? ' picker-side-panel-theme-icon--moon' : ''}`}
-                    aria-hidden
-                  >
-                    {isDark ? '🌙' : '☀️'}
-                  </span>
-                  <span className="picker-side-panel-theme-text">
-                    {isDark ? pickerUiT.themeMoonLabel : pickerUiT.themeSunLabel}
-                  </span>
-                </span>
-                <button
-                  type="button"
-                  className={`picker-ios-theme-toggle ${isDark ? 'picker-ios-theme-toggle-dark' : ''}`}
-                  onClick={toggleTheme}
-                  role="switch"
-                  aria-checked={isDark}
-                  aria-label="Mavzu"
-                >
-                  <span className="picker-ios-theme-thumb" />
-                </button>
-              </div>
-              <button
-                type="button"
-                className="picker-side-panel-logout"
-                onClick={() => {
-                  logout();
-                  navigate('/');
-                }}
-              >
-                Chiqish
-              </button>
-            </div>
-          </div>
-        </aside>
-        <div
-          className={`picker-side-panel-overlay ${sidePanelOpen ? 'show' : ''}`}
-          aria-hidden={!sidePanelOpen}
-          onClick={closeSidebar}
-        />
-
-        <main className="picker-main warehouse-admin-main accounting-main">
-          <div className="warehouse-admin-page accounting-page">
-            <Outlet />
-          </div>
+        <main className="accounting-main">
+          <Outlet />
         </main>
+
+        <nav className="accounting-bottom-nav" aria-label="Mobil bo'limlar">
+          {ACCOUNTING_NAV_ITEMS.slice(0, 4).map((item) => {
+            const Icon = item.icon;
+            const isActive = item.end ? location.pathname === item.path : location.pathname.startsWith(item.path);
+            return (
+              <NavLink key={item.path} to={item.path} end={item.end} className={`accounting-bottom-nav__item${isActive ? ' is-active' : ''}`}>
+                <Icon size={18} />
+                <span>{item.label.split(' ')[0]}</span>
+              </NavLink>
+            );
+          })}
+        </nav>
       </div>
+
+      <TransactionModal />
+      <PaymentModal />
     </div>
   );
 }

@@ -110,7 +110,7 @@ function isWarehouseAdmin(user) {
 
 function isAccounting(user) {
   const role = String(user?.role || '').toLowerCase();
-  return role === 'accounting';
+  return role === 'accounting' || role === 'superuser' || user?.role_id === 1;
 }
 
 function GateCard({ title, message, children }) {
@@ -317,7 +317,7 @@ function AccountingRoute({ children }) {
     return <SessionGate message={authMessage} onRetry={retrySession} />;
   }
   if (!isAccounting(user) || authStatus === 'forbidden') {
-    return <ForbiddenGate message="Buxgalteriya paneli faqat buxgalteriya roli uchun." />;
+    return <ForbiddenGate message="Buxgalteriya paneli accounting yoki superuser roli uchun." />;
   }
 
   return children;

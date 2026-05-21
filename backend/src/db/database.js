@@ -395,6 +395,132 @@ export function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_ad_slides_order ON ad_slides (sort_order ASC, id ASC);
   `);
 
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS employees (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER UNIQUE REFERENCES users(id) ON DELETE SET NULL,
+      employee_code TEXT UNIQUE NOT NULL,
+      full_name TEXT NOT NULL,
+      phone TEXT,
+      telegram_chat_id TEXT,
+      monthly_salary REAL NOT NULL DEFAULT 0,
+      advance_percent REAL NOT NULL DEFAULT 50,
+      currency TEXT NOT NULL DEFAULT 'UZS',
+      employment_type TEXT NOT NULL DEFAULT 'full_time',
+      hire_date TEXT,
+      notes TEXT,
+      status TEXT NOT NULL DEFAULT 'active',
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_employees_status ON employees(status);
+
+    CREATE TABLE IF NOT EXISTS payroll_cycles (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      month_key TEXT NOT NULL,
+      cycle_type TEXT NOT NULL,
+      cycle_label TEXT NOT NULL,
+      cycle_start TEXT NOT NULL,
+      cycle_end TEXT NOT NULL,
+      due_date TEXT NOT NULL,
+      base_amount REAL NOT NULL DEFAULT 0,
+      paid_amount REAL NOT NULL DEFAULT 0,
+      remaining_amount REAL NOT NULL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'pending',
+      is_overdue INTEGER NOT NULL DEFAULT 0,
+      last_payment_at TEXT,
+      last_notified_at TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(employee_id, month_key, cycle_type)
+    );
+    CREATE INDEX IF NOT EXISTS idx_payroll_cycles_employee ON payroll_cycles(employee_id);
+    CREATE INDEX IF NOT EXISTS idx_payroll_cycles_month ON payroll_cycles(month_key, due_date);
+    CREATE INDEX IF NOT EXISTS idx_payroll_cycles_status ON payroll_cycles(status, due_date);
+
+    CREATE TABLE IF NOT EXISTS salary_payments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      payroll_cycle_id INTEGER NOT NULL REFERENCES payroll_cycles(id) ON DELETE CASCADE,
+      payment_phase TEXT NOT NULL,
+      amount REAL NOT NULL,
+      payment_method TEXT NOT NULL DEFAULT 'bank',
+      payment_status TEXT NOT NULL DEFAULT 'paid',
+      paid_at TEXT NOT NULL DEFAULT (datetime('now')),
+      note TEXT,
+      created_by INTEGER REFERENCES users(id),
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_salary_payments_employee ON salary_payments(employee_id);
+    CREATE INDEX IF NOT EXISTS idx_salary_payments_cycle ON salary_payments(payroll_cycle_id);
+    CREATE INDEX IF NOT EXISTS idx_salary_payments_paid_at ON salary_payments(paid_at DESC);
+
+    CREATE TABLE IF NOT EXISTS expense_categories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      slug TEXT UNIQUE NOT NULL,
+      label_uz TEXT NOT NULL,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS income_categories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      slug TEXT UNIQUE NOT NULL,
+      label_uz TEXT NOT NULL,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS financial_transactions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      direction TEXT NOT NULL,
+      category_type TEXT NOT NULL,
+      category_slug TEXT,
+      category_name TEXT,
+      source_type TEXT NOT NULL DEFAULT 'manual',
+      reference_type TEXT,
+      reference_id INTEGER,
+      amount REAL NOT NULL,
+      title TEXT NOT NULL,
+      note TEXT,
+      payment_method TEXT NOT NULL DEFAULT 'bank',
+      counterparty TEXT,
+      occurred_at TEXT NOT NULL DEFAULT (datetime('now')),
+      created_by INTEGER REFERENCES users(id),
+      metadata_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_financial_transactions_direction ON financial_transactions(direction, occurred_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_financial_transactions_category ON financial_transactions(category_slug, occurred_at DESC);
+
+    CREATE TABLE IF NOT EXISTS receipts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      receipt_number TEXT UNIQUE NOT NULL,
+      receipt_type TEXT NOT NULL,
+      employee_id INTEGER REFERENCES employees(id) ON DELETE SET NULL,
+      payment_id INTEGER REFERENCES salary_payments(id) ON DELETE SET NULL,
+      created_by INTEGER REFERENCES users(id),
+      payload_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_receipts_payment ON receipts(payment_id);
+
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      actor_user_id INTEGER REFERENCES users(id),
+      entity_type TEXT NOT NULL,
+      entity_id INTEGER,
+      action TEXT NOT NULL,
+      description TEXT NOT NULL,
+      payload_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON audit_logs(created_at DESC);
+  `);
+
   const adSlideCount = db.prepare('SELECT COUNT(*) as c FROM ad_slides').get().c;
   /** Bosh sahifa reklama: frontend `public/images` → buildda `/images/...` */
   const defaultAdSlideImages = [
@@ -443,6 +569,27 @@ export function initDatabase() {
   db.prepare('INSERT OR IGNORE INTO app_settings (key, value) VALUES (?, ?)').run('contest_courier_active', '0');
   db.prepare('INSERT OR IGNORE INTO app_settings (key, value) VALUES (?, ?)').run('contest_start', '');
   db.prepare('INSERT OR IGNORE INTO app_settings (key, value) VALUES (?, ?)').run('contest_end', '');
+
+  const expenseCategorySeed = [
+    ['shop_expense', "Do'kon xarajatlari", 1],
+    ['employee_payroll', 'Xodim oyligi', 2],
+    ['utilities', 'Kommunal to`lovlar', 3],
+    ['transport', 'Transport', 4],
+    ['other_expense', 'Boshqa xarajatlar', 5],
+  ];
+  const incomeCategorySeed = [
+    ['product_sales', 'Mahsulot savdosi', 1],
+    ['manual_income', "Qo'lda kiritilgan daromad", 2],
+    ['service_income', 'Xizmat daromadi', 3],
+  ];
+  const seedExpenseCategory = db.prepare(
+    'INSERT OR IGNORE INTO expense_categories (slug, label_uz, sort_order) VALUES (?, ?, ?)',
+  );
+  const seedIncomeCategory = db.prepare(
+    'INSERT OR IGNORE INTO income_categories (slug, label_uz, sort_order) VALUES (?, ?, ?)',
+  );
+  expenseCategorySeed.forEach((row) => seedExpenseCategory.run(...row));
+  incomeCategorySeed.forEach((row) => seedIncomeCategory.run(...row));
 
   const FOOTER_STRIP_DEF_TEXT = "Bepul yetkazib berish — 500 000 so'mdan ortiq buyurtmalarda";
   const FOOTER_STRIP_DEF_PHONE = '+998 71 123 45 67';
@@ -1201,12 +1348,11 @@ export function getUserAllowedPages(user) {
     return [
       '/',
       '/accounting',
-      '/accounting/packer',
-      '/accounting/picker',
-      '/accounting/courier',
-      '/accounting/operator',
-      '/accounting/seller',
-      '/accounting/stats',
+      '/accounting/payroll',
+      '/accounting/transactions',
+      '/accounting/reports',
+      '/accounting/calendar',
+      '/accounting/activity',
       '/profile',
     ];
   }

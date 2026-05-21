@@ -33,7 +33,12 @@ export default function Layout() {
   /** Bosh sahifa menyusida: «Boshqaruv» ↔ «Loyiha jurnali» faqat bir-biridan ajratiladi */
   const adminViewQuery = location.pathname === '/admin' ? new URLSearchParams(location.search).get('view') : null;
   const isSuperuserUi = Boolean(user && (String(user?.role || '').toLowerCase() === 'superuser' || user.role_id === 1));
-  const isAccountingUi = Boolean(user && String(user?.role || '').toLowerCase() === 'accounting');
+  const isAccountingUi = Boolean(
+    user &&
+      (String(user?.role || '').toLowerCase() === 'accounting' ||
+        String(user?.role || '').toLowerCase() === 'superuser' ||
+        user?.role_id === 1),
+  );
   const isActivityLogShortcut = location.pathname === '/admin/jurnal' || adminViewQuery === 'activity_log';
   const isAdminBoardNavActive = isSuperuserUi && location.pathname === '/admin' && !isActivityLogShortcut;
   const isAccountingBoardNavActive = isAccountingUi && location.pathname.startsWith('/accounting');
@@ -221,7 +226,7 @@ export default function Layout() {
                       Admin panel
                     </Link>
                   )}
-                  {String(user?.role || '').toLowerCase() === 'accounting' && (
+                  {isAccountingUi && (
                     <Link
                       to="/accounting"
                       className={`btn btn-primary btn-sm nav-accounting-panel-cta${isActive('/accounting') ? ' active' : ''}`}

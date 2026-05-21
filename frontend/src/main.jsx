@@ -1,8 +1,21 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App.jsx';
 import './index.css';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+    mutations: {
+      retry: 0,
+    },
+  },
+});
 
 function isLikelyStaleChunkError(err) {
   const m = String(err?.message || err?.name || err || '');
@@ -99,10 +112,12 @@ if (!rootEl) {
 
 ReactDOM.createRoot(rootEl).render(
   <React.StrictMode>
-    <RootErrorBoundary>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </RootErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <RootErrorBoundary>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </RootErrorBoundary>
+    </QueryClientProvider>
   </React.StrictMode>
 );
