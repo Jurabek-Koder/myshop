@@ -366,6 +366,148 @@ export function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_withdrawal_requests_work_role ON withdrawal_requests(work_role_id);
     CREATE INDEX IF NOT EXISTS idx_withdrawal_requests_status ON withdrawal_requests(status);
 
+    CREATE TABLE IF NOT EXISTS employees (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      employee_code TEXT UNIQUE,
+      user_id INTEGER UNIQUE REFERENCES users(id) ON DELETE SET NULL,
+      work_role_id INTEGER UNIQUE REFERENCES work_roles(id) ON DELETE SET NULL,
+      staff_member_id INTEGER UNIQUE REFERENCES staff_members(id) ON DELETE SET NULL,
+      full_name TEXT NOT NULL,
+      department TEXT,
+      job_title TEXT,
+      phone TEXT,
+      monthly_salary REAL NOT NULL DEFAULT 0,
+      advance_day INTEGER NOT NULL DEFAULT 15,
+      final_day INTEGER NOT NULL DEFAULT 30,
+      advance_ratio REAL NOT NULL DEFAULT 0.5,
+      payroll_enabled INTEGER NOT NULL DEFAULT 1,
+      telegram_chat_id TEXT,
+      user_role_snapshot TEXT,
+      is_superuser_employee INTEGER NOT NULL DEFAULT 0,
+      notes TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_employees_payroll_enabled ON employees(payroll_enabled);
+    CREATE INDEX IF NOT EXISTS idx_employees_role_snapshot ON employees(user_role_snapshot);
+
+    CREATE TABLE IF NOT EXISTS payroll_cycles (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      payroll_year INTEGER NOT NULL,
+      payroll_month INTEGER NOT NULL,
+      cycle_type TEXT NOT NULL,
+      cycle_start TEXT NOT NULL,
+      cycle_end TEXT NOT NULL,
+      due_date TEXT NOT NULL,
+      gross_amount REAL NOT NULL DEFAULT 0,
+      paid_amount REAL NOT NULL DEFAULT 0,
+      remaining_amount REAL NOT NULL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'pending',
+      paid_at TEXT,
+      overdue_at TEXT,
+      reminder_sent_at TEXT,
+      overdue_notified_at TEXT,
+      metadata_json TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_payroll_cycles_unique
+      ON payroll_cycles(employee_id, payroll_year, payroll_month, cycle_type);
+    CREATE INDEX IF NOT EXISTS idx_payroll_cycles_due_date ON payroll_cycles(due_date);
+    CREATE INDEX IF NOT EXISTS idx_payroll_cycles_status ON payroll_cycles(status);
+
+    CREATE TABLE IF NOT EXISTS salary_payments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      payroll_cycle_id INTEGER REFERENCES payroll_cycles(id) ON DELETE SET NULL,
+      payment_type TEXT NOT NULL,
+      amount REAL NOT NULL,
+      payment_method TEXT NOT NULL DEFAULT 'cash',
+      reference_number TEXT,
+      note TEXT,
+      paid_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      receipt_id INTEGER REFERENCES receipts(id) ON DELETE SET NULL,
+      paid_at TEXT NOT NULL DEFAULT (datetime('now')),
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_salary_payments_employee ON salary_payments(employee_id);
+    CREATE INDEX IF NOT EXISTS idx_salary_payments_cycle ON salary_payments(payroll_cycle_id);
+
+    CREATE TABLE IF NOT EXISTS expense_categories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      slug TEXT UNIQUE NOT NULL,
+      label_uz TEXT NOT NULL,
+      color TEXT,
+      icon TEXT,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS income_categories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      slug TEXT UNIQUE NOT NULL,
+      label_uz TEXT NOT NULL,
+      color TEXT,
+      icon TEXT,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS receipts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      receipt_number TEXT UNIQUE NOT NULL,
+      employee_id INTEGER REFERENCES employees(id) ON DELETE SET NULL,
+      salary_payment_id INTEGER REFERENCES salary_payments(id) ON DELETE SET NULL,
+      title TEXT NOT NULL,
+      payload_json TEXT,
+      pdf_path TEXT,
+      issued_at TEXT NOT NULL DEFAULT (datetime('now')),
+      created_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_receipts_employee ON receipts(employee_id);
+    CREATE INDEX IF NOT EXISTS idx_receipts_salary_payment ON receipts(salary_payment_id);
+
+    CREATE TABLE IF NOT EXISTS financial_transactions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      direction TEXT NOT NULL,
+      source_type TEXT NOT NULL DEFAULT 'manual',
+      expense_category_id INTEGER REFERENCES expense_categories(id) ON DELETE SET NULL,
+      income_category_id INTEGER REFERENCES income_categories(id) ON DELETE SET NULL,
+      title TEXT NOT NULL,
+      description TEXT,
+      amount REAL NOT NULL,
+      currency TEXT NOT NULL DEFAULT 'UZS',
+      transaction_date TEXT NOT NULL DEFAULT (date('now')),
+      payment_method TEXT NOT NULL DEFAULT 'cash',
+      related_entity_type TEXT,
+      related_entity_id INTEGER,
+      status TEXT NOT NULL DEFAULT 'completed',
+      created_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_financial_transactions_date ON financial_transactions(transaction_date);
+    CREATE INDEX IF NOT EXISTS idx_financial_transactions_direction ON financial_transactions(direction);
+    CREATE INDEX IF NOT EXISTS idx_financial_transactions_source ON financial_transactions(source_type);
+
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      actor_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      action TEXT NOT NULL,
+      entity_type TEXT NOT NULL,
+      entity_id INTEGER,
+      payload_json TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON audit_logs(created_at);
+    CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON audit_logs(entity_type, entity_id);
+
     CREATE TABLE IF NOT EXISTS staff_chat_archive (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       client_message_id TEXT NOT NULL,

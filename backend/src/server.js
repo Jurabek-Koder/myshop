@@ -21,6 +21,7 @@ import { isRenderSubdomainCorsTrustActive } from './config/renderCorsTrust.js';
 import { mutationAuditMiddleware } from './middleware/mutationAudit.js';
 import { db, initDatabase } from './db/database.js';
 import { scheduleSupabaseMirrorSync } from './db/supabaseMirrorSync.js';
+import { scheduleAccountingAutomation } from './lib/accountingPayroll.js';
 import {
   parseHomeBenefitsJson,
   mergeHomeBenefitsForPublic,
@@ -93,6 +94,7 @@ const PORT = await resolveListenPort();
 
 initDatabase();
 scheduleSupabaseMirrorSync(db);
+scheduleAccountingAutomation();
 
 if (process.env.NODE_ENV === 'production') {
   const persisted = !!(process.env.MYSHOP_DATA_DIR && String(process.env.MYSHOP_DATA_DIR).trim());

@@ -1,10 +1,24 @@
 import { Router } from 'express';
+import PDFDocument from 'pdfkit';
 import { authRequired, requireRole } from '../middleware/auth.js';
 import { db } from '../db/database.js';
 import { applyWithdrawalMarkPaid, applyWithdrawalReview } from '../lib/withdrawalRequestActions.js';
+import {
+  createFinancialTransaction,
+  ensureAccountingModuleReady,
+  getActivityFeed,
+  getDashboardOverview,
+  getEmployeePayrollDetails,
+  getPayrollOverview,
+  getReceiptDetails,
+  getReportsSummary,
+  getTransactionsList,
+  registerSalaryPayment,
+  updateEmployeePayrollSettings,
+} from '../lib/accountingPayroll.js';
 
 const router = Router();
-router.use(authRequired, requireRole('accounting'));
+router.use(authRequired, requireRole('accounting', 'superuser'));
 
 /** Sklad `work_roles` jadvalida packer — `alias` = `wr` / `wr2` … */
 function sqlIsPackerWorkRole(alias) {
@@ -480,6 +494,64 @@ function parseReportDays(req) {
   return { days, daysStr: String(days) };
 }
 
+function parsePositiveId(value) {
+  const id = Number.parseInt(String(value ?? ''), 10);
+  return Number.isFinite(id) && id > 0 ? id : null;
+}
+
+function formatMoneyUz(value) {
+  return new Intl.NumberFormat('uz-UZ').format(Math.round((Number(value) || 0) * 100) / 100);
+}
+
+function writeReceiptPdf(res, receipt) {
+  const payload = receipt.payload || {};
+  const employee = payload.employee || {};
+  const payment = payload.payment || {};
+  const cycle = payload.cycle || {};
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${receipt.receipt_number || `receipt-${receipt.id}`}.pdf"`);
+
+  const doc = new PDFDocument({ size: 'A4', margin: 48 });
+  doc.pipe(res);
+
+  doc.fontSize(20).text('MyShop Payroll Receipt', { align: 'left' });
+  doc.moveDown(0.25);
+  doc.fontSize(10).fillColor('#64748b').text(`Receipt No: ${receipt.receipt_number || '-'}`);
+  doc.text(`Issued at: ${receipt.issued_at || '-'}`);
+  doc.moveDown();
+
+  doc.fillColor('#0f172a').fontSize(14).text('Employee');
+  doc.fontSize(11).text(`Full name: ${employee.full_name || receipt.full_name || '-'}`);
+  doc.text(`Department: ${employee.department || receipt.department || '-'}`);
+  doc.text(`Job title: ${employee.job_title || receipt.job_title || '-'}`);
+  doc.text(`Phone: ${employee.phone || receipt.phone || '-'}`);
+  doc.moveDown();
+
+  doc.fontSize(14).text('Payment details');
+  doc.fontSize(11).text(`Payment type: ${payment.payment_type === 'advance' ? 'Avans' : 'Oylik ish haqi'}`);
+  doc.text(`Amount: ${formatMoneyUz(payment.amount)} so'm`);
+  doc.text(`Method: ${payment.payment_method || '-'}`);
+  doc.text(`Paid at: ${payment.paid_at || '-'}`);
+  doc.text(`Note: ${payment.note || '-'}`);
+  doc.moveDown();
+
+  doc.fontSize(14).text('Payroll cycle');
+  doc.fontSize(11).text(`Month: ${cycle.payroll_month || '-'} / ${cycle.payroll_year || '-'}`);
+  doc.text(`Cycle: ${cycle.cycle_type === 'advance' ? 'Avans' : 'Oylik ish haqi'}`);
+  doc.text(`Due date: ${cycle.due_date || '-'}`);
+  doc.text(`Gross amount: ${formatMoneyUz(cycle.gross_amount)} so'm`);
+  doc.text(`Paid amount: ${formatMoneyUz(cycle.paid_amount)} so'm`);
+  doc.text(`Remaining balance: ${formatMoneyUz(cycle.remaining_amount)} so'm`);
+  doc.text(`Status: ${cycle.status || '-'}`);
+  doc.moveDown(1.5);
+
+  doc.fontSize(10).fillColor('#64748b').text(
+    "Mazkur kvitansiya MyShop accounting tizimi orqali avtomatik yaratildi. Kerak bo'lsa brauzer yoki mobil qurilmadan PDF sifatida saqlashingiz mumkin.",
+  );
+  doc.end();
+}
+
 /** Hisobot: to‘g‘ridan-to‘g‘ri `work_role_id` (sklad packer roli) — staff bo‘lmasa ham ishlaydi. */
 router.get('/packers/report', (req, res) => {
   const workRoleId = Number.parseInt(String(req.query.work_role_id ?? ''), 10);
@@ -593,6 +665,193 @@ router.get('/packers/:staffId/report', (req, res) => {
   } catch (e) {
     console.error('accounting portal packer report', e);
     res.status(500).json({ error: 'Hisobot yuklanmadi.' });
+  }
+});
+
+router.get('/dashboard', (req, res) => {
+  try {
+    ensureAccountingModuleReady();
+    const { days } = parseReportDays(req);
+    res.json(getDashboardOverview({ days }));
+  } catch (e) {
+    console.error('accounting dashboard', e);
+    res.status(500).json({ error: 'Boshqaruv paneli ma’lumotlari yuklanmadi.' });
+  }
+});
+
+router.get('/payroll/overview', (req, res) => {
+  try {
+    ensureAccountingModuleReady();
+    res.json(getPayrollOverview());
+  } catch (e) {
+    console.error('accounting payroll overview', e);
+    res.status(500).json({ error: 'Payroll ma’lumotlari yuklanmadi.' });
+  }
+});
+
+router.get('/payroll/employees', (req, res) => {
+  try {
+    ensureAccountingModuleReady();
+    const overview = getPayrollOverview();
+    res.json({ employees: overview.employees });
+  } catch (e) {
+    console.error('accounting payroll employees', e);
+    res.status(500).json({ error: 'Xodimlar ro‘yxati yuklanmadi.' });
+  }
+});
+
+router.get('/payroll/employees/:id', (req, res) => {
+  try {
+    ensureAccountingModuleReady();
+    const employeeId = parsePositiveId(req.params.id);
+    if (!employeeId) return res.status(400).json({ error: 'Xodim ID noto‘g‘ri.' });
+    const data = getEmployeePayrollDetails(employeeId);
+    if (!data) return res.status(404).json({ error: 'Xodim topilmadi.' });
+    res.json(data);
+  } catch (e) {
+    console.error('accounting payroll employee detail', e);
+    res.status(500).json({ error: 'Xodim payroll tafsilotlari yuklanmadi.' });
+  }
+});
+
+router.patch('/payroll/employees/:id', (req, res) => {
+  try {
+    const employeeId = parsePositiveId(req.params.id);
+    if (!employeeId) return res.status(400).json({ error: 'Xodim ID noto‘g‘ri.' });
+    const data = updateEmployeePayrollSettings(employeeId, req.body || {});
+    if (!data) return res.status(404).json({ error: 'Xodim topilmadi.' });
+    res.json(data);
+  } catch (e) {
+    console.error('accounting payroll employee update', e);
+    res.status(400).json({ error: e?.message || 'Payroll sozlamalari yangilanmadi.' });
+  }
+});
+
+router.post('/payroll/payments', async (req, res) => {
+  try {
+    const employeeId = parsePositiveId(req.body?.employee_id);
+    if (!employeeId) return res.status(400).json({ error: 'Xodim ID kerak.' });
+    const cycleType = String(req.body?.cycle_type || '').trim().toLowerCase();
+    const amount = Number(req.body?.amount);
+    if (!['advance', 'final'].includes(cycleType)) {
+      return res.status(400).json({ error: 'To‘lov turi advance yoki final bo‘lishi kerak.' });
+    }
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return res.status(400).json({ error: 'To‘lov summasi musbat son bo‘lishi kerak.' });
+    }
+    const result = await registerSalaryPayment({
+      employeeId,
+      cycleType,
+      amount,
+      paymentMethod: req.body?.payment_method,
+      note: req.body?.note,
+      referenceNumber: req.body?.reference_number,
+      paidByUserId: req.user.id,
+    });
+    res.json(result);
+  } catch (e) {
+    console.error('accounting payroll payment create', e);
+    res.status(400).json({ error: e?.message || 'To‘lov yozuvi yaratilmadi.' });
+  }
+});
+
+router.get('/transactions', (req, res) => {
+  try {
+    ensureAccountingModuleReady();
+    const search = String(req.query.search || '').trim();
+    const direction = String(req.query.direction || 'all').trim().toLowerCase();
+    const categoryType = String(req.query.category_type || 'all').trim().toLowerCase();
+    res.json(getTransactionsList({ search, direction, categoryType }));
+  } catch (e) {
+    console.error('accounting transactions list', e);
+    res.status(500).json({ error: 'Tranzaksiyalar ro‘yxati yuklanmadi.' });
+  }
+});
+
+router.post('/transactions', (req, res) => {
+  try {
+    const direction = String(req.body?.direction || '').trim().toLowerCase();
+    const title = String(req.body?.title || '').trim();
+    const amount = Number(req.body?.amount);
+    if (!['income', 'expense'].includes(direction)) {
+      return res.status(400).json({ error: 'Yo‘nalish income yoki expense bo‘lishi kerak.' });
+    }
+    if (!title) return res.status(400).json({ error: 'Nomi kiritilishi shart.' });
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return res.status(400).json({ error: 'Summa musbat son bo‘lishi kerak.' });
+    }
+    const transaction = createFinancialTransaction({
+      direction,
+      sourceType: req.body?.source_type || 'manual',
+      title,
+      description: req.body?.description || '',
+      amount,
+      paymentMethod: req.body?.payment_method || 'cash',
+      expenseCategoryId: parsePositiveId(req.body?.expense_category_id),
+      incomeCategoryId: parsePositiveId(req.body?.income_category_id),
+      relatedEntityType: req.body?.related_entity_type || null,
+      relatedEntityId: parsePositiveId(req.body?.related_entity_id),
+      createdByUserId: req.user.id,
+      transactionDate: String(req.body?.transaction_date || '').trim() || null,
+      status: req.body?.status || 'completed',
+    });
+    res.json({ transaction });
+  } catch (e) {
+    console.error('accounting transaction create', e);
+    res.status(400).json({ error: e?.message || 'Tranzaksiya yaratilmadi.' });
+  }
+});
+
+router.get('/reports/summary', (req, res) => {
+  try {
+    ensureAccountingModuleReady();
+    const from = String(req.query.from || '').trim();
+    const to = String(req.query.to || '').trim();
+    res.json(getReportsSummary({ from, to }));
+  } catch (e) {
+    console.error('accounting reports summary', e);
+    res.status(500).json({ error: 'Hisobot ma’lumotlari yuklanmadi.' });
+  }
+});
+
+router.get('/activity', (req, res) => {
+  try {
+    ensureAccountingModuleReady();
+    const limit = Number.parseInt(String(req.query.limit || '40'), 10);
+    res.json({ items: getActivityFeed({ limit }) });
+  } catch (e) {
+    console.error('accounting activity', e);
+    res.status(500).json({ error: 'Faoliyat jurnali yuklanmadi.' });
+  }
+});
+
+router.get('/receipts/:id', (req, res) => {
+  try {
+    ensureAccountingModuleReady();
+    const receiptId = parsePositiveId(req.params.id);
+    if (!receiptId) return res.status(400).json({ error: 'Kvitansiya ID noto‘g‘ri.' });
+    const receipt = getReceiptDetails(receiptId);
+    if (!receipt) return res.status(404).json({ error: 'Kvitansiya topilmadi.' });
+    res.json({ receipt });
+  } catch (e) {
+    console.error('accounting receipt detail', e);
+    res.status(500).json({ error: 'Kvitansiya ma’lumotlari yuklanmadi.' });
+  }
+});
+
+router.get('/receipts/:id/pdf', (req, res) => {
+  try {
+    ensureAccountingModuleReady();
+    const receiptId = parsePositiveId(req.params.id);
+    if (!receiptId) return res.status(400).json({ error: 'Kvitansiya ID noto‘g‘ri.' });
+    const receipt = getReceiptDetails(receiptId);
+    if (!receipt) return res.status(404).json({ error: 'Kvitansiya topilmadi.' });
+    writeReceiptPdf(res, receipt);
+  } catch (e) {
+    console.error('accounting receipt pdf', e);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'PDF kvitansiya yaratilmadi.' });
+    }
   }
 });
 
