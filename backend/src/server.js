@@ -33,6 +33,7 @@ import adminRoutes from './routes/admin.js';
 import rolesRoutes from './routes/roles.js';
 import portalRoutes from './routes/portal.js';
 import accountingPortalRoutes from './routes/accountingPortal.js';
+import accountingPortalV2Routes from './routes/accountingPortalV2.js';
 import sellerRoutes from './routes/seller.js';
 import courierRoutes from './routes/courier.js';
 import operatorRoutes from './routes/operator.js';
@@ -198,6 +199,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/admin/roles', rolesRoutes);
 app.use('/api/admin/portal', portalRoutes);
 app.use('/api/accounting/portal', accountingPortalRoutes);
+app.use('/api/accounting/portal/v2', accountingPortalV2Routes);
 app.use('/api/seller', sellerRoutes);
 app.use('/api/courier', courierRoutes);
 // Vapi webhooks (authRequired emas) — operator middleware'dan oldin ulansin.
