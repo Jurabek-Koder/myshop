@@ -1,0 +1,1 @@
+import{j as t}from"./react-vendor-KeS5yrgH.js";import{d as s,N as r}from"./router-BqJbIk08.js";import"./vendor-DeNvNobK.js";function n(){const{section:e}=s(),o=String(e||"").toLowerCase().trim();return["packer","picker","courier","operator","seller","stats"].includes(o)?t.jsx(r,{to:"/accounting/reports",replace:!0}):t.jsx(r,{to:"/accounting",replace:!0})}export{n as default};
