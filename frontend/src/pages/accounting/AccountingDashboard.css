@@ -1,3 +1,575 @@
+.accounting-panel-shell {
+  --acc-bg: #f7f9ff;
+  --acc-card: rgba(255, 255, 255, 0.78);
+  --acc-card-strong: rgba(255, 255, 255, 0.94);
+  --acc-border: rgba(15, 23, 42, 0.08);
+  --acc-text: #0f172a;
+  --acc-muted: #64748b;
+  --acc-shadow: 0 24px 80px rgba(15, 23, 42, 0.12);
+  --acc-blue: #2563eb;
+  --acc-emerald: #10b981;
+  --acc-rose: #f43f5e;
+  --acc-violet: #8b5cf6;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(37, 99, 235, 0.14), transparent 30%),
+    radial-gradient(circle at 90% 10%, rgba(139, 92, 246, 0.16), transparent 34%),
+    var(--acc-bg);
+}
+
+.theme-dark .accounting-panel-shell {
+  --acc-bg: #020617;
+  --acc-card: rgba(15, 23, 42, 0.72);
+  --acc-card-strong: rgba(15, 23, 42, 0.9);
+  --acc-border: rgba(255, 255, 255, 0.11);
+  --acc-text: #f8fafc;
+  --acc-muted: #94a3b8;
+  --acc-shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
+}
+
+.accounting-main,
+.accounting-page {
+  background: transparent !important;
+}
+
+.acc-saas-shell {
+  color: var(--acc-text);
+  display: grid;
+  gap: 18px;
+  padding: clamp(14px, 2vw, 26px);
+  padding-bottom: 92px;
+}
+
+.acc-hero,
+.acc-panel,
+.acc-kpi-card,
+.acc-modal {
+  border: 1px solid var(--acc-border);
+  background: var(--acc-card);
+  backdrop-filter: blur(24px) saturate(160%);
+  box-shadow: var(--acc-shadow);
+}
+
+.acc-hero {
+  border-radius: 32px;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  overflow: hidden;
+  padding: clamp(22px, 4vw, 38px);
+  position: relative;
+}
+
+.acc-hero::after {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.18), rgba(16, 185, 129, 0.12));
+  border-radius: 999px;
+  content: '';
+  filter: blur(8px);
+  height: 180px;
+  position: absolute;
+  right: -48px;
+  top: -70px;
+  width: 180px;
+}
+
+.acc-eyebrow,
+.acc-live {
+  align-items: center;
+  color: var(--acc-blue);
+  display: inline-flex;
+  font-size: 0.82rem;
+  font-weight: 800;
+  gap: 8px;
+  letter-spacing: 0.02em;
+}
+
+.acc-hero h1 {
+  font-size: clamp(2rem, 5vw, 4.2rem);
+  letter-spacing: -0.07em;
+  line-height: 0.96;
+  margin: 10px 0 12px;
+}
+
+.acc-hero p,
+.acc-panel-head p,
+.acc-employee-card p,
+.acc-employee-meta,
+.acc-activity-item small {
+  color: var(--acc-muted);
+}
+
+.acc-hero-actions,
+.acc-table-actions,
+.acc-employee-actions,
+.acc-payroll-mini {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.acc-hero-actions button,
+.acc-table-actions button,
+.acc-employee-actions button,
+.acc-form button,
+.acc-modal-head button {
+  align-items: center;
+  border: 0;
+  border-radius: 14px;
+  display: inline-flex;
+  font-weight: 800;
+  gap: 8px;
+  padding: 11px 14px;
+}
+
+.acc-hero-actions button,
+.acc-form button {
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: white;
+}
+
+.acc-table-actions button,
+.acc-employee-actions button,
+.acc-modal-head button {
+  background: rgba(37, 99, 235, 0.09);
+  color: var(--acc-blue);
+}
+
+.acc-kpi-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.acc-kpi-card {
+  border-radius: 26px;
+  display: flex;
+  gap: 14px;
+  min-height: 150px;
+  padding: 20px;
+}
+
+.acc-kpi-icon {
+  align-items: center;
+  border-radius: 18px;
+  color: white;
+  display: inline-flex;
+  height: 46px;
+  justify-content: center;
+  width: 46px;
+}
+
+.acc-kpi-card--blue .acc-kpi-icon { background: var(--acc-blue); }
+.acc-kpi-card--emerald .acc-kpi-icon { background: var(--acc-emerald); }
+.acc-kpi-card--rose .acc-kpi-icon { background: var(--acc-rose); }
+.acc-kpi-card--violet .acc-kpi-icon { background: var(--acc-violet); }
+
+.acc-kpi-card p {
+  color: var(--acc-muted);
+  font-size: 0.9rem;
+  margin: 0 0 8px;
+}
+
+.acc-kpi-card strong {
+  display: block;
+  font-size: clamp(1.35rem, 2.5vw, 2rem);
+  letter-spacing: -0.04em;
+  line-height: 1.08;
+}
+
+.acc-delta-positive,
+.acc-delta-negative {
+  align-items: center;
+  display: inline-flex;
+  font-size: 0.82rem;
+  font-weight: 800;
+  gap: 4px;
+  margin-top: 10px;
+}
+
+.acc-delta-positive { color: var(--acc-emerald); }
+.acc-delta-negative, .acc-red { color: var(--acc-rose); }
+.acc-green { color: var(--acc-emerald); }
+
+.acc-dashboard-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.75fr);
+}
+
+.acc-panel {
+  border-radius: 28px;
+  min-width: 0;
+  padding: clamp(16px, 2vw, 24px);
+}
+
+.acc-panel-wide {
+  min-height: 360px;
+}
+
+.acc-panel-head {
+  align-items: flex-start;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.acc-panel h2 {
+  font-size: 1.25rem;
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+
+.acc-chart,
+.acc-donut {
+  min-height: 230px;
+}
+
+.acc-ratio-list,
+.acc-calendar-list,
+.acc-activity-feed,
+.acc-employee-meta {
+  display: grid;
+  gap: 10px;
+}
+
+.acc-ratio-list span {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.acc-ratio-list i {
+  border-radius: 999px;
+  height: 10px;
+  width: 10px;
+}
+
+.acc-payroll-mini span {
+  background: rgba(15, 23, 42, 0.05);
+  border: 1px solid var(--acc-border);
+  border-radius: 999px;
+  color: var(--acc-muted);
+  font-size: 0.82rem;
+  padding: 7px 10px;
+}
+
+.acc-employee-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.acc-employee-card {
+  background: var(--acc-card-strong);
+  border: 1px solid var(--acc-border);
+  border-radius: 24px;
+  padding: 16px;
+}
+
+.acc-employee-top {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.acc-avatar {
+  align-items: center;
+  background: linear-gradient(135deg, #0f172a, #2563eb);
+  border-radius: 18px;
+  color: white;
+  display: flex;
+  font-weight: 900;
+  height: 44px;
+  justify-content: center;
+  width: 44px;
+}
+
+.acc-employee-card h3 {
+  margin: 14px 0 6px;
+}
+
+.acc-employee-actions {
+  margin-top: 14px;
+}
+
+.acc-status {
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 900;
+  padding: 7px 10px;
+}
+
+.acc-status--paid {
+  background: rgba(16, 185, 129, 0.14);
+  color: #059669;
+}
+
+.acc-status--pending {
+  background: rgba(245, 158, 11, 0.16);
+  color: #d97706;
+}
+
+.acc-status--overdue {
+  background: rgba(244, 63, 94, 0.14);
+  color: #e11d48;
+}
+
+.acc-calendar-item,
+.acc-activity-item {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.52);
+  border: 1px solid var(--acc-border);
+  border-radius: 18px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: 12px;
+}
+
+.theme-dark .acc-calendar-item,
+.theme-dark .acc-activity-item {
+  background: rgba(15, 23, 42, 0.42);
+}
+
+.acc-activity-item span {
+  align-items: center;
+  background: rgba(37, 99, 235, 0.1);
+  border-radius: 12px;
+  color: var(--acc-blue);
+  display: flex;
+  height: 34px;
+  justify-content: center;
+  width: 34px;
+}
+
+.acc-activity-item b,
+.acc-calendar-item b {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.acc-activity-item em {
+  font-style: normal;
+  font-weight: 900;
+}
+
+.acc-table-actions label {
+  align-items: center;
+  background: var(--acc-card-strong);
+  border: 1px solid var(--acc-border);
+  border-radius: 14px;
+  color: var(--acc-muted);
+  display: flex;
+  gap: 8px;
+  padding: 0 10px;
+}
+
+.acc-table-actions input {
+  background: transparent;
+  border: 0;
+  color: var(--acc-text);
+  min-height: 40px;
+  outline: 0;
+}
+
+.acc-table-wrap {
+  overflow-x: auto;
+}
+
+.acc-table {
+  border-collapse: separate;
+  border-spacing: 0 10px;
+  min-width: 760px;
+  width: 100%;
+}
+
+.acc-table th {
+  color: var(--acc-muted);
+  font-size: 0.76rem;
+  padding: 0 12px 6px;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.acc-table td {
+  background: var(--acc-card-strong);
+  border-bottom: 1px solid var(--acc-border);
+  border-top: 1px solid var(--acc-border);
+  padding: 14px 12px;
+}
+
+.acc-table td:first-child {
+  border-left: 1px solid var(--acc-border);
+  border-radius: 16px 0 0 16px;
+  font-weight: 800;
+}
+
+.acc-table td:last-child {
+  border-radius: 0 16px 16px 0;
+  border-right: 1px solid var(--acc-border);
+}
+
+.acc-empty {
+  border: 1px dashed var(--acc-border);
+  border-radius: 20px;
+  color: var(--acc-muted);
+  padding: 22px;
+  text-align: center;
+}
+
+.acc-modal-backdrop {
+  align-items: center;
+  background: rgba(2, 6, 23, 0.52);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 18px;
+  position: fixed;
+  z-index: 120;
+}
+
+.acc-modal {
+  border-radius: 28px;
+  max-width: 560px;
+  padding: 22px;
+  width: min(560px, 100%);
+}
+
+.acc-modal-head {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.acc-modal-head h3 {
+  margin: 0;
+}
+
+.acc-form {
+  display: grid;
+  gap: 12px;
+}
+
+.acc-form label {
+  color: var(--acc-muted);
+  display: grid;
+  font-size: 0.86rem;
+  font-weight: 800;
+  gap: 6px;
+}
+
+.acc-form input,
+.acc-form select,
+.acc-form textarea {
+  background: var(--acc-card-strong);
+  border: 1px solid var(--acc-border);
+  border-radius: 14px;
+  color: var(--acc-text);
+  min-height: 44px;
+  padding: 10px 12px;
+}
+
+.acc-form textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.acc-form-error {
+  background: rgba(244, 63, 94, 0.1);
+  border-radius: 14px;
+  color: var(--acc-rose);
+  padding: 10px;
+}
+
+.acc-bottom-nav {
+  display: none;
+}
+
+@media (max-width: 1180px) {
+  .acc-kpi-grid,
+  .acc-employee-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .acc-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .acc-saas-shell {
+    padding: 12px 10px 96px;
+  }
+
+  .acc-hero {
+    border-radius: 24px;
+    display: grid;
+  }
+
+  .acc-hero-actions {
+    display: grid;
+  }
+
+  .acc-kpi-grid,
+  .acc-employee-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .acc-panel-head {
+    display: grid;
+  }
+
+  .acc-table-actions {
+    align-items: stretch;
+    display: grid;
+  }
+
+  .acc-table-actions label {
+    width: 100%;
+  }
+
+  .acc-bottom-nav {
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid var(--acc-border);
+    border-radius: 24px;
+    bottom: 12px;
+    box-shadow: var(--acc-shadow);
+    display: grid;
+    gap: 4px;
+    grid-template-columns: repeat(4, 1fr);
+    left: 10px;
+    padding: 8px;
+    position: fixed;
+    right: 10px;
+    z-index: 80;
+  }
+
+  .theme-dark .acc-bottom-nav {
+    background: rgba(15, 23, 42, 0.9);
+  }
+
+  .acc-bottom-nav button {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 16px;
+    color: var(--acc-muted);
+    display: grid;
+    font-size: 0.72rem;
+    font-weight: 900;
+    justify-items: center;
+    padding: 8px 4px;
+  }
+
+  .acc-bottom-nav button:nth-child(3) {
+    background: var(--acc-blue);
+    color: white;
+  }
+}
 /* src/pages/accounting/AccountingDashboard.css */
 * {
   margin: 0;

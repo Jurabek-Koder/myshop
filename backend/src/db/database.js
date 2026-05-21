@@ -681,6 +681,141 @@ export function initDatabase() {
   `);
 
   db.exec(`
+    CREATE TABLE IF NOT EXISTS employees (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER UNIQUE REFERENCES users(id) ON DELETE SET NULL,
+      full_name TEXT NOT NULL,
+      phone TEXT,
+      telegram_chat_id TEXT,
+      monthly_salary REAL NOT NULL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'active',
+      hired_at TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_employees_user ON employees(user_id);
+    CREATE INDEX IF NOT EXISTS idx_employees_status ON employees(status);
+
+    CREATE TABLE IF NOT EXISTS payroll_cycles (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      cycle_type TEXT NOT NULL CHECK(cycle_type IN ('advance', 'salary')),
+      period_start TEXT NOT NULL,
+      period_end TEXT NOT NULL,
+      due_date TEXT NOT NULL,
+      expected_amount REAL NOT NULL DEFAULT 0,
+      paid_amount REAL NOT NULL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'pending',
+      generated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_payroll_cycles_employee_period_type
+      ON payroll_cycles(employee_id, period_start, period_end, cycle_type);
+    CREATE INDEX IF NOT EXISTS idx_payroll_cycles_status_due ON payroll_cycles(status, due_date);
+
+    CREATE TABLE IF NOT EXISTS salary_payments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      payroll_cycle_id INTEGER REFERENCES payroll_cycles(id) ON DELETE SET NULL,
+      amount REAL NOT NULL,
+      payment_type TEXT NOT NULL CHECK(payment_type IN ('advance', 'salary', 'bonus', 'adjustment')),
+      payment_method TEXT NOT NULL DEFAULT 'cash',
+      note TEXT,
+      paid_at TEXT NOT NULL DEFAULT (datetime('now')),
+      created_by INTEGER REFERENCES users(id),
+      receipt_id INTEGER
+    );
+    CREATE INDEX IF NOT EXISTS idx_salary_payments_employee_paid ON salary_payments(employee_id, paid_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_salary_payments_cycle ON salary_payments(payroll_cycle_id);
+
+    CREATE TABLE IF NOT EXISTS expense_categories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE,
+      slug TEXT NOT NULL UNIQUE,
+      color TEXT NOT NULL DEFAULT '#64748b',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS income_categories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE,
+      slug TEXT NOT NULL UNIQUE,
+      color TEXT NOT NULL DEFAULT '#2563eb',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS receipts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      receipt_number TEXT NOT NULL UNIQUE,
+      entity_type TEXT NOT NULL,
+      entity_id INTEGER,
+      recipient_name TEXT NOT NULL DEFAULT '',
+      amount REAL NOT NULL DEFAULT 0,
+      currency TEXT NOT NULL DEFAULT 'UZS',
+      payload_json TEXT NOT NULL DEFAULT '{}',
+      created_by INTEGER REFERENCES users(id),
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_receipts_entity ON receipts(entity_type, entity_id);
+
+    CREATE TABLE IF NOT EXISTS financial_transactions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      type TEXT NOT NULL CHECK(type IN ('income', 'expense')),
+      category_id INTEGER,
+      category_type TEXT NOT NULL CHECK(category_type IN ('income', 'expense')),
+      source TEXT NOT NULL DEFAULT 'manual',
+      title TEXT NOT NULL,
+      amount REAL NOT NULL,
+      currency TEXT NOT NULL DEFAULT 'UZS',
+      note TEXT,
+      transaction_date TEXT NOT NULL DEFAULT (date('now')),
+      created_by INTEGER REFERENCES users(id),
+      receipt_id INTEGER REFERENCES receipts(id),
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_financial_transactions_type_date ON financial_transactions(type, transaction_date DESC);
+    CREATE INDEX IF NOT EXISTS idx_financial_transactions_category ON financial_transactions(category_type, category_id);
+
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      actor_user_id INTEGER REFERENCES users(id),
+      action TEXT NOT NULL,
+      entity_type TEXT NOT NULL,
+      entity_id INTEGER,
+      details_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON audit_logs(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON audit_logs(entity_type, entity_id);
+  `);
+
+  ensureColumn('employees', 'telegram_chat_id', 'TEXT');
+  ensureColumn('employees', 'monthly_salary', 'REAL NOT NULL DEFAULT 0');
+  ensureColumn('salary_payments', 'receipt_id', 'INTEGER');
+
+  const defaultExpenseCategories = [
+    ['Do‘kon xarajatlari', 'shop_expenses', '#f97316'],
+    ['Xodim oyliklari', 'employee_payroll', '#8b5cf6'],
+    ['Kommunal to‘lovlar', 'utilities', '#06b6d4'],
+    ['Transport', 'transport', '#22c55e'],
+    ['Boshqa xarajatlar', 'other_expenses', '#64748b'],
+  ];
+  const defaultIncomeCategories = [
+    ['Mahsulot savdosi', 'product_sales', '#2563eb'],
+    ['Qo‘lda kiritilgan daromad', 'manual_income', '#10b981'],
+    ['Xizmat daromadi', 'service_income', '#14b8a6'],
+  ];
+  const insertExpenseCategory = db.prepare(
+    'INSERT OR IGNORE INTO expense_categories (name, slug, color) VALUES (?, ?, ?)',
+  );
+  const insertIncomeCategory = db.prepare(
+    'INSERT OR IGNORE INTO income_categories (name, slug, color) VALUES (?, ?, ?)',
+  );
+  for (const row of defaultExpenseCategories) insertExpenseCategory.run(...row);
+  for (const row of defaultIncomeCategories) insertIncomeCategory.run(...row);
+
+  db.exec(`
     CREATE TABLE IF NOT EXISTS staff_direct_messages (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       client_message_id TEXT NOT NULL,
