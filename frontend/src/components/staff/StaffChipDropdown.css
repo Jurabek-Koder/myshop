@@ -1,0 +1,41 @@
+.staff-chip-dropdown {
+  position: relative;
+  flex: 0 1 auto;
+  min-width: 0;
+  width: 100%;
+}
+
+.staff-chip-dropdown__trigger {
+  width: 100%;
+  max-width: 100%;
+  min-height: 36px;
+  font-size: 0.78rem;
+  display: flex;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.staff-chip-dropdown__trigger.has-filter,
+.staff-chip-dropdown__trigger.is-open {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  color: var(--accent);
+}
+
+.staff-chip-dropdown__trigger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.staff-chip-dropdown__trigger .catalog-mobile-category-trigger-label {
+  flex: 1 1 auto;
+  flex-shrink: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.staff-chip-dropdown__panel {
+  /* `top` inline — trigger ostidan */
+  z-index: 1500;
+}
