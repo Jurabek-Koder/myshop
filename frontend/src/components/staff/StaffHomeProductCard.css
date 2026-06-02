@@ -76,73 +76,97 @@
   pointer-events: auto;
 }
 
-/* ═══ Packer asosiy sahifa mahsulot kartasi — mobil 3 ustun, desktop 7 ustun ═══ */
+/* ═══ Packer mahsulot kartasi — mobil/desktop bir xil ko‘rinish, faqat ustunlar farq qiladi ═══ */
 .packer-app .packer-v2-product-grid.operator-home-product-grid.product-grid {
   --packer-card-cols: 3;
-  --packer-card-stats-h: 28px;
-  --packer-card-title-h: 40px;
+  --packer-card-gap: 1px;
+  --packer-card-inner-gap: 6px;
+  --packer-card-bg: #ececec;
+  --packer-card-footer-bg: #f5f0e6;
+  --packer-card-radius: 8px;
+  --packer-image-radius: 4px;
+  --packer-badge-stock-bg: #f5e08a;
+  --packer-badge-stock-text: #3d2f0a;
+  --packer-badge-orders-bg: #8fd9a8;
+  --packer-badge-orders-text: #1a4d2e;
+  --packer-badge-font: 0.78rem;
+  --packer-title-font: 0.8rem;
+  --packer-title-line: 1.2;
+  --packer-badge-gap: 5px;
+  --packer-badge-pad-y: 4px;
+  --packer-badge-pad-x: 6px;
+  --packer-image-bleed-x: 18px;
+  --packer-image-bleed-top: 6px;
+  --packer-image-zoom: 1.2;
   display: grid;
   grid-template-columns: repeat(var(--packer-card-cols), minmax(0, 1fr));
   grid-auto-rows: auto;
-  align-items: stretch;
+  align-items: start;
   align-content: start;
-  gap: 4px;
+  gap: var(--packer-card-gap);
   width: 100%;
   margin-top: 0;
 }
 
 @media (min-width: 1024px) {
+  /* Desktop: faqat 7 ustun — karta o‘lchamlari va ko‘rinishi mobil bilan bir xil */
   .packer-app .packer-v2-product-grid.operator-home-product-grid.product-grid {
     --packer-card-cols: 7;
-    gap: 6px;
   }
 }
 
 .packer-app .packer-v2-product-grid > .packer-home-product-card.card.product-card {
   --product-card-extra-height: 0px;
+  --packer-content-inset: 0px;
   display: flex;
   flex-direction: column;
   width: 100%;
   min-width: 0;
   max-width: none;
-  height: 100%;
+  height: auto;
   min-height: 0;
   max-height: none;
   margin: 0;
+  align-self: start;
   padding: 0 !important;
-  border-radius: 0;
+  border-radius: var(--packer-card-radius);
   border: none;
-  background: transparent !important;
+  background: var(--packer-card-bg) !important;
   box-shadow: none;
   overflow: hidden;
   box-sizing: border-box;
 }
 
 html.theme-dark .packer-app .packer-v2-product-grid > .packer-home-product-card.card.product-card {
-  background: transparent !important;
+  --packer-card-bg: rgba(30, 41, 59, 0.72);
+  --packer-card-footer-bg: rgba(15, 23, 42, 0.55);
+  background: var(--packer-card-bg) !important;
   border: none;
 }
 
 .packer-app .packer-home-product-card .operator-home-product-card-stack {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  align-items: stretch;
+  gap: var(--packer-card-inner-gap);
   width: 100%;
-  height: 100%;
+  height: auto;
   min-width: 0;
   min-height: 0;
+  flex: 0 0 auto;
 }
 
 .packer-app .packer-home-product-card .staff-home-product-card-media {
   display: block;
   position: relative;
   flex: 0 0 auto;
-  width: 100%;
+  width: calc(100% + (var(--packer-image-bleed-x) * 2));
+  max-width: none;
   aspect-ratio: 1 / 1;
-  margin: 0;
+  margin: calc(-1 * var(--packer-image-bleed-top)) calc(-1 * var(--packer-image-bleed-x)) 0;
   padding: 0;
   overflow: hidden;
-  border-radius: 4px;
+  border-radius: var(--packer-card-radius) var(--packer-card-radius) 0 0;
   line-height: 0;
   background: transparent;
   box-sizing: border-box;
@@ -158,7 +182,7 @@ html.theme-dark .packer-app .packer-v2-product-grid > .packer-home-product-card.
   padding: 0;
   border: 0;
   overflow: hidden;
-  border-radius: 4px;
+  border-radius: inherit;
   line-height: 0;
   background: transparent;
   box-sizing: border-box;
@@ -171,10 +195,11 @@ html.theme-dark .packer-app .packer-v2-product-grid > .packer-home-product-card.
   height: 100%;
   margin: 0;
   padding: 0 !important;
+  padding-bottom: 0 !important;
   overflow: hidden;
   display: block;
   background: transparent !important;
-  border-radius: 4px !important;
+  border-radius: inherit !important;
   line-height: 0;
   aspect-ratio: auto;
   box-sizing: border-box;
@@ -183,130 +208,169 @@ html.theme-dark .packer-app .packer-v2-product-grid > .packer-home-product-card.
 .packer-app .packer-home-product-card .product-image img,
 .packer-app .packer-home-product-card .product-image .product-placeholder {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  left: 50%;
+  top: 50%;
+  right: auto;
+  bottom: auto;
+  width: calc(100% * var(--packer-image-zoom));
+  height: calc(100% * var(--packer-image-zoom));
   object-fit: cover !important;
   object-position: center center !important;
-  transform: none !important;
+  transform: translate(-50%, -50%) !important;
   display: block;
   margin: 0;
   padding: 0;
-  border-radius: 4px !important;
+  border-radius: 0 !important;
 }
 
 .packer-app .packer-home-product-card .operator-home-card-stats {
   display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 5px !important;
-  flex: 0 0 var(--packer-card-stats-h, 28px) !important;
+  gap: var(--packer-badge-gap) !important;
+  flex: 0 0 auto !important;
   flex-shrink: 0 !important;
   width: 100% !important;
-  height: var(--packer-card-stats-h, 28px) !important;
-  min-height: var(--packer-card-stats-h, 28px) !important;
-  max-height: var(--packer-card-stats-h, 28px) !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
   margin: 0 !important;
-  padding: 0 6px !important;
-  border-radius: 4px 4px 0 0;
-  background: rgba(255, 255, 255, 0.42) !important;
+  padding: 0 !important;
+  border-radius: 0;
+  background: var(--packer-card-footer-bg) !important;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .packer-app .packer-home-product-card .operator-home-card-stat {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  min-width: 2.1rem !important;
-  padding: 4px 10px !important;
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  max-width: calc(50% - (var(--packer-badge-gap) / 2)) !important;
+  padding: var(--packer-badge-pad-y) var(--packer-badge-pad-x) !important;
   border-radius: 999px !important;
-  font-size: 0.75rem !important;
+  font-size: var(--packer-badge-font) !important;
   font-weight: 700 !important;
   font-variant-numeric: tabular-nums;
   line-height: 1 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
   box-shadow: none !important;
+  box-sizing: border-box;
 }
 
 .packer-app .packer-home-product-card .operator-home-card-stat--stock {
-  background: rgba(245, 224, 137, 0.55) !important;
-  color: #3d2f0a !important;
+  background: var(--packer-badge-stock-bg) !important;
+  color: var(--packer-badge-stock-text) !important;
 }
 
 .packer-app .packer-home-product-card .operator-home-card-stat--orders {
-  background: rgba(143, 217, 168, 0.55) !important;
-  color: #1a4d2e !important;
-}
-
-html.theme-dark .packer-app .packer-home-product-card .operator-home-card-stats {
-  background: rgba(15, 23, 42, 0.38) !important;
+  background: var(--packer-badge-orders-bg) !important;
+  color: var(--packer-badge-orders-text) !important;
 }
 
 html.theme-dark .packer-app .packer-home-product-card .operator-home-card-stat--stock {
-  background: rgba(202, 138, 4, 0.45) !important;
+  background: rgba(202, 138, 4, 0.55) !important;
   color: #fef9c3 !important;
 }
 
 html.theme-dark .packer-app .packer-home-product-card .operator-home-card-stat--orders {
-  background: rgba(22, 163, 74, 0.45) !important;
+  background: rgba(22, 163, 74, 0.55) !important;
   color: #ecfdf5 !important;
 }
 
 .packer-app .packer-home-product-card .staff-home-product-card-body-btn {
-  flex: 0 0 var(--packer-card-title-h, 40px);
+  flex: 0 0 auto;
   width: 100%;
-  height: var(--packer-card-title-h, 40px);
-  min-height: var(--packer-card-title-h, 40px);
-  max-height: var(--packer-card-title-h, 40px);
-  margin: 0;
-  padding: 0 6px !important;
+  height: fit-content;
+  min-height: 0 !important;
+  max-height: none;
+  margin: 0 !important;
+  padding: 0 !important;
   border: 0;
-  background: rgba(255, 255, 255, 0.42);
-  border-radius: 0 0 4px 4px;
-  line-height: 1.1;
+  background: var(--packer-card-footer-bg) !important;
+  border-radius: 0 0 var(--packer-card-radius) var(--packer-card-radius);
+  line-height: 0 !important;
+  font-size: 0 !important;
   box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
   overflow: hidden;
+  appearance: none;
+  -webkit-appearance: none;
+  text-align: center;
 }
 
 .packer-app .packer-home-product-card .product-card-body,
+.packer-app .packer-home-product-card .packer-card-title-pane,
 .packer-app .packer-home-product-card .operator-home-card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block !important;
   width: 100%;
-  height: 100%;
-  margin: 0;
+  height: fit-content;
+  margin: 0 !important;
   padding: 0 !important;
   text-align: center;
   background: transparent !important;
   overflow: hidden;
+  line-height: 1 !important;
+  font-size: var(--packer-title-font);
+  flex: none !important;
 }
 
 .packer-app .packer-home-product-card .product-card-body h3,
+.packer-app .packer-home-product-card .packer-card-title-pane h3,
 .packer-app .packer-home-product-card .operator-home-card-footer h3 {
-  display: -webkit-box;
+  display: block !important;
   width: 100%;
   margin: 0 !important;
   padding: 0 !important;
-  color: #1f2937 !important;
-  font-size: 0.78rem !important;
+  color: #1e293b !important;
+  font-size: var(--packer-title-font) !important;
   font-weight: 700 !important;
   letter-spacing: -0.01em;
-  line-height: 1.15 !important;
-  min-height: calc(0.78rem * 1.15 * 2);
-  max-height: calc(0.78rem * 1.15 * 2);
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  line-height: 1 !important;
+  min-height: 0 !important;
+  max-height: calc(var(--packer-title-font) * 2) !important;
+  height: auto !important;
+  overflow: hidden !important;
   text-align: center;
-  text-transform: lowercase;
+  text-transform: none;
   word-break: break-word;
+  -webkit-box: unset !important;
+  -webkit-box-orient: unset !important;
+  -webkit-line-clamp: unset !important;
+  box-orient: unset !important;
+  line-clamp: unset !important;
+  text-shadow: none !important;
 }
 
-html.theme-dark .packer-app .packer-home-product-card .staff-home-product-card-body-btn {
-  background: rgba(15, 23, 42, 0.38);
+/* Global .card.product-card / operator footer qoidalarini bekor qilish */
+.packer-app .packer-v2-product-grid > .packer-home-product-card.card.product-card .product-card-body,
+.packer-app .packer-v2-product-grid > .packer-home-product-card.card.product-card .packer-card-title-pane,
+.packer-app .packer-v2-product-grid > .packer-home-product-card.card.product-card .operator-home-card-footer {
+  padding: 0 !important;
+  margin: 0 !important;
+  gap: 0 !important;
+}
+
+.packer-app .packer-v2-product-grid > .packer-home-product-card.card.product-card .product-card-body h3,
+.packer-app .packer-v2-product-grid > .packer-home-product-card.card.product-card .packer-card-title-pane h3,
+.packer-app .packer-v2-product-grid > .packer-home-product-card.card.product-card .operator-home-card-footer h3 {
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  max-height: calc(var(--packer-title-font) * 2) !important;
+  -webkit-box-orient: unset !important;
+  -webkit-line-clamp: unset !important;
+  font-size: var(--packer-title-font) !important;
+  font-weight: 700 !important;
 }
 
 html.theme-dark .packer-app .packer-home-product-card .product-card-body h3 {
@@ -314,27 +378,11 @@ html.theme-dark .packer-app .packer-home-product-card .product-card-body h3 {
 }
 
 .packer-app .packer-home-product-card .packer-card-hold-overlay {
-  padding: 0.1rem 0.1rem 0;
+  padding: 0.12rem 0.12rem 0;
 }
 
-@media (max-width: 420px) {
+@media (max-width: 1023px) {
   .packer-app .packer-v2-product-grid.operator-home-product-grid.product-grid {
-    gap: 3px;
-  }
-
-  .packer-app .packer-v2-product-grid > .packer-home-product-card.card.product-card {
-    border-radius: 0;
-  }
-
-  .packer-app .packer-home-product-card .product-card-body h3 {
-    font-size: 0.68rem !important;
-    min-height: calc(0.68rem * 1.15 * 2);
-    max-height: calc(0.68rem * 1.15 * 2);
-  }
-
-  .packer-app .packer-home-product-card .operator-home-card-stat {
-    min-width: 1.7rem !important;
-    padding: 3px 6px !important;
-    font-size: 0.68rem !important;
+    --packer-card-cols: 3;
   }
 }
