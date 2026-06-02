@@ -71,7 +71,9 @@ function extractHttpErrorMessage(res, data) {
   }
 
   const st = res?.status;
-  if (st === 401) return "Email, login yoki parol noto'g'ri. Kiritilgan ma'lumotlarni tekshiring.";
+  if (st === 401) {
+    return "Kechirasiz, bunday foydalanuvchi mavjud emas. Iltimos, ma'lumotlaringizni tekshiring va qaytadan urinib ko'ring.";
+  }
   if (st === 429) return "Juda ko'p urinish. Bir ozdan keyin qayta urinib ko'ring.";
   if (st === 502 || st === 503 || st === 504) return "Server vaqtincha javob bermayapti. Backend (port 3000) ishlayotganini tekshiring.";
   if (st === 404) return "Kirish manzili topilmadi. Sayt /api sozlamalari va backend holatini tekshiring.";
@@ -229,7 +231,14 @@ export function AuthProvider({ children }) {
         }
 
         if (res.status === 401) {
-          clearSession('expired', 'Sessiya tugagan. Qayta kiring.');
+          let deniedMsg = "Kechirasiz, bunday foydalanuvchi mavjud emas. Iltimos, ma'lumotlaringizni tekshiring va qaytadan urinib ko'ring.";
+          try {
+            const data = await res.json();
+            if (data?.error) deniedMsg = String(data.error);
+          } catch {
+            /* ignore */
+          }
+          clearSession('expired', deniedMsg);
           return { ok: false, reason: 'expired' };
         }
 
