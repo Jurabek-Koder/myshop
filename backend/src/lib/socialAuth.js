@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { db, getUserAllowedPages } from '../db/database.js';
+import { isUserLoginAllowed, LOGIN_ACCESS_DENIED_MESSAGE } from './portalAccess.js';
 
 const PROVIDERS = new Set(['google', 'facebook', 'instagram', 'telegram']);
 
@@ -90,8 +91,8 @@ export function findOrCreateOAuthUser(provider, providerUserId, profile, clientM
       )
       .get(existingLink.user_id);
     if (!user) throw new Error('Foydalanuvchi topilmadi');
-    if (String(user.status || '').toLowerCase() === 'blocked') {
-      throw new Error('Akkount bloklangan');
+    if (!isUserLoginAllowed(user)) {
+      throw new Error(LOGIN_ACCESS_DENIED_MESSAGE);
     }
     user.allowed_pages = getUserAllowedPages(user);
     return { user, created: false };
@@ -107,8 +108,8 @@ export function findOrCreateOAuthUser(provider, providerUserId, profile, clientM
 
   const tx = db.transaction(() => {
     if (user) {
-      if (String(user.status || '').toLowerCase() === 'blocked') {
-        throw new Error('Akkount bloklangan');
+      if (!isUserLoginAllowed(user)) {
+        throw new Error(LOGIN_ACCESS_DENIED_MESSAGE);
       }
       db.prepare(
         `INSERT INTO user_oauth_accounts (user_id, provider, provider_user_id, profile_json)
