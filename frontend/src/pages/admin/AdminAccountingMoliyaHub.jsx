@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useMemo, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { AccountingAppProvider } from '../accounting-panel/context/AccountingAppContext.jsx';
 import { ACCOUNTING_NAV_ITEMS } from '../accounting-panel/accountingNav.js';
 import '../accounting-panel/AccountingDesign.css';
@@ -52,30 +52,50 @@ function HubPageBody({ tabKey, role }) {
 
 export default function AdminAccountingMoliyaHub({ onBack, initialTab = 'dashboard' }) {
   const [activeTab, setActiveTab] = useState(initialTab);
+  const tabsScrollRef = useRef(null);
+  const tabButtonRefs = useRef({});
 
   const activeItem = useMemo(
     () => ACCOUNTING_NAV_ITEMS.find((x) => x.key === activeTab) || ACCOUNTING_NAV_ITEMS[0],
     [activeTab],
   );
 
+  useEffect(() => {
+    const node = tabButtonRefs.current[activeTab];
+    if (!node || typeof node.scrollIntoView !== 'function') return;
+    node.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }, [activeTab]);
+
   return (
     <AccountingAppProvider>
       <div data-apanel className="admin-accounting-moliya-hub ap-theme-light">
         <div className="admin-accounting-moliya-hub-bar">
           <button type="button" className="btn-neo admin-accounting-moliya-hub-back" onClick={onBack}>
-            <i className="fas fa-arrow-left" aria-hidden /> Orqaga
+            <i className="fas fa-arrow-left" aria-hidden />
+            <span className="admin-accounting-moliya-hub-back-text">Orqaga</span>
           </button>
-          <p className="admin-accounting-moliya-hub-title">Buxgalteriya moliyasi</p>
+          <div className="admin-accounting-moliya-hub-headings">
+            <p className="admin-accounting-moliya-hub-title">Buxgalteriya moliyasi</p>
+            <p className="admin-accounting-moliya-hub-subtitle">{activeItem.label}</p>
+          </div>
         </div>
 
         <nav className="admin-accounting-moliya-tabs" aria-label="Buxgalteriya bo‘limlari">
-          <div className="admin-accounting-moliya-tabs-scroll">
+          <p className="admin-accounting-moliya-tabs-hint" aria-hidden="true">
+            Bo‘limlar — yonga suring
+          </p>
+          <div className="admin-accounting-moliya-tabs-scroll" ref={tabsScrollRef}>
             {ACCOUNTING_NAV_ITEMS.map((item) => (
               <button
                 key={item.key}
+                ref={(el) => {
+                  tabButtonRefs.current[item.key] = el;
+                }}
                 type="button"
                 className={`admin-accounting-moliya-tab${activeTab === item.key ? ' admin-accounting-moliya-tab--active' : ''}`}
                 aria-current={activeTab === item.key ? 'page' : undefined}
+                aria-label={item.label}
+                title={item.label}
                 onClick={() => setActiveTab(item.key)}
               >
                 <span className="admin-accounting-moliya-tab-icon" aria-hidden>
