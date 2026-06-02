@@ -2351,11 +2351,12 @@ export default function PackerDashboard() {
                         <StaffHomeProductCard
                           key={row.product_id}
                           name={row.name_uz}
-                          price={row.price}
                           imageUrl={row.image_url}
                           warehouseStock={row.stock}
                           orderCount={row.orders_count ?? 0}
                           blocked={false}
+                          hidePrice
+                          className="packer-home-product-card"
                           resolveImageUrl={resolvePackerProductImageUrl}
                           onImageClick={() => handleDirectPrintAndPack(row)}
                           onBodyClick={() => openQueueProductModal(row)}
