@@ -19,8 +19,14 @@ export function isSuperuserUser(user) {
 /** Buxgalter oyligi — superuser belgilay olmaydi */
 export const PAYROLL_SELF_MANAGED_ROLE = 'accounting';
 
+const PROTECTED_PAYROLL_ROLE_KEYS = new Set([PAYROLL_SELF_MANAGED_ROLE, 'buxgalter']);
+
+export function isProtectedPayrollRoleKey(roleKey) {
+  return PROTECTED_PAYROLL_ROLE_KEYS.has(normalizeRoleKey(roleKey));
+}
+
 export function assertPayrollWriteAccess(user) {
-  if (!isAccountingUser(user)) {
+  if (!isAccountingUser(user) && !isSuperuserUser(user)) {
     const err = new Error('PAYROLL_WRITE_FORBIDDEN');
     err.code = 'PAYROLL_WRITE_FORBIDDEN';
     throw err;
@@ -40,12 +46,7 @@ export function resolveUserSystemRoleKey(userId) {
 
 export function assertCanEditPayrollRoleDefault(user, roleKey) {
   assertPayrollWriteAccess(user);
-  if (isSuperuserUser(user)) {
-    const err = new Error('PAYROLL_WRITE_FORBIDDEN');
-    err.code = 'PAYROLL_WRITE_FORBIDDEN';
-    throw err;
-  }
-  if (normalizeRoleKey(roleKey) === PAYROLL_SELF_MANAGED_ROLE && !isAccountingUser(user)) {
+  if (isProtectedPayrollRoleKey(roleKey) && !isAccountingUser(user)) {
     const err = new Error('ACCOUNTING_SALARY_PROTECTED');
     err.code = 'ACCOUNTING_SALARY_PROTECTED';
     throw err;
@@ -54,15 +55,10 @@ export function assertCanEditPayrollRoleDefault(user, roleKey) {
 
 export function assertCanEditPayrollEmployee(user, { user_id: userId, work_role_id: workRoleId } = {}) {
   assertPayrollWriteAccess(user);
-  if (isSuperuserUser(user)) {
-    const err = new Error('PAYROLL_WRITE_FORBIDDEN');
-    err.code = 'PAYROLL_WRITE_FORBIDDEN';
-    throw err;
-  }
   const uid = userId != null ? Number(userId) : null;
   if (uid) {
     const roleKey = resolveUserSystemRoleKey(uid);
-    if (roleKey === PAYROLL_SELF_MANAGED_ROLE && !isAccountingUser(user)) {
+    if (isProtectedPayrollRoleKey(roleKey) && !isAccountingUser(user)) {
       const err = new Error('ACCOUNTING_SALARY_PROTECTED');
       err.code = 'ACCOUNTING_SALARY_PROTECTED';
       throw err;
@@ -73,23 +69,20 @@ export function assertCanEditPayrollEmployee(user, { user_id: userId, work_role_
       .prepare(`SELECT role_name FROM work_roles WHERE id = ? AND deleted_at IS NULL`)
       .get(Number(workRoleId));
     const wrKey = normalizeRoleKey(wr?.role_name);
-    if (wrKey === 'buxgalter' || wrKey === 'accounting') {
-      /* sklad ish roli «Buxgalter» — superuser taqiqlangan, buxgalter belgilaydi */
-      if (isSuperuserUser(user)) {
-        const err = new Error('PAYROLL_WRITE_FORBIDDEN');
-        err.code = 'PAYROLL_WRITE_FORBIDDEN';
-        throw err;
-      }
+    if (isProtectedPayrollRoleKey(wrKey) && !isAccountingUser(user)) {
+      const err = new Error('ACCOUNTING_SALARY_PROTECTED');
+      err.code = 'ACCOUNTING_SALARY_PROTECTED';
+      throw err;
     }
   }
 }
 
 export function payrollAccessErrorResponse(res, e) {
   if (e?.code === 'PAYROLL_WRITE_FORBIDDEN' || e?.message === 'PAYROLL_WRITE_FORBIDDEN') {
-    return res.status(403).json({ error: 'Ish haqini faqat buxgalter belgilaydi. Superuser faqat kuzatadi.' });
+    return res.status(403).json({ error: 'Ish haqini belgilash huquqi yo‘q.' });
   }
   if (e?.code === 'ACCOUNTING_SALARY_PROTECTED' || e?.message === 'ACCOUNTING_SALARY_PROTECTED') {
-    return res.status(403).json({ error: 'Buxgalter oyligini superuser belgilay olmaydi.' });
+    return res.status(403).json({ error: 'Buxgalter oyligini faqat buxgalter belgilaydi.' });
   }
   return null;
 }
