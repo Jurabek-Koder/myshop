@@ -13,6 +13,10 @@ import {
   HOME_BENEFITS_DEFAULT,
 } from '../config/homeBenefitsDefaults.js';
 import { authRequired, requireRole } from '../middleware/auth.js';
+import {
+  denyPortalAccessForWorkRole,
+  restorePortalAccessForWorkRole,
+} from '../lib/portalAccess.js';
 import { buildCourierRegionServiceText } from '../utils/viloyatPacker.js';
 import { syncPayrollRoleDefaults } from '../services/payrollCycleService.js';
 import { buildWorkRoleFinancePayload } from '../services/workRoleTransactionService.js';
@@ -1410,15 +1414,17 @@ router.post('/work-roles/:id/restore', (req, res) => {
   if (!existing) return res.status(404).json({ error: 'Rol topilmadi.' });
   db.prepare('UPDATE work_roles SET deleted_at = NULL WHERE id = ?').run(id);
   const restored = db.prepare('SELECT * FROM work_roles WHERE id = ?').get(id);
+  restorePortalAccessForWorkRole(restored);
   res.json(roleRowToDto(restored));
 });
 
 router.delete('/work-roles/:id/permanent', (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
   if (Number.isNaN(id) || id < 1) return res.status(400).json({ error: 'Noto\'g\'ri ID.' });
-  const row = db.prepare('SELECT id, deleted_at FROM work_roles WHERE id = ?').get(id);
+  const row = db.prepare('SELECT * FROM work_roles WHERE id = ?').get(id);
   if (!row) return res.status(404).json({ error: 'Rol topilmadi.' });
   if (row.deleted_at == null) return res.status(400).json({ error: 'Faqat savatdagi (o\'chirilgan) rolni butunlay o\'chirish mumkin.' });
+  denyPortalAccessForWorkRole(row);
   db.prepare('DELETE FROM work_roles WHERE id = ?').run(id);
   res.json({ ok: true });
 });
@@ -1567,8 +1573,10 @@ router.post('/work-roles/:id/actions', (req, res) => {
 
   if (action === 'activate') {
     db.prepare('UPDATE work_roles SET status = ? WHERE id = ?').run('active', id);
+    restorePortalAccessForWorkRole(role);
   } else if (action === 'block') {
     db.prepare('UPDATE work_roles SET status = ? WHERE id = ?').run('blocked', id);
+    denyPortalAccessForWorkRole(role);
   } else if (action === 'fine') {
     const v = Number.isFinite(amount) ? Math.max(0, amount) : 0;
     db.prepare('UPDATE work_roles SET fines_count = fines_count + 1, fine_amount = fine_amount + ?, total_amount = total_amount - ? WHERE id = ?').run(v, v, id);
@@ -1591,6 +1599,7 @@ router.post('/work-roles/:id/actions', (req, res) => {
     });
   } else if (action === 'delete') {
     db.prepare('UPDATE work_roles SET deleted_at = ? WHERE id = ?').run(nowSql(), id);
+    denyPortalAccessForWorkRole(role);
   } else {
     return res.status(400).json({ error: 'Noto\'g\'ri action.' });
   }
@@ -1606,6 +1615,7 @@ router.delete('/work-roles/:id', (req, res) => {
   const existing = db.prepare('SELECT id FROM work_roles WHERE id = ?').get(id);
   if (!existing) return res.status(404).json({ error: 'Rol topilmadi.' });
 
+  denyPortalAccessForWorkRole(existing);
   db.prepare('UPDATE work_roles SET deleted_at = ? WHERE id = ?').run(nowSql(), id);
   res.json({ ok: true });
 });
