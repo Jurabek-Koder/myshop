@@ -1,0 +1,87 @@
+/* Yon panel menyu — ixcham qatorlar (ombor admin + buxgalteriya) */
+
+.picker-mobile .staff-side-panel-ref.staff-side-panel--compact .picker-side-panel-nav,
+[data-apanel] .staff-side-panel-ref.staff-side-panel--compact .picker-side-panel-nav {
+  padding: 0 6px !important;
+  gap: 0 !important;
+  row-gap: 0 !important;
+}
+
+.picker-mobile .staff-side-panel-ref.staff-side-panel--compact .picker-side-panel-item,
+[data-apanel] .staff-side-panel-ref.staff-side-panel--compact .picker-side-panel-item {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  gap: 6px !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 1.5px 8px !important;
+  border: none !important;
+  border-radius: 6px !important;
+  font-size: 13px !important;
+  font-weight: 500;
+  line-height: 1.1 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  min-width: 0;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.picker-mobile .staff-side-panel-ref.staff-side-panel--compact .picker-side-panel-item-label,
+[data-apanel] .staff-side-panel-ref.staff-side-panel--compact .picker-side-panel-item-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0 !important;
+  padding: 2px 0 !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.1 !important;
+  text-align: left;
+}
+
+.picker-mobile .staff-side-panel-ref.staff-side-panel--compact .picker-side-panel-item-icon,
+[data-apanel] .staff-side-panel-ref.staff-side-panel--compact .picker-side-panel-item-icon {
+  font-size: 15px !important;
+  width: 20px !important;
+  min-width: 20px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  flex-shrink: 0 !important;
+  line-height: 1 !important;
+}
+
+.picker-mobile .staff-side-panel-ref.staff-side-panel--compact .picker-side-panel-item.picker-side-panel-item-active::before,
+[data-apanel] .staff-side-panel-ref.staff-side-panel--compact .picker-side-panel-item.picker-side-panel-item-active::before {
+  top: 0;
+  bottom: 0;
+}
+
+/* PickerDashboard.css lazy yuklanganda ham ustun bo‘lishi uchun */
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref.staff-side-panel--compact .picker-side-panel-nav {
+  padding: 0 6px !important;
+  gap: 0 !important;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref.staff-side-panel--compact .picker-side-panel-item {
+  padding: 1.5px 8px !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  gap: 6px !important;
+  line-height: 1.1 !important;
+  border-radius: 6px !important;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref.staff-side-panel--compact .picker-side-panel-item-label {
+  padding: 2px 0 !important;
+  margin: 0 !important;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref.staff-side-panel--compact .picker-side-panel-item-icon {
+  margin: 0 !important;
+  padding: 0 !important;
+}

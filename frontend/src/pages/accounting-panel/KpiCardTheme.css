@@ -1,0 +1,72 @@
+/**
+ * Buxgalter paneli stat bloklari — AccountingShell style={--ap-kpi-*} bilan boshqariladi.
+ * !important: boshqa global CSS bilan ziddiyatni oldini oladi.
+ */
+
+[data-apanel] .ap-kpi,
+[data-apanel] .ap-mini-stat {
+  background: var(--ap-kpi-surface, #111827) !important;
+  border-color: var(--ap-kpi-border, #1e293b) !important;
+  box-shadow: var(--ap-kpi-shadow, none) !important;
+}
+
+[data-apanel] .ap-kpi .ap-kpi-label,
+[data-apanel] .ap-kpi .ap-kpi-hint,
+[data-apanel] .ap-mini-stat span {
+  color: var(--ap-kpi-muted, #94a3b8) !important;
+}
+
+/* Qiymat ranglari — kun */
+[data-apanel][data-theme='light'] .ap-kpi.ap-kpi--brand .ap-kpi-value,
+[data-apanel].ap-theme-light .ap-kpi.ap-kpi--brand .ap-kpi-value {
+  color: #0284c7 !important;
+}
+
+[data-apanel][data-theme='light'] .ap-kpi.ap-kpi--rose .ap-kpi-value,
+[data-apanel].ap-theme-light .ap-kpi.ap-kpi--rose .ap-kpi-value {
+  color: #e11d48 !important;
+}
+
+[data-apanel][data-theme='light'] .ap-kpi.ap-kpi--emerald .ap-kpi-value,
+[data-apanel].ap-theme-light .ap-kpi.ap-kpi--emerald .ap-kpi-value {
+  color: #059669 !important;
+}
+
+[data-apanel][data-theme='light'] .ap-kpi.ap-kpi--violet .ap-kpi-value,
+[data-apanel].ap-theme-light .ap-kpi.ap-kpi--violet .ap-kpi-value {
+  color: #7c3aed !important;
+}
+
+/* Qiymat ranglari — tun */
+[data-apanel][data-theme='dark'] .ap-kpi.ap-kpi--brand .ap-kpi-value {
+  color: #38bdf8 !important;
+}
+
+[data-apanel][data-theme='dark'] .ap-kpi.ap-kpi--rose .ap-kpi-value {
+  color: #fb7185 !important;
+}
+
+[data-apanel][data-theme='dark'] .ap-kpi.ap-kpi--emerald .ap-kpi-value {
+  color: #34d399 !important;
+}
+
+[data-apanel][data-theme='dark'] .ap-kpi.ap-kpi--violet .ap-kpi-value {
+  color: #a78bfa !important;
+}
+
+[data-apanel] .ap-mini-stat strong {
+  color: var(--ap-text, #f1f5f9);
+}
+
+[data-apanel].ap-theme-light .ap-mini-stat strong,
+[data-apanel][data-theme='light'] .ap-mini-stat strong {
+  color: var(--ap-text, #0f172a) !important;
+}
+
+[data-apanel] .ap-mini-stat--ok strong {
+  color: var(--ap-ok, #34d399) !important;
+}
+
+[data-apanel] .ap-mini-stat--danger strong {
+  color: var(--ap-danger, #f87171) !important;
+}
