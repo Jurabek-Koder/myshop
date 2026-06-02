@@ -1,6 +1,15 @@
 import jwt from 'jsonwebtoken';
 import { security } from '../config/security.js';
 import { db } from '../db/database.js';
+import { isUserLoginAllowed, LOGIN_ACCESS_DENIED_MESSAGE } from '../lib/portalAccess.js';
+
+function loadAuthUser(userId) {
+  return db
+    .prepare(
+      'SELECT id, email, login, full_name, role, role_id, seller_id, staff_member_id, phone, status FROM users WHERE id = ?',
+    )
+    .get(userId);
+}
 
 export function authRequired(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -13,8 +22,10 @@ export function authRequired(req, res, next) {
       issuer: security.jwt.issuer,
       audience: security.jwt.audience,
     });
-    const user = db.prepare('SELECT id, email, login, full_name, role, role_id, seller_id, staff_member_id, phone FROM users WHERE id = ?').get(payload.sub);
-    if (!user) return res.status(401).json({ error: 'Foydalanuvchi topilmadi.' });
+    const user = loadAuthUser(payload.sub);
+    if (!user || !isUserLoginAllowed(user)) {
+      return res.status(401).json({ error: LOGIN_ACCESS_DENIED_MESSAGE });
+    }
     req.user = user;
     next();
   } catch (e) {
@@ -33,8 +44,8 @@ export function optionalAuth(req, res, next) {
       issuer: security.jwt.issuer,
       audience: security.jwt.audience,
     });
-    const user = db.prepare('SELECT id, email, login, full_name, role, role_id, seller_id, staff_member_id, phone FROM users WHERE id = ?').get(payload.sub);
-    if (user) req.user = user;
+    const user = loadAuthUser(payload.sub);
+    if (user && isUserLoginAllowed(user)) req.user = user;
   } catch (_) {}
   next();
 }
@@ -87,10 +98,8 @@ export function authRequiredBearerOrQuery(req, res, next) {
       issuer: security.jwt.issuer,
       audience: security.jwt.audience,
     });
-    const user = db
-      .prepare('SELECT id, email, login, full_name, role, role_id, seller_id, staff_member_id, phone FROM users WHERE id = ?')
-      .get(payload.sub);
-    if (!user) return res.status(401).end();
+    const user = loadAuthUser(payload.sub);
+    if (!user || !isUserLoginAllowed(user)) return res.status(401).end();
     req.user = user;
     next();
   } catch {
