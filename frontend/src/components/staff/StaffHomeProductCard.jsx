@@ -27,8 +27,11 @@ function StaffHomeProductCardStats({ warehouseStock, orderCount }) {
 }
 
 function StaffHomeProductCardBody({ name, price, priceLabel, hidePrice = false }) {
+  const bodyClass = hidePrice
+    ? 'product-card-body packer-card-title-pane'
+    : 'product-card-body operator-home-card-footer';
   return (
-    <div className="product-card-body operator-home-card-footer">
+    <div className={bodyClass}>
       <h3>{name}</h3>
       {!hidePrice ? (
         <p className="product-price operator-home-card-price">{priceLabel ?? formatCurrency(price)}</p>
