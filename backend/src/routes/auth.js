@@ -11,6 +11,10 @@ import { security } from '../config/security.js';
 import { insertProjectAuditEntry } from '../lib/projectAuditLog.js';
 import { enrichUserWithRoleProfile } from '../lib/roleProfileId.js';
 import {
+  isUserLoginAllowed,
+  LOGIN_ACCESS_DENIED_MESSAGE,
+} from '../lib/portalAccess.js';
+import {
   buildInstagramAuthorizeUrl,
   exchangeInstagramCode,
   findOrCreateOAuthUser,
@@ -854,12 +858,13 @@ router.post('/login', authRateLimiter, loginValidation, async (req, res) => {
     LIMIT 1
   `).get(identifier, identifier, identifier);
 
-    if (String(user?.status || '').toLowerCase() === 'blocked') {
-      return res.status(403).json({ error: 'Akkount bloklangan. Administratorga murojaat qiling.' });
-    }
-
     let match = false;
-    if (user) match = await verifyUserPassword(password, user);
+    if (user && !isUserLoginAllowed(user)) {
+      user = null;
+      match = false;
+    } else if (user) {
+      match = await verifyUserPassword(password, user);
+    }
 
     if (!user || !match) {
       const workRole = findWorkRole(identifier) || (identifier.includes('@') ? findWorkRole(identifier.split('@')[0].trim()) : null);
@@ -946,8 +951,8 @@ router.post('/login', authRateLimiter, loginValidation, async (req, res) => {
       user = ensureSuperuserRoleInDbIfNeeded(user) || user;
     }
 
-    if (!user || !match) {
-      return res.status(401).json({ error: 'Email yoki login yoki parol noto\'g\'ri.' });
+    if (!user || !match || !isUserLoginAllowed(user)) {
+      return res.status(401).json({ error: LOGIN_ACCESS_DENIED_MESSAGE });
     }
 
     /** `users` bcrypt bilan kirildi; `staff_members` hali bog‘lanmagan bo‘lsa, parolni qayta yozmaymiz */
@@ -1039,6 +1044,11 @@ router.post('/refresh', authRateLimiter, (req, res) => {
       audience: security.jwt.audience,
     });
     if (payload.type !== 'refresh') return res.status(401).json({ error: 'Token turi noto\'g\'ri.' });
+    const user = db.prepare('SELECT id, status, role, role_id FROM users WHERE id = ?').get(payload.sub);
+    if (!user || !isUserLoginAllowed(user)) {
+      res.clearCookie(REFRESH_COOKIE, refreshCookieOpts());
+      return res.status(401).json({ error: LOGIN_ACCESS_DENIED_MESSAGE });
+    }
     const tokens = generateTokens(payload.sub);
     if (readRefreshFromCookie(req)) {
       applyRefreshCookie(res, tokens.refresh, true);
