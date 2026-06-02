@@ -3309,6 +3309,8 @@ export default function AdminDashboard() {
 
   if (user && !isSuperuser) return null;
 
+  const accountingMoliyaHubActive = activeView === 'accounting' && accountingMoliyaHubOpen;
+
   return (
     <div className={`admin-dashboard ${darkMode ? 'admin-dark' : ''}`}>
       <div className={`admin-overlay ${sidebarOpen ? 'show' : ''}`} onClick={() => setSidebarOpen(false)} aria-hidden={!sidebarOpen} />
@@ -3383,7 +3385,9 @@ export default function AdminDashboard() {
         </div>
       </aside>
 
-      <main className={`admin-main${activeView === 'staff_chat' ? ' admin-main--staff-chat' : ''}`}>
+      <main
+        className={`admin-main${activeView === 'staff_chat' ? ' admin-main--staff-chat' : ''}${accountingMoliyaHubActive ? ' admin-main--moliya-hub' : ''}`}
+      >
         {activeView !== 'staff_chat' && (
         <header className="topbar-neo">
           <StaffTopbarCenterId />
@@ -3746,7 +3750,9 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        <section className={`admin-content${activeView === 'staff_chat' ? ' admin-content--staff-chat' : ''}`}>
+        <section
+          className={`admin-content${activeView === 'staff_chat' ? ' admin-content--staff-chat' : ''}${accountingMoliyaHubActive ? ' admin-content--moliya-hub' : ''}`}
+        >
           {error && <div className="admin-alert">{error}</div>}
 
           {activeView === 'staff_chat' ? (
