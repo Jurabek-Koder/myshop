@@ -4,6 +4,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { db, getUserAllowedPages } from '../db/database.js';
 import { authRequired, requireRole } from '../middleware/auth.js';
+import { isSuperuserUserRow } from '../lib/portalAccess.js';
 import { scheduleSkladBotAfterHumanMessage } from '../services/skladChatBot.js';
 import { enqueueAiCallForPendingOrder } from '../modules/operator/call-operator.service.js';
 import {
@@ -240,7 +241,7 @@ router.patch('/users/:id/role', (req, res) => {
   const user = db.prepare('SELECT id, email, full_name, role, seller_id FROM users WHERE id = ?').get(userId);
   if (!user) return res.status(404).json({ error: 'Foydalanuvchi topilmadi.' });
 
-  if (normalizeRoleName(user.role) === 'superuser') {
+  if (normalizeRoleName(user.role) === 'superuser' || isSuperuserUserRow(user)) {
     return res.status(403).json({ error: 'Superuser rolini o\'zgartirish mumkin emas.' });
   }
 
@@ -276,7 +277,7 @@ router.patch('/users/:id/status', (req, res) => {
 
   const user = db.prepare('SELECT id, role FROM users WHERE id = ?').get(userId);
   if (!user) return res.status(404).json({ error: 'Foydalanuvchi topilmadi.' });
-  if (normalizeRoleName(user.role) === 'superuser') {
+  if (normalizeRoleName(user.role) === 'superuser' || isSuperuserUserRow(user)) {
     return res.status(403).json({ error: 'Superuser statusini o\'zgartirib bo\'lmaydi.' });
   }
 
@@ -296,7 +297,7 @@ router.patch('/users/:id/password', (req, res) => {
   const user = db.prepare('SELECT id, role, email, full_name FROM users WHERE id = ?').get(userId);
   if (!user) return res.status(404).json({ error: 'Foydalanuvchi topilmadi.' });
 
-  if (normalizeRoleName(user.role) === 'superuser') {
+  if (normalizeRoleName(user.role) === 'superuser' || isSuperuserUserRow(user)) {
     return res.status(403).json({ error: 'Superuser parolini bu yerda almashtirib bo\'lmaydi.' });
   }
 
