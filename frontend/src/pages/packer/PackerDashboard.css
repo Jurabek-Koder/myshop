@@ -3734,24 +3734,11 @@ html.theme-dark .packer-main--v2-home {
   }
 }
 
-/* Mahsulot panjarasi — katta ekran: ixcham kartalar; mobil: ikkilik ustun */
+/* Mahsulot panjarasi — operator katalogiga mos (StaffHomeProductCard.css da batafsil) */
 
 .packer-v2-product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(168px, 100%), 1fr));
-  gap: clamp(0.75rem, 2vw, 1rem);
-}
-
-@media (min-width: 1100px) {
-  .packer-v2-product-grid {
-    grid-template-columns: repeat(auto-fill, minmax(212px, 1fr));
-  }
-}
-
-@media (max-width: 420px) {
-  .packer-v2-product-grid {
-    gap: 0.65rem;
-  }
+  width: 100%;
 }
 
 .packer-v2-card {
