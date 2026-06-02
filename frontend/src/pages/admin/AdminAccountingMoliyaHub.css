@@ -1,0 +1,142 @@
+.admin-accounting-moliya-hub {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+  background: var(--admin-bg, #f8fafc);
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--admin-border, #e2e8f0);
+}
+
+.admin-accounting-moliya-hub-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid var(--admin-border, #e2e8f0);
+  background: var(--admin-card, #fff);
+  flex-shrink: 0;
+}
+
+.admin-accounting-moliya-hub-back {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.admin-accounting-moliya-hub-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--admin-text, #0f172a);
+}
+
+.admin-accounting-moliya-tabs {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--admin-border, #e2e8f0);
+  background: var(--admin-card, #fff);
+}
+
+.admin-accounting-moliya-tabs-scroll {
+  display: flex;
+  align-items: stretch;
+  gap: 0.35rem;
+  padding: 0.45rem 0.75rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-accounting-moliya-tab {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--admin-muted, #64748b);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.admin-accounting-moliya-tab:hover {
+  background: rgba(37, 99, 235, 0.06);
+  color: var(--admin-text, #0f172a);
+}
+
+.admin-accounting-moliya-tab--active {
+  background: rgba(37, 99, 235, 0.1);
+  border-color: rgba(37, 99, 235, 0.25);
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.admin-accounting-moliya-tab-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.admin-accounting-moliya-tab-label {
+  line-height: 1.2;
+}
+
+.admin-accounting-moliya-hub-content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0.5rem 0.75rem 1rem;
+}
+
+.admin-accounting-moliya-hub-content .ap-page {
+  padding-top: 0.25rem;
+}
+
+.admin-accounting-moliya-hub-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  padding: 3rem 1rem;
+  color: var(--admin-muted, #64748b);
+}
+
+.admin-dark .admin-accounting-moliya-hub {
+  background: var(--admin-bg, #0f172a);
+  border-color: var(--admin-border, #1e293b);
+}
+
+.admin-dark .admin-accounting-moliya-hub-bar,
+.admin-dark .admin-accounting-moliya-tabs {
+  background: var(--admin-card, #111827);
+  border-color: var(--admin-border, #1e293b);
+}
+
+.admin-dark .admin-accounting-moliya-hub-title {
+  color: var(--admin-text, #f1f5f9);
+}
+
+.admin-dark .admin-accounting-moliya-tab {
+  color: var(--admin-muted, #94a3b8);
+}
+
+.admin-dark .admin-accounting-moliya-tab--active {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.35);
+  color: #93c5fd;
+}
+
+@media (max-width: 640px) {
+  .admin-accounting-moliya-tab-label {
+    max-width: 9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
