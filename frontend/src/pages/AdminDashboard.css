@@ -907,6 +907,48 @@
   min-width: 0;
 }
 
+/* Buxgalteriya → Moliya hub: qolgan balandlikni to‘ldiradi (mobil + desktop) */
+.admin-main.admin-main--moliya-hub {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  min-height: 100svh;
+}
+
+.admin-content.admin-content--moliya-hub {
+  padding: 0;
+  gap: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.admin-content.admin-content--moliya-hub > .admin-alert {
+  flex-shrink: 0;
+  margin: 0.65rem 0.85rem 0;
+  border-radius: 12px;
+}
+
+.admin-content.admin-content--moliya-hub > .admin-accounting-moliya-hub {
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+}
+
+@media (max-width: 700px) {
+  .admin-content.admin-content--moliya-hub {
+    padding-left: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+  }
+}
+
 .admin-staff-chat-main {
   position: relative;
 }
@@ -6924,6 +6966,21 @@ button.admin-ai-target-pill:not(:disabled):hover {
   flex-wrap: wrap;
 }
 
+.admin-payroll-oversight__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.admin-payroll-oversight__actions .btn-neo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 36px;
+  white-space: nowrap;
+}
+
 .admin-payroll-oversight__kpi {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
@@ -6935,6 +6992,19 @@ button.admin-ai-target-pill:not(:disabled):hover {
   margin: 1rem 0 0.5rem;
   font-size: 0.92rem;
   font-weight: 600;
+}
+
+.admin-payroll-oversight .ap-table-scroll-hint {
+  display: none;
+  margin: 0.35rem 0 0;
+  font-size: 0.72rem;
+  color: var(--admin-muted, #64748b);
+}
+
+@media (max-width: 768px) {
+  .admin-payroll-oversight .ap-table-scroll-hint {
+    display: block;
+  }
 }
 
 .admin-payroll-oversight__table-wrap {
@@ -6976,6 +7046,99 @@ button.admin-ai-target-pill:not(:disabled):hover {
 .admin-payroll-oversight__table .is-center {
   text-align: center;
   white-space: nowrap;
+}
+
+.admin-payroll-oversight__table .is-action {
+  text-align: right;
+  white-space: nowrap;
+  width: 8.5rem;
+}
+
+.admin-payroll-oversight__table--employees {
+  min-width: 36rem;
+}
+
+.admin-payroll-oversight__edit-btn {
+  min-height: 32px;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.78rem;
+}
+
+.admin-payroll-oversight__locked {
+  font-size: 0.78rem;
+}
+
+.admin-payroll-modal-overlay {
+  z-index: 360;
+}
+
+.admin-payroll-modal {
+  width: min(100%, 28rem);
+  max-height: min(92dvh, 640px);
+  overflow: auto;
+  margin: auto;
+}
+
+.admin-payroll-modal-sub {
+  margin: 0.25rem 0 0;
+  font-size: 0.84rem;
+}
+
+.admin-payroll-modal-body {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0 1.1rem 1rem;
+}
+
+.admin-payroll-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.admin-payroll-field > span {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--admin-muted, #64748b);
+}
+
+.admin-payroll-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+
+.admin-payroll-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.85rem 1.1rem 1rem;
+  border-top: 1px solid var(--admin-border, rgba(148, 163, 184, 0.22));
+}
+
+@media (max-width: 640px) {
+  .admin-payroll-oversight__actions {
+    width: 100%;
+  }
+
+  .admin-payroll-oversight__actions .btn-neo {
+    flex: 1 1 calc(50% - 0.25rem);
+    justify-content: center;
+  }
+
+  .admin-payroll-field-row {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-payroll-modal {
+    width: calc(100% - 1.25rem);
+    margin: max(0.75rem, env(safe-area-inset-top, 0px)) auto max(0.75rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  .admin-payroll-modal-footer .btn-neo {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
 }
 
 .admin-payroll-oversight__empty {
