@@ -3743,7 +3743,7 @@ html.theme-dark .packer-main--v2-home {
 
 .packer-app .packer-home-product-card.operator-home-product-card .product-image,
 .packer-app .packer-home-product-card.operator-home-product-card .product-image img {
-  object-position: center center !important;
+  object-position: center top !important;
 }
 
 .packer-app .packer-home-product-card .product-image {
@@ -3815,7 +3815,7 @@ html.theme-dark .packer-main--v2-home {
     --packer-card-gap: 1px;
     --packer-card-inner-gap: 6px;
     --packer-image-bleed-x: 18px;
-    --packer-image-bleed-top: 6px;
+    --packer-image-bleed-top: 14px;
     --packer-image-zoom: 1.2;
     --packer-badge-font: 0.78rem;
     --packer-title-font: 0.8rem;
@@ -3823,8 +3823,9 @@ html.theme-dark .packer-main--v2-home {
 
   .packer-app .packer-home-product-card .product-image img,
   .packer-app .packer-home-product-card .product-image .product-placeholder {
-    object-position: center center !important;
-    transform: translate(-50%, -50%) !important;
+    top: 0 !important;
+    object-position: center top !important;
+    transform: translateX(-50%) !important;
     width: calc(100% * var(--packer-image-zoom)) !important;
     height: calc(100% * var(--packer-image-zoom)) !important;
   }
