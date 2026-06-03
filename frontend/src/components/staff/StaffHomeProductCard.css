@@ -96,7 +96,7 @@
   --packer-badge-pad-y: 4px;
   --packer-badge-pad-x: 6px;
   --packer-image-bleed-x: 18px;
-  --packer-image-bleed-top: 6px;
+  --packer-image-bleed-top: 14px;
   --packer-image-zoom: 1.2;
   display: grid;
   grid-template-columns: repeat(var(--packer-card-cols), minmax(0, 1fr));
@@ -154,6 +154,8 @@ html.theme-dark .packer-app .packer-v2-product-grid > .packer-home-product-card.
   min-width: 0;
   min-height: 0;
   flex: 0 0 auto;
+  margin: 0;
+  padding: 0;
 }
 
 .packer-app .packer-home-product-card .staff-home-product-card-media {
@@ -209,14 +211,14 @@ html.theme-dark .packer-app .packer-v2-product-grid > .packer-home-product-card.
 .packer-app .packer-home-product-card .product-image .product-placeholder {
   position: absolute;
   left: 50%;
-  top: 50%;
+  top: 0;
   right: auto;
   bottom: auto;
   width: calc(100% * var(--packer-image-zoom));
   height: calc(100% * var(--packer-image-zoom));
   object-fit: cover !important;
-  object-position: center center !important;
-  transform: translate(-50%, -50%) !important;
+  object-position: center top !important;
+  transform: translateX(-50%) !important;
   display: block;
   margin: 0;
   padding: 0;
