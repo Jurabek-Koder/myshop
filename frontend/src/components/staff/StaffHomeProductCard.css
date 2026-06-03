@@ -79,7 +79,7 @@
 /* ═══ Packer mahsulot kartasi — mobil/desktop bir xil ko‘rinish, faqat ustunlar farq qiladi ═══ */
 .packer-app .packer-v2-product-grid.operator-home-product-grid.product-grid {
   --packer-card-cols: 3;
-  --packer-card-gap: 1px;
+  --packer-card-gap: 7px;
   --packer-card-inner-gap: 6px;
   --packer-card-bg: #ececec;
   --packer-card-footer-bg: #f5f0e6;
