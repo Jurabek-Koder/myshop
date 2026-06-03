@@ -3812,7 +3812,7 @@ html.theme-dark .packer-main--v2-home {
 /* Mobil/desktop bir xil karta — faqat ustunlar (3/7) farq qiladi; vw/clamp ta’sirini yo‘q qilish */
 @media (min-width: 1024px) {
   .packer-app .packer-v2-product-grid.operator-home-product-grid.product-grid {
-    --packer-card-gap: 1px;
+    --packer-card-gap: 7px;
     --packer-card-inner-gap: 6px;
     --packer-image-bleed-x: 18px;
     --packer-image-bleed-top: 14px;
@@ -4063,7 +4063,7 @@ html.theme-dark .packer-v2-card__metric-num--warn {
 
   .packer-app .packer-v2-product-grid.operator-home-product-grid.product-grid {
     --packer-card-cols: 3;
-    gap: 1px;
+    gap: var(--packer-card-gap, 7px);
   }
 
   .packer-v2-product-grid:not(.operator-home-product-grid) {
