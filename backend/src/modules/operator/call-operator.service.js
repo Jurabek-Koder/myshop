@@ -211,18 +211,14 @@ function buildAssistantTranscriber() {
     model,
     language: 'multi',
     endpointing: readEnvFloat('MYSHOP_VAPI_DEEPGRAM_ENDPOINTING', 300),
+    // Vapi: har bir keyword — faqat "so'z" yoki "so'z:raqam" (bo'shliqsiz)
     keywords: [
-      'MyShop',
-      'My Shop',
-      'buyurtma',
-      'zakaz',
-      'заказ',
-      'курьер',
-      'kuryer',
-      'Toshkent',
-      'Ташкент',
-      'Chilonzor',
-      'Чиланзар',
+      'MyShop:2',
+      'buyurtma:1',
+      'zakaz:1',
+      'kuryer:1',
+      'Toshkent:1',
+      'Chilonzor:1',
     ],
   };
 }
