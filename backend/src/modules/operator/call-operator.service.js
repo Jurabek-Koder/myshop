@@ -201,15 +201,24 @@ function buildAssistantVoice() {
   };
 }
 
+function resolveDeepgramLanguage(model) {
+  const fromEnv = String(process.env.MYSHOP_VAPI_DEEPGRAM_LANGUAGE || '').trim();
+  if (fromEnv) return fromEnv;
+  // nova-2-phonecall: Vapi faqat en yoki en-US qabul qiladi
+  if (/phonecall/i.test(String(model || ''))) return 'en-US';
+  return 'multi';
+}
+
 function buildAssistantTranscriber() {
   const mode = String(process.env.MYSHOP_VAPI_TRANSCRIBER || 'deepgram').trim().toLowerCase();
   if (mode === 'off' || mode === 'none' || mode === 'default') return undefined;
 
-  const model = String(process.env.MYSHOP_VAPI_DEEPGRAM_MODEL || 'nova-2-phonecall').trim();
+  const model = String(process.env.MYSHOP_VAPI_DEEPGRAM_MODEL || 'nova-2').trim();
+  const language = resolveDeepgramLanguage(model);
   return {
     provider: 'deepgram',
     model,
-    language: 'multi',
+    language,
     endpointing: readEnvFloat('MYSHOP_VAPI_DEEPGRAM_ENDPOINTING', 300),
     // Vapi: har bir keyword — faqat "so'z" yoki "so'z:raqam" (bo'shliqsiz)
     keywords: [
