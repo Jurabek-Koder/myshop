@@ -1,0 +1,196 @@
+/* Ombor admin yon paneli — barcha CSS dan keyin yuklanadi (main.jsx) */
+
+.warehouse-admin-shell .warehouse-admin-side-panel.staff-side-panel-ref {
+  width: min(300px, 92vw) !important;
+  max-width: 300px !important;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref {
+  background: #f4f6fb !important;
+  border-right: 1px solid rgba(15, 23, 42, 0.1) !important;
+  box-shadow: 6px 0 32px rgba(15, 23, 42, 0.12) !important;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .staff-side-panel-head {
+  height: 44px;
+  min-height: 44px;
+  max-height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .staff-side-panel-logo-icon {
+  font-size: 18px;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .staff-side-panel-logo-text span {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a !important;
+  letter-spacing: -0.02em;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .staff-side-panel-logo-text small {
+  font-size: 8px;
+  letter-spacing: 1.1px;
+  color: #64748b !important;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .staff-side-intro {
+  height: auto;
+  min-height: 38px;
+  max-height: none;
+  padding: 8px 16px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  white-space: normal;
+  overflow: visible;
+  flex-wrap: wrap;
+  row-gap: 2px;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .staff-side-intro strong {
+  color: #0f172a !important;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .staff-side-intro .courier-side-meta {
+  color: #64748b !important;
+  font-size: 12px;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-item {
+  color: #334155 !important;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-item:hover {
+  background: rgba(37, 99, 235, 0.08) !important;
+  color: #1e293b !important;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-item.picker-side-panel-item-active {
+  background: rgba(37, 99, 235, 0.12) !important;
+  color: #1d4ed8 !important;
+  font-weight: 600;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-item.picker-side-panel-item-active::before {
+  background: #2563eb;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-item-icon.courier-side-nav-tg-plane {
+  color: #1e3a8a !important;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-footer {
+  padding: 12px 14px !important;
+  border-top: 1px solid rgba(15, 23, 42, 0.08) !important;
+  gap: 10px !important;
+  flex-direction: row !important;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-logout {
+  background: rgba(239, 68, 68, 0.08) !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+  color: #dc2626 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.12);
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-logout:hover {
+  background: rgba(239, 68, 68, 0.14) !important;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-theme-row {
+  background: rgba(15, 23, 42, 0.06) !important;
+  border: 1px solid rgba(15, 23, 42, 0.12) !important;
+  color: #475569 !important;
+  flex: 0 0 40px !important;
+  width: 40px !important;
+  min-width: 40px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  padding: 0 !important;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-theme-row:hover {
+  background: rgba(15, 23, 42, 0.1) !important;
+}
+
+.warehouse-admin-shell.picker-mobile .picker-side-panel-overlay {
+  background: rgba(15, 23, 42, 0.28) !important;
+}
+
+/* Tun rejimi */
+html.theme-dark .warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref {
+  background: #0f0f1e !important;
+  border-right-color: rgba(255, 255, 255, 0.07) !important;
+  box-shadow: 6px 0 40px rgba(0, 0, 0, 0.55) !important;
+}
+
+html.theme-dark .warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .staff-side-panel-head,
+html.theme-dark .warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .staff-side-intro {
+  border-bottom-color: rgba(255, 255, 255, 0.07);
+}
+
+html.theme-dark .warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .staff-side-panel-logo-text span {
+  color: #e8e8ff !important;
+}
+
+html.theme-dark .warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .staff-side-panel-logo-text small {
+  color: rgba(150, 150, 210, 0.55) !important;
+}
+
+html.theme-dark .warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .staff-side-intro strong {
+  color: #d0d0f0 !important;
+}
+
+html.theme-dark .warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .staff-side-intro .courier-side-meta {
+  color: rgba(130, 130, 185, 0.65) !important;
+}
+
+html.theme-dark .warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-item {
+  color: rgba(160, 160, 215, 0.7) !important;
+}
+
+html.theme-dark .warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-item:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: rgba(210, 220, 255, 0.95) !important;
+}
+
+html.theme-dark .warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-item.picker-side-panel-item-active {
+  background: rgba(74, 158, 255, 0.13) !important;
+  color: #80c8ff !important;
+}
+
+html.theme-dark .warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-item-icon.courier-side-nav-tg-plane {
+  color: inherit !important;
+}
+
+html.theme-dark .warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-footer {
+  border-top-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+html.theme-dark .warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-logout {
+  background: rgba(160, 30, 30, 0.18) !important;
+  border-color: rgba(210, 60, 60, 0.35) !important;
+  color: #ff8585 !important;
+  box-shadow: none;
+}
+
+html.theme-dark .warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-theme-row {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: rgba(190, 200, 245, 0.8) !important;
+}
+
+html.theme-dark .warehouse-admin-shell.picker-mobile .picker-side-panel-overlay {
+  background: rgba(0, 0, 0, 0.62) !important;
+}
+
+@media (min-width: 1025px) {
+  .warehouse-admin-shell .picker-side-panel.warehouse-admin-side-panel.staff-side-panel-ref {
+    width: min(300px, min(92vw, 100% - 2rem)) !important;
+    max-width: 300px !important;
+  }
+}
