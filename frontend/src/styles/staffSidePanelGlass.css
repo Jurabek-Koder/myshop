@@ -1,0 +1,195 @@
+/*
+ * Barcha rollar yon menyusi: shaffof panel + xira blur overlay.
+ * staffSidePanelRef / warehouseAdminSidePanel / accountingSidePanel dan keyin yuklanadi.
+ */
+
+:root {
+  --role-sidebar-backdrop: rgba(15, 23, 42, 0.34);
+  --role-sidebar-backdrop-blur: saturate(120%) blur(12px);
+  --role-sidebar-glass: rgba(255, 255, 255, 0.52);
+  --role-sidebar-glass-border: rgba(255, 255, 255, 0.62);
+  --role-sidebar-glass-shadow: 8px 0 36px rgba(15, 23, 42, 0.12);
+  --role-sidebar-glass-dark: rgba(15, 23, 42, 0.66);
+  --role-sidebar-glass-dark-border: rgba(255, 255, 255, 0.14);
+  --role-sidebar-glass-dark-shadow: 8px 0 40px rgba(0, 0, 0, 0.32);
+  --role-topbar-glass: rgba(255, 255, 255, 0.52);
+  --role-topbar-glass-dark: rgba(15, 23, 42, 0.62);
+  --role-topbar-glass-border: rgba(255, 255, 255, 0.38);
+}
+
+html.theme-dark {
+  --role-sidebar-backdrop: rgba(2, 6, 23, 0.58);
+  --role-sidebar-glass: rgba(15, 23, 42, 0.58);
+  --role-sidebar-glass-border: rgba(255, 255, 255, 0.12);
+  --role-sidebar-glass-shadow: 8px 0 40px rgba(0, 0, 0, 0.28);
+  --role-sidebar-glass-dark: rgba(15, 23, 42, 0.72);
+  --role-sidebar-glass-dark-border: rgba(255, 255, 255, 0.12);
+  --role-sidebar-glass-dark-shadow: 8px 0 44px rgba(0, 0, 0, 0.38);
+  --role-topbar-glass-dark: rgba(15, 23, 42, 0.72);
+}
+
+/* --- Orqa fon (xira + blur) --- */
+.admin-overlay,
+.picker-side-panel-overlay,
+.seller-overlay,
+.target-overlay,
+.packer-sidebar-backdrop.packer-sidebar-backdrop--visible {
+  background: var(--role-sidebar-backdrop) !important;
+  -webkit-backdrop-filter: var(--role-sidebar-backdrop-blur) !important;
+  backdrop-filter: var(--role-sidebar-backdrop-blur) !important;
+}
+
+.seller-app.seller-mobile-shell:not(.seller-chat-mode) .seller-overlay {
+  background: var(--role-sidebar-backdrop) !important;
+  -webkit-backdrop-filter: var(--role-sidebar-backdrop-blur) !important;
+  backdrop-filter: var(--role-sidebar-backdrop-blur) !important;
+}
+
+[data-apanel] .ap-layout .picker-side-panel-overlay {
+  background: var(--role-sidebar-backdrop) !important;
+  -webkit-backdrop-filter: var(--role-sidebar-backdrop-blur) !important;
+  backdrop-filter: var(--role-sidebar-backdrop-blur) !important;
+}
+
+.warehouse-admin-shell.picker-mobile .picker-side-panel-overlay {
+  background: var(--role-sidebar-backdrop) !important;
+  -webkit-backdrop-filter: var(--role-sidebar-backdrop-blur) !important;
+  backdrop-filter: var(--role-sidebar-backdrop-blur) !important;
+}
+
+.picker-mobile .picker-side-panel-overlay {
+  background: var(--role-sidebar-backdrop) !important;
+  -webkit-backdrop-filter: var(--role-sidebar-backdrop-blur) !important;
+  backdrop-filter: var(--role-sidebar-backdrop-blur) !important;
+}
+
+/* --- Shaffof yon panel (staff / operator / kuryer / ombor / buxgalteriya) --- */
+.picker-side-panel.staff-side-panel-ref,
+.picker-mobile .picker-side-panel.staff-side-panel-ref,
+[data-apanel] .accounting-side-panel.staff-side-panel-ref {
+  background: var(--role-sidebar-glass-dark) !important;
+  border-right: 1px solid var(--role-sidebar-glass-dark-border) !important;
+  box-shadow: var(--role-sidebar-glass-dark-shadow) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(170%) !important;
+  backdrop-filter: blur(26px) saturate(170%) !important;
+}
+
+html.theme-light .picker-side-panel.staff-side-panel-ref,
+html.theme-light .picker-mobile .picker-side-panel.staff-side-panel-ref,
+html.theme-light [data-apanel] .accounting-side-panel.staff-side-panel-ref {
+  background: var(--role-sidebar-glass) !important;
+  border-right-color: var(--role-sidebar-glass-border) !important;
+  box-shadow: var(--role-sidebar-glass-shadow) !important;
+}
+
+/* Picker (staff-side-panel-ref siz) */
+.picker-mobile .picker-side-panel:not(.staff-side-panel-ref) {
+  background: var(--role-sidebar-glass) !important;
+  border-right: 1px solid var(--role-sidebar-glass-border) !important;
+  box-shadow: var(--role-sidebar-glass-shadow) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(170%) !important;
+  backdrop-filter: blur(26px) saturate(170%) !important;
+}
+
+html.theme-dark .picker-mobile .picker-side-panel:not(.staff-side-panel-ref) {
+  background: var(--role-sidebar-glass-dark) !important;
+  border-right-color: var(--role-sidebar-glass-dark-border) !important;
+  box-shadow: var(--role-sidebar-glass-dark-shadow) !important;
+}
+
+/* Admin yon panel */
+.admin-dashboard .admin-sidebar.open .sidebar-inner {
+  background: rgba(255, 255, 255, 0.74) !important;
+  border-color: rgba(255, 255, 255, 0.55) !important;
+  box-shadow: var(--role-sidebar-glass-shadow) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(165%) !important;
+  backdrop-filter: blur(26px) saturate(165%) !important;
+}
+
+.admin-dashboard.admin-dark .admin-sidebar.open .sidebar-inner {
+  background: rgba(17, 17, 19, 0.78) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: var(--role-sidebar-glass-dark-shadow) !important;
+}
+
+/* Seller mobil yon panel */
+.seller-app.seller-mobile-shell .seller-sidebar {
+  background: var(--role-sidebar-glass) !important;
+  border-right: 1px solid var(--role-sidebar-glass-border) !important;
+  box-shadow: var(--role-sidebar-glass-shadow) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(170%) !important;
+  backdrop-filter: blur(26px) saturate(170%) !important;
+}
+
+.seller-app.seller-dark.seller-mobile-shell .seller-sidebar,
+html.theme-dark .seller-app.seller-mobile-shell .seller-sidebar {
+  background: var(--role-sidebar-glass-dark) !important;
+  border-right-color: var(--role-sidebar-glass-dark-border) !important;
+  box-shadow: var(--role-sidebar-glass-dark-shadow) !important;
+}
+
+/* Target mobil yon panel */
+@media (max-width: 900px) {
+  .target-sidebar {
+    background: var(--role-sidebar-glass) !important;
+    border-right: 1px solid var(--role-sidebar-glass-border) !important;
+    box-shadow: var(--role-sidebar-glass-shadow) !important;
+    -webkit-backdrop-filter: blur(26px) saturate(170%) !important;
+    backdrop-filter: blur(26px) saturate(170%) !important;
+  }
+
+  html.theme-dark .target-sidebar {
+    background: var(--role-sidebar-glass-dark) !important;
+    border-right-color: var(--role-sidebar-glass-dark-border) !important;
+    box-shadow: var(--role-sidebar-glass-dark-shadow) !important;
+  }
+}
+
+/* rolePanelPolish: operator / seller / packer drawer (rels dan tashqari) */
+.picker-side-panel:not(.staff-side-panel-ref),
+.operator-sidebar,
+.packer-sidebar:not(.packer-sidebar--rail) {
+  background: var(--role-sidebar-glass-dark) !important;
+  border-right: 1px solid var(--role-sidebar-glass-dark-border) !important;
+  box-shadow: var(--role-sidebar-glass-dark-shadow) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(170%) !important;
+  backdrop-filter: blur(26px) saturate(170%) !important;
+}
+
+html.theme-light .picker-side-panel:not(.staff-side-panel-ref),
+html.theme-light .operator-sidebar,
+html.theme-light .packer-sidebar:not(.packer-sidebar--rail) {
+  background: var(--role-sidebar-glass) !important;
+  border-right-color: var(--role-sidebar-glass-border) !important;
+  box-shadow: var(--role-sidebar-glass-shadow) !important;
+}
+
+/* --- Topbar: shaffof glass (barcha rollar) --- */
+.picker-topbar,
+.seller-topbar,
+.topbar-neo,
+.target-topbar,
+.packer-sticky-topbar,
+[data-apanel] .ap-topbar {
+  background: var(--role-topbar-glass) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(165%) !important;
+  backdrop-filter: blur(18px) saturate(165%) !important;
+  border-bottom-color: var(--role-topbar-glass-border) !important;
+}
+
+.theme-dark .picker-topbar,
+.seller-dark .seller-topbar,
+.admin-dashboard.admin-dark .topbar-neo,
+html.theme-dark .target-topbar,
+html.theme-dark .packer-sticky-topbar,
+[data-apanel]:not(.ap-theme-light) .ap-topbar {
+  background: var(--role-topbar-glass-dark) !important;
+}
+
+html.theme-dark .target-topbar {
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18) !important;
+}
+
+[data-apanel].ap-theme-light .ap-topbar {
+  background: var(--role-topbar-glass) !important;
+}
