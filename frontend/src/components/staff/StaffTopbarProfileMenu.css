@@ -1,0 +1,189 @@
+.staff-profile-popover-wrap {
+  position: relative;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+/* Picker / operator / ombor: chip tugma. Seller: faqat `.seller-profile-btn` (SellerDashboard.css). */
+.staff-profile-popover-trigger:not(.seller-profile-btn) {
+  box-sizing: border-box;
+  margin: 0;
+  border: 1px solid rgba(59, 130, 246, 0.18);
+  background: var(--bg-card, #ffffff);
+  color: var(--text, #1e293b);
+  border-radius: 12px;
+  padding: 0.34rem 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  max-width: min(200px, 72vw);
+  min-height: 36px;
+  cursor: pointer;
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+html.theme-dark .staff-profile-popover-trigger:not(.seller-profile-btn) {
+  border-color: rgba(129, 164, 235, 0.22);
+  background: #101b31;
+  color: var(--text, #f1f5f9);
+}
+
+.staff-profile-popover-trigger:not(.seller-profile-btn):hover {
+  filter: brightness(0.97);
+}
+
+html.theme-dark .staff-profile-popover-trigger:not(.seller-profile-btn):hover {
+  filter: brightness(1.08);
+}
+
+.staff-profile-popover-trigger.seller-profile-btn {
+  max-width: min(260px, 85vw);
+}
+
+.staff-profile-popover-avatar-img {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.staff-profile-popover-initials {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(152deg, #5eead4 0%, #34d399 35%, #10b981 70%, #059669 100%);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.theme-dark .staff-profile-popover-initials {
+  background: linear-gradient(152deg, #047857 0%, #065f46 48%, #064e3b 100%);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.staff-profile-popover-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.staff-profile-popover-chevron {
+  flex-shrink: 0;
+  font-size: 0.62rem;
+  opacity: 0.72;
+}
+
+/* Markaziy portal: yengil xira fon (orqa kontent o‘qilmaydi, lekin seziladi) */
+.staff-profile-popover-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 12050;
+  background: rgba(15, 23, 42, 0.18);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-backdrop-filter: blur(8px) saturate(110%);
+  backdrop-filter: blur(8px) saturate(110%);
+  isolation: isolate;
+}
+
+.theme-dark .staff-profile-popover-backdrop {
+  background: rgba(2, 6, 23, 0.22);
+}
+
+.staff-profile-popover-menu {
+  min-width: 220px;
+  width: min(280px, calc(100vw - 2rem));
+  padding: 0.45rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(30, 41, 59, 0.72);
+  color: #e2e8f0;
+  box-shadow:
+    0 20px 48px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
+  isolation: isolate;
+  position: relative;
+  flex-shrink: 0;
+  max-height: min(
+    72dvh,
+    calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 2rem)
+  );
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobil + desktop: ekran markazi (flex — transform muammosiz) */
+.staff-profile-popover-center-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 12051;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding:
+    max(1rem, env(safe-area-inset-top, 0px))
+    max(1rem, env(safe-area-inset-right, 0px))
+    max(1rem, env(safe-area-inset-bottom, 0px))
+    max(1rem, env(safe-area-inset-left, 0px));
+  pointer-events: none;
+}
+
+.staff-profile-popover-center-shell .staff-profile-popover-menu {
+  pointer-events: auto;
+}
+
+.staff-profile-popover-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.52rem 0.55rem;
+  margin: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #cbd5e1;
+  font-size: 0.88rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.staff-profile-popover-item i {
+  width: 1.1rem;
+  text-align: center;
+  opacity: 0.92;
+}
+
+.staff-profile-popover-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #f8fafc;
+}
+
+.staff-profile-popover-item--danger {
+  color: #fca5a5;
+}
+
+.staff-profile-popover-item--danger:hover {
+  background: rgba(239, 68, 68, 0.14);
+  color: #fecaca;
+}
