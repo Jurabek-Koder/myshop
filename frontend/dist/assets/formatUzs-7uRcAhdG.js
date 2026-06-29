@@ -1,0 +1,1 @@
+function m(t,n="so'm"){const r=Math.round(Number(t)||0);return`${new Intl.NumberFormat("uz-UZ").format(r)} ${n}`.trim()}function e(t){const n=String(t||"").slice(0,10),[r,a,o]=n.split("-").map(Number);return r?`${o}-${String(a).padStart(2,"0")}-${r}`:t}export{e as a,m as f};
