@@ -211,7 +211,7 @@ html.theme-dark {
 .chart-card-neo,
 .mini-stat-card,
 .mini-stat-card-simple,
-[class*="-panel"]:not(body):not(html):not(#root):not([class*="nav-category-panel"]) {
+[class*="-panel"]:not(body):not(html):not(#root) {
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
@@ -1314,8 +1314,10 @@ html.theme-dark .nav-category-trigger:hover {
   min-width: min(20rem, calc(100vw - 2rem));
   max-width: min(22rem, calc(100vw - 1.5rem));
   max-height: min(70vh, calc(100vh - 10rem));
-  overflow: hidden;
-  padding: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable both-edges;
+  padding: 0.35rem;
   background: var(--glass-panel-bg);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
@@ -1325,11 +1327,6 @@ html.theme-dark .nav-category-trigger:hover {
     0 12px 40px rgba(0, 0, 0, 0.1),
     0 2px 8px rgba(0, 0, 0, 0.06),
     inset 0 1px 0 rgba(255, 255, 255, 0.45);
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--accent) 62%, transparent) transparent;
 }
 html.theme-dark .nav-category-panel {
   box-shadow:
@@ -1341,53 +1338,10 @@ html.theme-dark .nav-category-panel {
 .main-bar .nav-category-panel,
 .nav .nav-category-panel {
   max-height: min(70vh, calc(100vh - 8rem));
-  overflow: hidden;
-  min-height: 0;
-}
-
-/* Ro'yxat ustida (overlay) scroll — yon tomonda joy olmaydi */
-.nav-category-panel__scroll {
-  flex: 1 1 auto;
-  min-height: 0;
-  max-height: 100%;
-  overflow-x: hidden !important;
-  overflow-y: auto !important;
+  overflow-y: auto;
   overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
-  padding: 0.45rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--accent) 62%, transparent) transparent;
-  box-sizing: border-box;
-}
-
-/* Top bar kategoriya ichidagi elementlar qisqarib ketmasin va mukammal scroll paydo bo'lsin */
-.nav-category-panel__scroll > * {
-  flex-shrink: 0;
-}
-
-.nav-category-panel::-webkit-scrollbar,
-.nav-category-panel__scroll::-webkit-scrollbar {
-  width: 6px;
-}
-
-.nav-category-panel::-webkit-scrollbar-track,
-.nav-category-panel__scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.nav-category-panel::-webkit-scrollbar-thumb,
-.nav-category-panel__scroll::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--accent) 55%, transparent);
-  border-radius: 999px;
-}
-
-.nav-category-panel::-webkit-scrollbar-thumb:hover,
-.nav-category-panel__scroll::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--accent) 78%, transparent);
+  scrollbar-gutter: stable both-edges;
+  min-height: 0;
 }
 
 /* Desktop: kategoriya paneli — header ostidan footer ustigacha, konteyner kengligi */
@@ -1402,29 +1356,11 @@ html.theme-dark .nav-category-panel {
     min-width: 0;
     max-width: none;
     max-height: none;
-    overflow: hidden;
-    z-index: 6110;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-  }
-
-  .nav-category-panel.nav-category-panel--fixed-sheet .nav-category-panel__scroll {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
-    align-content: start;
-    gap: 0.45rem;
-    padding: 0.45rem;
-    flex: 1 1 auto;
-    min-height: 0;
-    max-height: none;
-    overflow-x: hidden;
     overflow-y: auto;
-  }
-
-  .nav-category-panel.nav-category-panel--fixed-sheet .catalog-cat-chip {
-    height: 100%;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable both-edges;
+    z-index: 5200;
+    padding-bottom: 0.45rem;
   }
 }
 
@@ -1557,8 +1493,10 @@ html.theme-dark .nav-category-panel .catalog-cat-chip.is-active:hover {
     min-width: 0;
     max-width: none;
     width: 100%;
-    max-height: min(52dvh, 28rem);
-    overflow: hidden;
+    max-height: min(70vh, calc(100vh - 8rem));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable both-edges;
     margin-top: 0.35rem;
     border-radius: 12px;
     box-shadow:
@@ -1576,14 +1514,10 @@ html.theme-dark .nav-category-panel .catalog-cat-chip.is-active:hover {
 .nav-category-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 6100;
+  z-index: 5100;
   background: rgba(2, 6, 23, 0.24);
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
-}
-
-.nav-category-backdrop--desktop {
-  z-index: 6090;
 }
 
 .nav-category-panel--mobile-modal {
@@ -1591,15 +1525,19 @@ html.theme-dark .nav-category-panel .catalog-cat-chip.is-active:hover {
   top: var(--nav-category-panel-top, calc(env(safe-area-inset-top) + 4.15rem));
   left: max(0.75rem, env(safe-area-inset-left));
   right: max(0.75rem, env(safe-area-inset-right));
-  bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--nav-category-panel-bottom, 0px));
   width: auto;
   min-width: 0;
   max-width: none;
+  max-height: none;
+  height: auto;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   margin: 0;
-  z-index: 6110;
+  z-index: 5110;
   border-radius: 14px;
-  padding: 0;
+  padding-bottom: 0.45rem;
   background: color-mix(in srgb, var(--glass-panel-bg) 80%, transparent);
   border: 1px solid color-mix(in srgb, var(--glass-panel-border) 92%, rgba(255, 255, 255, 0.2));
   backdrop-filter: var(--glass-blur);
@@ -1608,9 +1546,6 @@ html.theme-dark .nav-category-panel .catalog-cat-chip.is-active:hover {
     0 14px 34px rgba(2, 6, 23, 0.28),
     0 3px 12px rgba(37, 99, 235, 0.14),
     inset 0 1px 0 rgba(255, 255, 255, 0.26);
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
 }
 html.theme-dark .nav-category-panel--mobile-modal {
   background: color-mix(in srgb, var(--glass-panel-bg) 72%, transparent);
@@ -1726,6 +1661,8 @@ html.theme-dark .nav-category-panel--mobile-modal {
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
   max-height: min(70vh, 420px);
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 html.theme-dark .site-messages-panel {
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
@@ -1823,7 +1760,9 @@ html.theme-dark .site-messages-modal-close:hover {
   display: flex;
   flex-direction: column;
   width: min(calc(100vw - 1.35rem), 440px);
+  height: min(84dvh, 640px);
   max-height: min(84vh, 640px);
+  max-height: min(84dvh, 640px);
   margin: 0;
   padding: 0;
   overflow: hidden;
@@ -1853,9 +1792,11 @@ html.theme-dark .site-messages-panel--mobile-sheet {
 .site-messages-panel--mobile-sheet .site-messages-panel-inner {
   padding: 0.85rem 1rem 1.1rem;
   overflow-y: auto;
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
 }
 
 .site-messages-panel--mobile-sheet .site-messages-list {
@@ -3034,29 +2975,12 @@ html.theme-dark .nav.nav-open a:hover {
     gap: 0.35rem;
     border-radius: 0;
     right: auto;
-    background: color-mix(in srgb, var(--bg-card) 76%, rgba(255, 255, 255, 0.18));
-    backdrop-filter: saturate(150%) blur(18px);
-    -webkit-backdrop-filter: saturate(150%) blur(18px);
   }
 
   .nav.nav-open a,
   .nav.nav-open .nav-user,
   .nav.nav-open .btn {
     padding: 0.48rem 0.62rem;
-    background: color-mix(in srgb, var(--bg-card) 42%, rgba(255, 255, 255, 0.2));
-    border: 1px solid color-mix(in srgb, var(--border) 32%, transparent);
-    box-shadow: 0 1px 8px rgba(15, 23, 42, 0.04);
-  }
-
-  html.theme-dark .nav.nav-open {
-    background: color-mix(in srgb, var(--bg-deep) 82%, rgba(15, 23, 42, 0.2));
-  }
-
-  html.theme-dark .nav.nav-open a,
-  html.theme-dark .nav.nav-open .nav-user,
-  html.theme-dark .nav.nav-open .btn {
-    background: color-mix(in srgb, var(--bg-card) 50%, rgba(15, 23, 42, 0.2));
-    border-color: color-mix(in srgb, var(--border) 36%, transparent);
   }
 }
 @media (min-width: 992px) {
@@ -3457,58 +3381,62 @@ html.theme-dark .catalog-cat-chip.is-active {
 }
 
 .nav-category-panel {
-  padding: 0;
+  padding: 0.45rem;
 }
 
-.nav-category-panel--inline {
-  position: relative;
-  top: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
-  min-width: 0;
-  max-width: none;
-  max-height: min(46dvh, 24rem);
-  overflow: hidden;
-  margin-top: 0.35rem;
-  display: flex;
-  flex-direction: column;
+.nav-category-panel,
+.nav-category-panel--mobile-modal,
+.nav.nav-open .nav-category-dropdown .nav-category-panel {
   min-height: 0;
-  flex-shrink: 0;
-}
-
-.nav-category-panel--inline .nav-category-panel__scroll {
-  flex: 1 1 auto;
-  min-height: 0;
-  max-height: min(46dvh, 24rem);
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-color: color-mix(in srgb, var(--accent) 70%, transparent) transparent;
+  scrollbar-gutter: stable both-edges;
+  scrollbar-width: thin;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
 }
 
-@media (max-width: 991px) {
-  html.nav-category-hamburger-open .nav.nav-open {
-    overflow: hidden !important;
+.nav-category-panel::-webkit-scrollbar,
+.nav-category-panel--mobile-modal::-webkit-scrollbar,
+.nav.nav-open .nav-category-dropdown .nav-category-panel::-webkit-scrollbar {
+  width: 7px;
+}
+
+.nav-category-panel::-webkit-scrollbar-track,
+.nav-category-panel--mobile-modal::-webkit-scrollbar-track,
+.nav.nav-open .nav-category-dropdown .nav-category-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.nav-category-panel::-webkit-scrollbar-thumb,
+.nav-category-panel--mobile-modal::-webkit-scrollbar-thumb,
+.nav.nav-open .nav-category-dropdown .nav-category-panel::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--accent) 62%, transparent);
+  border-radius: 999px;
+}
+
+@media (min-width: 992px) {
+  .nav-category-panel.nav-category-panel--fixed-sheet {
+    position: fixed;
+    top: var(--nav-category-panel-top, 4.75rem);
+    left: max(0.75rem, var(--page-gutter-x));
+    right: max(0.75rem, var(--page-gutter-x));
+    bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    max-height: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+    align-content: start;
+    gap: 0.45rem;
+    z-index: 5200;
   }
 
-  .nav.nav-open .nav-category-hamburger-slot {
-    flex-shrink: 0;
-    min-height: 0;
-  }
-
-  .nav.nav-open .nav-category-hamburger-slot .nav-category-panel--inline {
-    max-height: min(42dvh, 22rem);
-  }
-
-  .nav.nav-open .nav-category-hamburger-slot .nav-category-panel__scroll {
-    max-height: min(42dvh, 22rem);
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-    touch-action: pan-y;
+  .nav-category-panel.nav-category-panel--fixed-sheet .catalog-cat-chip {
+    height: 100%;
   }
 }
 
@@ -3522,27 +3450,118 @@ html.theme-dark .catalog-cat-chip.is-active {
       100dvh - var(--nav-category-panel-top, calc(env(safe-area-inset-top, 0px) + 4.15rem)) -
         max(0.75rem, env(safe-area-inset-bottom, 0px))
     );
+    overflow-y: auto;
+  }
+
+  .nav.nav-open .nav-category-dropdown .nav-category-panel {
+    max-height: min(52dvh, 28rem);
+    overflow-y: auto;
+  }
+}
+
+.main-bar .nav-category-dropdown .nav-category-panel,
+.nav .nav-category-dropdown .nav-category-panel,
+.nav-category-dropdown .nav-category-panel {
+  max-height: min(70vh, calc(100vh - 12rem)) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  display: block !important;
+  min-height: 0 !important;
+  touch-action: pan-y !important;
+}
+
+.nav-category-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.25rem 0.25rem 0.7rem;
+  color: var(--text);
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.nav-category-panel__head span {
+  min-width: 0;
+}
+
+.nav-category-panel__scroll {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.55rem;
+  min-height: 0;
+}
+
+@media (min-width: 992px) {
+  .nav-category-panel.nav-category-panel--fixed-sheet {
+    left: 50%;
+    right: auto;
+    bottom: auto;
+    width: min(58rem, calc(100vw - 2rem));
+    max-height: min(68vh, 34rem);
+    transform: translateX(-50%);
+    padding: 0.9rem;
+    border-radius: 18px;
+    display: block;
+  }
+
+  .nav-category-panel.nav-category-panel--fixed-sheet .nav-category-panel__scroll {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.65rem;
+  }
+
+  .nav-category-panel.nav-category-panel--fixed-sheet .catalog-cat-chip {
+    min-height: 2.75rem;
+    padding: 0.72rem 0.85rem;
+    border-radius: 12px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .nav-category-panel.nav-category-panel--fixed-sheet .nav-category-panel__scroll {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 991px) {
+  .nav-category-panel--mobile-modal {
+    padding: 0.85rem;
+    border-radius: 18px;
+    min-height: 0;
+  }
+
+  .nav-category-panel--mobile-modal .nav-category-panel__scroll,
+  .nav-category-panel--inline .nav-category-panel__scroll {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
   }
 
   .nav-category-panel--mobile-modal .nav-category-panel__scroll {
     flex: 1 1 auto;
     min-height: 0;
-    max-height: none;
+    height: 100%;
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-y;
-    padding-bottom: calc(0.45rem + env(safe-area-inset-bottom, 0px));
+    padding: 0.05rem 0.1rem 0.85rem;
+    scrollbar-width: thin;
+  }
+
+  .nav-category-panel--mobile-modal .catalog-cat-chip,
+  .nav-category-panel--inline .catalog-cat-chip {
+    min-height: 2.55rem;
+    padding: 0.62rem 0.7rem;
+    border-radius: 12px;
   }
 }
 
-.main-bar .nav-category-dropdown .nav-category-panel:not(.nav-category-panel--fixed-sheet):not(.nav-category-panel--mobile-modal):not(.nav-category-panel--inline),
-.nav .nav-category-dropdown .nav-category-panel:not(.nav-category-panel--fixed-sheet):not(.nav-category-panel--mobile-modal):not(.nav-category-panel--inline),
-.nav-category-dropdown .nav-category-panel:not(.nav-category-panel--fixed-sheet):not(.nav-category-panel--mobile-modal):not(.nav-category-panel--inline) {
-  max-height: min(70vh, calc(100vh - 12rem)) !important;
-  overflow: hidden !important;
-  min-height: 0 !important;
+@media (max-width: 430px) {
+  .nav-category-panel--mobile-modal .nav-category-panel__scroll,
+  .nav-category-panel--inline .nav-category-panel__scroll {
+    grid-template-columns: 1fr;
+  }
 }
 
 .catalog-layout {
@@ -4766,16 +4785,4 @@ html.theme-dark .product-detail-thumb {
     font-weight: 850 !important;
     white-space: nowrap !important;
   }
-}
-
-/* Flex konteyner ichida scroll — emoji panel va boshqa ro‘yxatlar */
-.u-flex-scroll-y {
-  flex: 1 1 0;
-  min-height: 0;
-  max-height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
 }
