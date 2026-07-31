@@ -2067,6 +2067,27 @@ button.mini-stat-card.mini-stat-card--drill:focus-visible {
   background: var(--admin-surface);
 }
 
+.admin-ai-operator-feed-wrap {
+  max-height: min(58dvh, 560px);
+  min-height: 220px;
+  overflow-y: auto;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-x pan-y;
+}
+
+.admin-ai-operator-feed-wrap .neo-table {
+  margin: 0;
+}
+
+.admin-ai-operator-feed-wrap thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--admin-surface);
+}
+
 .placeholder {
   min-height: 260px;
   display: grid;
@@ -3767,7 +3788,7 @@ html.theme-dark .admin-filter-dropdown-menu button:hover {
 .admin-orders-table {
   table-layout: fixed;
   width: 100%;
-  min-width: 920px;
+  min-width: 1040px;
 }
 
 .admin-orders-table tbody td {
@@ -3799,6 +3820,11 @@ html.theme-dark .admin-filter-dropdown-menu button:hover {
   width: 8.5rem;
 }
 
+.admin-orders-col-warehouse {
+  width: 9.5rem;
+  text-align: center;
+}
+
 .admin-orders-col-date {
   width: 9rem;
   white-space: nowrap;
@@ -3820,6 +3846,10 @@ html.theme-dark .admin-filter-dropdown-menu button:hover {
 .admin-orders-col-status,
 .admin-orders-col-tez {
   overflow: visible;
+}
+
+.admin-orders-return-btn {
+  white-space: nowrap;
 }
 
 .admin-orders-jami {
@@ -4363,7 +4393,7 @@ html.theme-dark .admin-filter-dropdown-menu button:hover {
   }
 
   .admin-orders-table {
-    min-width: 880px;
+    min-width: 1040px;
   }
 
   .admin-orders-table th,
@@ -7675,6 +7705,7 @@ button.admin-ai-target-pill:not(:disabled):hover {
   flex-direction: column;
   gap: 1rem;
   max-height: min(70vh, 640px);
+  min-height: 0;
 }
 
 .admin-recent-users-msg-list {
@@ -7682,8 +7713,12 @@ button.admin-ai-target-pill:not(:disabled):hover {
   flex-direction: column;
   gap: 0.65rem;
   overflow-y: auto;
-  max-height: min(38vh, 320px);
+  max-height: min(46dvh, 380px);
+  min-height: 160px;
   padding-right: 0.25rem;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
 }
 
 .admin-recent-users-msg-card {
