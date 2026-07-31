@@ -20,7 +20,6 @@ import {
   getDmCallLogs,
   postDmCallLog,
 } from '../lib/staffSkladLichka.js';
-import { sqlStaffHasActiveWorkRole } from '../lib/workRoleArchive.js';
 import { EVENT_TYPES } from '../events/eventTypes.js';
 import { actorFromRequest, publishEnterpriseEvent } from '../events/publishEvent.js';
 
@@ -78,13 +77,17 @@ router.get('/orders', (req, res) => {
 
 router.get('/packers', (req, res) => {
   const packers = db.prepare(`
-    SELECT id, full_name, phone, status, orders_handled
-    FROM staff_members
-    WHERE staff_type = ?
-      AND lower(trim(status)) = 'active'
-      AND user_id IS NOT NULL
-      AND ${sqlStaffHasActiveWorkRole()}
-    ORDER BY full_name
+    SELECT sm.id, sm.full_name, sm.phone, sm.status, sm.orders_handled
+    FROM staff_members sm
+    INNER JOIN users u ON u.id = sm.user_id
+    INNER JOIN work_roles wr ON wr.id = sm.work_role_id
+    WHERE sm.staff_type = ?
+      AND lower(trim(sm.status)) = 'active'
+      AND lower(trim(COALESCE(u.status, 'active'))) IN ('active', '')
+      AND lower(trim(COALESCE(u.role, ''))) = 'packer'
+      AND wr.deleted_at IS NULL
+      AND lower(trim(COALESCE(wr.status, 'active'))) IN ('active', '')
+    ORDER BY sm.full_name
   `).all('packer');
   res.json({ packers });
 });
@@ -93,11 +96,16 @@ function getActiveLinkedPackerStaffId(packerIdNum) {
   if (!Number.isInteger(packerIdNum) || packerIdNum < 1) return null;
   const row = db
     .prepare(
-      `SELECT id FROM staff_members
-       WHERE id = ? AND staff_type = 'packer'
-         AND lower(trim(status)) = 'active'
-         AND user_id IS NOT NULL
-         AND ${sqlStaffHasActiveWorkRole()}`,
+      `SELECT sm.id
+       FROM staff_members sm
+       INNER JOIN users u ON u.id = sm.user_id
+       INNER JOIN work_roles wr ON wr.id = sm.work_role_id
+       WHERE sm.id = ? AND sm.staff_type = 'packer'
+         AND lower(trim(sm.status)) = 'active'
+         AND lower(trim(COALESCE(u.status, 'active'))) IN ('active', '')
+         AND lower(trim(COALESCE(u.role, ''))) = 'packer'
+         AND wr.deleted_at IS NULL
+         AND lower(trim(COALESCE(wr.status, 'active'))) IN ('active', '')`,
     )
     .get(packerIdNum);
   return row ? row.id : null;
