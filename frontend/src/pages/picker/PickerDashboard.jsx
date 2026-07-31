@@ -1108,8 +1108,8 @@ export default function PickerDashboard() {
       setPickedBatch([orderId]);
       setPackerModalAssignedOrderId(null);
       setOrders((prev) => prev.slice(1));
-      void loadPackers();
-        setShowPackerModal(true);
+      await loadPackers();
+      setShowPackerModal(true);
       if (tab === 'history') loadHistory();
     } catch (e) {
       setError(e.message || pickerUiT.errGeneric);
@@ -1164,6 +1164,7 @@ export default function PickerDashboard() {
       if (tab === 'history') loadHistory();
     } catch (e) {
       setError(e.message || pickerUiT.errGeneric);
+      void loadPackers();
     } finally {
       setAssigningPacker(false);
     }
