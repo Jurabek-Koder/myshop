@@ -300,6 +300,65 @@ router.patch('/orders/:id/status', (req, res) => {
   res.json(updated);
 });
 
+router.post('/orders/:id/return-to-warehouse', (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);
+  if (Number.isNaN(id) || id < 1) return res.status(400).json({ error: 'Noto\'g\'ri order ID.' });
+
+  const existing = db.prepare('SELECT id, status FROM orders WHERE id = ?').get(id);
+  if (!existing) return res.status(404).json({ error: 'Order topilmadi.' });
+
+  if (existing.status === 'delivered' || existing.status === 'completed') {
+    return res.status(400).json({ error: 'Yakunlangan zakazni omborga qaytarib bo\'lmaydi.' });
+  }
+
+  const tx = db.transaction(() => {
+    db.prepare(`
+      UPDATE orders
+      SET status = 'pending',
+          packer_id = NULL,
+          courier_id = NULL,
+          packer_batch_id = NULL,
+          expeditor_batch_id = NULL,
+          courier_assigned_via = NULL,
+          courier_unsold_return = 0,
+          status_updated_at = datetime('now')
+      WHERE id = ?
+    `).run(id);
+    db.prepare('UPDATE order_items SET home_left_in_courier = 0 WHERE order_id = ?').run(id);
+  });
+  tx();
+
+  const updated = db.prepare(`
+    SELECT
+      o.id,
+      o.user_id,
+      o.status,
+      o.total_amount,
+      o.currency,
+      o.shipping_address,
+      o.contact_phone,
+      o.created_at,
+      u.full_name,
+      u.email,
+      (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.id) as items_count,
+      (
+        SELECT GROUP_CONCAT(
+          COALESCE(NULLIF(TRIM(p.name_uz), ''), p.name_ru, 'Mahsulot') ||
+          CASE WHEN COALESCE(oi.home_left_in_courier, 0) = 1 THEN ' [UYDA]' ELSE '' END,
+          ', '
+        )
+        FROM order_items oi
+        LEFT JOIN products p ON p.id = oi.product_id
+        WHERE oi.order_id = o.id
+      ) as product_names
+    FROM orders o
+    LEFT JOIN users u ON u.id = o.user_id
+    WHERE o.id = ?
+  `).get(id);
+
+  res.json(updated);
+});
+
 router.get('/staff', (req, res) => {
   const type = req.query.type ? String(req.query.type).trim() : '';
   const status = req.query.status ? String(req.query.status).trim() : '';
