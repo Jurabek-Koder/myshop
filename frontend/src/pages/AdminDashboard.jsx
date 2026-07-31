@@ -741,7 +741,7 @@ function AdminAiOperatorFeedTable({ events, emptyLabel, resolveFeedAudio }) {
     return <p className="muted" style={{ margin: 0 }}>{emptyLabel}</p>;
   }
   return (
-    <div className="table-wrap">
+    <div className="table-wrap admin-ai-operator-feed-wrap">
       <table className="neo-table">
         <thead>
           <tr>
@@ -2982,6 +2982,16 @@ export default function AdminDashboard() {
     }, 'Status yangilanmadi');
   };
 
+  const handleReturnOrderToWarehouse = async (id) => {
+    if (!window.confirm(`Zakaz #${id} omborga qaytarilsinmi? Picker bu zakazni qaytadan teradi.`)) return;
+    await runMutation(`order-return-${id}`, async () => {
+      const res = await request(`/admin/portal/orders/${id}/return-to-warehouse`, {
+        method: 'POST',
+      });
+      await ensureOk(res, 'Zakaz omborga qaytarilmadi');
+    }, 'Zakaz omborga qaytarilmadi');
+  };
+
   const handleCreateRole = async (e) => {
     e.preventDefault();
     if (!roleForm.role_name.trim()) return;
@@ -5117,12 +5127,14 @@ export default function AdminDashboard() {
                             <th className="admin-orders-col-jami">Jami</th>
                             <th className="admin-orders-col-status">Status</th>
                             <th className="admin-orders-col-tez">Tez</th>
+                            <th className="admin-orders-col-warehouse">Omborga qaytarish</th>
                             <th className="admin-orders-col-date">Sana</th>
                           </tr>
                         </thead>
                         <tbody>
                           {rows.map((row) => {
                             const tezValue = row.status === 'delivery' || row.status === 'on_the_way' ? row.status : '';
+                            const cannotReturnToWarehouse = row.status === 'delivered' || row.status === 'completed';
                             return (
                             <tr key={row.id}>
                                 <td className="admin-orders-col-id">#{row.id}</td>
@@ -5150,6 +5162,16 @@ export default function AdminDashboard() {
                                     variant="table-cell"
                                     disabled={busyKey === `order-${row.id}`}
                                   />
+                                </td>
+                                <td className="admin-orders-col-warehouse">
+                                  <button
+                                    type="button"
+                                    className="btn-neo btn-neo-warning btn-neo-sm admin-orders-return-btn"
+                                    onClick={() => handleReturnOrderToWarehouse(row.id)}
+                                    disabled={cannotReturnToWarehouse || busyKey === `order-return-${row.id}`}
+                                  >
+                                    {busyKey === `order-return-${row.id}` ? '...' : 'Omborga'}
+                                  </button>
                                 </td>
                                 <td className="admin-orders-col-date">{formatDate(row.created_at)}</td>
                             </tr>
@@ -9338,9 +9360,6 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
-
-
 
 
 
