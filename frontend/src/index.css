@@ -3449,6 +3449,13 @@ html.theme-dark .catalog-cat-chip.is-active {
 
 @media (max-width: 991px) {
   .nav-category-panel--mobile-modal {
+    position: fixed;
+    top: var(--nav-category-panel-top, calc(env(safe-area-inset-top, 0px) + 4.15rem));
+    left: max(0.75rem, env(safe-area-inset-left, 0px));
+    right: max(0.75rem, env(safe-area-inset-right, 0px));
+    bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+    width: auto;
+    max-width: none;
     height: calc(
       100dvh - var(--nav-category-panel-top, calc(env(safe-area-inset-top, 0px) + 4.15rem)) -
         max(0.75rem, env(safe-area-inset-bottom, 0px))
@@ -3457,10 +3464,15 @@ html.theme-dark .catalog-cat-chip.is-active {
       100dvh - var(--nav-category-panel-top, calc(env(safe-area-inset-top, 0px) + 4.15rem)) -
         max(0.75rem, env(safe-area-inset-bottom, 0px))
     );
-    overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      touch-action: none;
+      min-height: min(50dvh, 30rem);
   }
 
   .nav.nav-open .nav-category-dropdown .nav-category-panel {
+    position: relative;
     max-height: min(52dvh, 28rem);
     overflow-y: auto;
   }
@@ -3546,14 +3558,25 @@ html.theme-dark .catalog-cat-chip.is-active {
   .nav-category-panel--mobile-modal .nav-category-panel__scroll {
     flex: 1 1 auto;
     min-height: 0;
-    height: 100%;
+    height: 0;
     overflow-x: hidden;
-    overflow-y: auto;
+    overflow-y: scroll;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-y;
     padding: 0.05rem 0.1rem 0.85rem;
     scrollbar-width: thin;
+  }
+
+  .nav.nav-open .nav-category-dropdown .nav-category-panel__scroll,
+  .nav-category-panel--inline .nav-category-panel__scroll {
+    min-height: 0;
+    max-height: min(52dvh, 28rem);
+    overflow-x: hidden;
+    overflow-y: scroll;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
   }
 
   .nav-category-panel--mobile-modal .catalog-cat-chip,
@@ -3568,6 +3591,44 @@ html.theme-dark .catalog-cat-chip.is-active {
   .nav-category-panel--mobile-modal .nav-category-panel__scroll,
   .nav-category-panel--inline .nav-category-panel__scroll {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Hamburger ichidagi kategoriya: trigger ostida, o'zining ichki scrolli bilan. */
+@media (max-width: 991px) {
+  .nav.nav-open .nav-category-hamburger-slot .nav-category-panel--inline {
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    left: auto !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: calc(100dvh - 7rem) !important;
+    min-height: min(50dvh, 30rem) !important;
+    max-height: calc(100dvh - 7rem) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    padding: 0.65rem !important;
+    margin-top: 0.35rem;
+  }
+
+  .nav.nav-open .nav-category-hamburger-slot .nav-category-panel--inline .nav-category-panel__scroll {
+    flex: 1 1 auto;
+    height: 0;
+    min-height: 0;
+    max-height: none;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+  }
+
+  .nav-category-panel--mobile-modal .nav-category-panel__scroll {
+    height: 0 !important;
+    min-height: 0 !important;
+    overflow-y: scroll !important;
   }
 }
 
