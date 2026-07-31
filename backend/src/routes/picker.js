@@ -80,13 +80,32 @@ router.get('/packers', (req, res) => {
     SELECT sm.id, sm.full_name, sm.phone, sm.status, sm.orders_handled
     FROM staff_members sm
     INNER JOIN users u ON u.id = sm.user_id
-    INNER JOIN work_roles wr ON wr.id = sm.work_role_id
     WHERE sm.staff_type = ?
       AND lower(trim(sm.status)) = 'active'
       AND lower(trim(COALESCE(u.status, 'active'))) IN ('active', '')
       AND lower(trim(COALESCE(u.role, ''))) = 'packer'
-      AND wr.deleted_at IS NULL
-      AND lower(trim(COALESCE(wr.status, 'active'))) IN ('active', '')
+      AND EXISTS (
+        SELECT 1
+        FROM work_roles wr
+        WHERE wr.deleted_at IS NULL
+          AND lower(trim(COALESCE(wr.status, 'active'))) IN ('active', '')
+          AND lower(trim(COALESCE(wr.portal_role, ''))) = 'packer'
+          AND (
+            wr.id = sm.work_role_id
+            OR (
+              length(trim(COALESCE(wr.login, ''))) > 0
+              AND lower(trim(wr.login)) = lower(trim(COALESCE(u.login, '')))
+            )
+            OR (
+              length(trim(COALESCE(wr.email, ''))) > 0
+              AND lower(trim(wr.email)) = lower(trim(COALESCE(u.email, '')))
+            )
+            OR (
+              length(trim(COALESCE(wr.phone, ''))) > 0
+              AND trim(wr.phone) = trim(COALESCE(sm.phone, u.phone, ''))
+            )
+          )
+      )
     ORDER BY sm.full_name
   `).all('packer');
   res.json({ packers });
@@ -96,16 +115,35 @@ function getActiveLinkedPackerStaffId(packerIdNum) {
   if (!Number.isInteger(packerIdNum) || packerIdNum < 1) return null;
   const row = db
     .prepare(
-      `SELECT sm.id
+       `SELECT sm.id
        FROM staff_members sm
        INNER JOIN users u ON u.id = sm.user_id
-       INNER JOIN work_roles wr ON wr.id = sm.work_role_id
        WHERE sm.id = ? AND sm.staff_type = 'packer'
          AND lower(trim(sm.status)) = 'active'
          AND lower(trim(COALESCE(u.status, 'active'))) IN ('active', '')
          AND lower(trim(COALESCE(u.role, ''))) = 'packer'
-         AND wr.deleted_at IS NULL
-         AND lower(trim(COALESCE(wr.status, 'active'))) IN ('active', '')`,
+         AND EXISTS (
+           SELECT 1
+           FROM work_roles wr
+           WHERE wr.deleted_at IS NULL
+             AND lower(trim(COALESCE(wr.status, 'active'))) IN ('active', '')
+             AND lower(trim(COALESCE(wr.portal_role, ''))) = 'packer'
+             AND (
+               wr.id = sm.work_role_id
+               OR (
+                 length(trim(COALESCE(wr.login, ''))) > 0
+                 AND lower(trim(wr.login)) = lower(trim(COALESCE(u.login, '')))
+               )
+               OR (
+                 length(trim(COALESCE(wr.email, ''))) > 0
+                 AND lower(trim(wr.email)) = lower(trim(COALESCE(u.email, '')))
+               )
+               OR (
+                 length(trim(COALESCE(wr.phone, ''))) > 0
+                 AND trim(wr.phone) = trim(COALESCE(sm.phone, u.phone, ''))
+               )
+             )
+         )`,
     )
     .get(packerIdNum);
   return row ? row.id : null;
