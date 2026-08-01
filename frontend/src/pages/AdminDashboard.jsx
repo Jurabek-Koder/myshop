@@ -5134,7 +5134,6 @@ export default function AdminDashboard() {
                         <tbody>
                           {rows.map((row) => {
                             const tezValue = row.status === 'delivery' || row.status === 'on_the_way' ? row.status : '';
-                            const cannotReturnToWarehouse = row.status === 'delivered' || row.status === 'completed';
                             return (
                             <tr key={row.id}>
                                 <td className="admin-orders-col-id">#{row.id}</td>
@@ -5168,7 +5167,7 @@ export default function AdminDashboard() {
                                     type="button"
                                     className="btn-neo btn-neo-warning btn-neo-sm admin-orders-return-btn"
                                     onClick={() => handleReturnOrderToWarehouse(row.id)}
-                                    disabled={cannotReturnToWarehouse || busyKey === `order-return-${row.id}`}
+                                    disabled={busyKey === `order-return-${row.id}`}
                                   >
                                     {busyKey === `order-return-${row.id}` ? '...' : 'Omborga'}
                                   </button>
@@ -9360,7 +9359,6 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
 
 
 
