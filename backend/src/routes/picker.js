@@ -43,6 +43,110 @@ function getPickerWorkRole(req) {
   return getPickerWorkRoleByUserRow(req.user);
 }
 
+function phoneDigitsLocal(value) {
+  return String(value || '').replace(/\D/g, '');
+}
+
+function activePackerWorkRoles() {
+  return db.prepare(`
+    SELECT *
+    FROM work_roles
+    WHERE deleted_at IS NULL
+      AND lower(trim(COALESCE(status, 'active'))) IN ('active', '')
+      AND (
+        lower(trim(COALESCE(portal_role, ''))) = 'packer'
+        OR lower(trim(COALESCE(role_name, ''))) = 'packer'
+        OR lower(trim(COALESCE(role_name, ''))) LIKE '%packer%'
+      )
+  `).all();
+}
+
+function findPackerStaffForWorkRole(workRole, user) {
+  const roleKey = 'packer';
+  if (Number(user?.staff_member_id) > 0) {
+    const byUserStaff = db.prepare('SELECT id, user_id FROM staff_members WHERE id = ? AND staff_type = ?').get(user.staff_member_id, roleKey);
+    if (byUserStaff) return byUserStaff;
+  }
+
+  if (Number(user?.id) > 0) {
+    const byUserId = db.prepare('SELECT id, user_id FROM staff_members WHERE user_id = ? AND staff_type = ? LIMIT 1').get(user.id, roleKey);
+    if (byUserId) return byUserId;
+  }
+
+  const phone = String(workRole?.phone || '').trim();
+  if (phone) {
+    const exact = db
+      .prepare(`SELECT id, user_id FROM staff_members WHERE staff_type = ? AND trim(ifnull(phone,'')) = ? LIMIT 1`)
+      .get(roleKey, phone);
+    if (exact) return exact;
+  }
+
+  const digits = phoneDigitsLocal(phone);
+  if (digits.length >= 9) {
+    const rows = db.prepare(`SELECT id, user_id, phone FROM staff_members WHERE staff_type = ?`).all(roleKey);
+    for (const row of rows) {
+      if (phoneDigitsLocal(row.phone) === digits) return { id: row.id, user_id: row.user_id };
+    }
+  }
+
+  return null;
+}
+
+function ensureActivePackerStaffLinks() {
+  const roles = activePackerWorkRoles();
+  const roleId = db.prepare('SELECT id FROM roles WHERE name = ?').get('packer')?.id || 5;
+
+  const syncOne = db.transaction((workRole) => {
+    const loginVal = String(workRole?.login || '').trim().toLowerCase();
+    if (!loginVal) return;
+
+    const email = workRole?.email && String(workRole.email).includes('@')
+      ? String(workRole.email).trim().toLowerCase()
+      : `${loginVal}@packer.myshop.local`;
+    const fullName = String(workRole?.role_name || workRole?.login || 'packer').trim();
+    const phone = String(workRole?.phone || '').trim() || null;
+    const passwordHash = bcrypt.hashSync(String(workRole?.password || '12345'), 12);
+
+    let user = db
+      .prepare('SELECT id, staff_member_id, password_hash FROM users WHERE lower(login) = lower(?) OR lower(email) = lower(?)')
+      .get(loginVal, email);
+
+    let staff = findPackerStaffForWorkRole(workRole, user);
+    if (staff && Number(staff.user_id) > 0 && Number(user?.id) > 0 && Number(staff.user_id) !== Number(user.id)) {
+      staff = null;
+    }
+
+    if (!staff) {
+      const created = db
+        .prepare(`INSERT INTO staff_members (staff_type, full_name, phone, status, work_role_id) VALUES ('packer', ?, ?, 'active', ?)`)
+        .run(fullName, phone, workRole.id);
+      staff = { id: created.lastInsertRowid, user_id: null };
+    }
+
+    if (!user) {
+      const created = db.prepare(`
+        INSERT INTO users (email, login, password_hash, full_name, role, role_id, staff_member_id, status)
+        VALUES (?, ?, ?, ?, 'packer', ?, ?, 'active')
+      `).run(email, loginVal, passwordHash, fullName, roleId, staff.id);
+      user = db.prepare('SELECT id, staff_member_id, password_hash FROM users WHERE id = ?').get(created.lastInsertRowid);
+    } else {
+      db.prepare(`
+        UPDATE users
+        SET full_name = ?, role = 'packer', role_id = ?, staff_member_id = ?, status = 'active'
+        WHERE id = ?
+      `).run(fullName, roleId, staff.id, user.id);
+    }
+
+    db.prepare(`
+      UPDATE staff_members
+      SET user_id = ?, full_name = ?, phone = COALESCE(?, phone), status = 'active', work_role_id = ?
+      WHERE id = ?
+    `).run(user.id, fullName, phone, workRole.id, staff.id);
+  });
+
+  for (const role of roles) syncOne(role);
+}
+
 function orderWithItems(orderId) {
   const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId);
   if (!order) return null;
@@ -76,6 +180,7 @@ router.get('/orders', (req, res) => {
 });
 
 router.get('/packers', (req, res) => {
+  ensureActivePackerStaffLinks();
   const packers = db.prepare(`
     SELECT sm.id, sm.full_name, sm.phone, sm.status, sm.orders_handled
     FROM staff_members sm
@@ -113,6 +218,7 @@ router.get('/packers', (req, res) => {
 
 function getActiveLinkedPackerStaffId(packerIdNum) {
   if (!Number.isInteger(packerIdNum) || packerIdNum < 1) return null;
+  ensureActivePackerStaffLinks();
   const row = db
     .prepare(
        `SELECT sm.id
