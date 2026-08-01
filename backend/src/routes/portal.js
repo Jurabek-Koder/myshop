@@ -307,10 +307,6 @@ router.post('/orders/:id/return-to-warehouse', (req, res) => {
   const existing = db.prepare('SELECT id, status FROM orders WHERE id = ?').get(id);
   if (!existing) return res.status(404).json({ error: 'Order topilmadi.' });
 
-  if (existing.status === 'delivered' || existing.status === 'completed') {
-    return res.status(400).json({ error: 'Yakunlangan zakazni omborga qaytarib bo\'lmaydi.' });
-  }
-
   const tx = db.transaction(() => {
     db.prepare(`
       UPDATE orders
