@@ -268,7 +268,26 @@ router.patch('/orders/:id/status', (req, res) => {
   const existing = db.prepare('SELECT id FROM orders WHERE id = ?').get(id);
   if (!existing) return res.status(404).json({ error: 'Order topilmadi.' });
 
-  db.prepare(`UPDATE orders SET status = ?, status_updated_at = datetime('now') WHERE id = ?`).run(status, id);
+  if (status === 'pending') {
+    const tx = db.transaction(() => {
+      db.prepare(`
+        UPDATE orders
+        SET status = 'pending',
+            packer_id = NULL,
+            courier_id = NULL,
+            packer_batch_id = NULL,
+            expeditor_batch_id = NULL,
+            courier_assigned_via = NULL,
+            courier_unsold_return = 0,
+            status_updated_at = datetime('now')
+        WHERE id = ?
+      `).run(id);
+      db.prepare('UPDATE order_items SET home_left_in_courier = 0 WHERE order_id = ?').run(id);
+    });
+    tx();
+  } else {
+    db.prepare(`UPDATE orders SET status = ?, status_updated_at = datetime('now') WHERE id = ?`).run(status, id);
+  }
   const updated = db.prepare(`
     SELECT
       o.id,
