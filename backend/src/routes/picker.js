@@ -26,6 +26,8 @@ import { actorFromRequest, publishEnterpriseEvent } from '../events/publishEvent
 const router = Router();
 router.use(authRequired, requireRole('picker'));
 
+const PICKER_COLLECTABLE_STATUSES = new Set(['pending', 'processing']);
+
 function getPickerWorkRoleByUserRow(userRow) {
   const login = String(userRow?.login || '').trim();
   const email = String(userRow?.email || '').trim();
@@ -161,13 +163,21 @@ router.get('/orders', (req, res) => {
   const status = req.query.status === 'picked' ? 'picked' : 'pending';
   const orderBy = status === 'picked' ? 'o.created_at DESC' : 'o.created_at ASC';
   const limit = status === 'pending' ? 20 : 100;
-  const orders = db.prepare(`
-    SELECT o.id, o.user_id, o.status, o.total_amount, o.currency, o.shipping_address, o.contact_phone, o.created_at
-    FROM orders o
-    WHERE o.status = ?
-    ORDER BY ${orderBy}
-    LIMIT ?
-  `).all(status, limit);
+  const orders = status === 'pending'
+    ? db.prepare(`
+      SELECT o.id, o.user_id, o.status, o.total_amount, o.currency, o.shipping_address, o.contact_phone, o.created_at
+      FROM orders o
+      WHERE o.status IN ('pending', 'processing')
+      ORDER BY ${orderBy}
+      LIMIT ?
+    `).all(limit)
+    : db.prepare(`
+      SELECT o.id, o.user_id, o.status, o.total_amount, o.currency, o.shipping_address, o.contact_phone, o.created_at
+      FROM orders o
+      WHERE o.status = ?
+      ORDER BY ${orderBy}
+      LIMIT ?
+    `).all(status, limit);
 
   for (const o of orders) {
     o.items = db.prepare(`
@@ -284,7 +294,9 @@ router.patch('/orders/:id/status', (req, res) => {
   }
 
   if (statusStr !== 'picked') return res.status(400).json({ error: 'Faqat status = picked yoki hold qabul qilinadi.' });
-  if (order.status !== 'pending') return res.status(400).json({ error: 'Faqat pending buyurtmani yig\'ish mumkin.' });
+  if (!PICKER_COLLECTABLE_STATUSES.has(order.status)) {
+    return res.status(400).json({ error: 'Faqat omborda yig\'iladigan zakazni terish mumkin.' });
+  }
 
   const lineGroups = db
     .prepare(
