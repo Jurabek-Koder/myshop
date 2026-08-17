@@ -1,0 +1,1413 @@
+/* Ombor admin alohida qobiq; asosiy dizayn picker/operator bilan bir xil klasslardan keladi */
+/* Yon panel stillari: styles/warehouseAdminSidePanel.css (main.jsx) */
+
+.warehouse-admin-shell.warehouse-admin-shell {
+  min-height: 100dvh;
+}
+
+/**
+ * Desktop (≥1025px): telefon quti cheklovi yo‘q, chapda doimiy navigatsiya.
+ * Mobil (≤1024px): kartochka tartibi — pastda `warehouse-admin-mobile-cards` qismida.
+ */
+@media (min-width: 1025px) {
+  .warehouse-admin-shell.picker-app.picker-mobile {
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    box-shadow: none;
+  }
+
+  /**
+   * Kompiyuter: yon menyu gamburger orqali overlay sifatida ochiladi/yopiladi
+   * (asosiy kontent to‘liq kenglikda).
+   */
+  .warehouse-admin-shell .picker-phone-frame {
+    max-width: none;
+    width: 100%;
+    border-left: none;
+    border-right: none;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .warehouse-admin-shell .picker-phone-frame.picker-phone-frame--no-topbar {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .warehouse-admin-shell .warehouse-admin-topbar {
+    flex-shrink: 0;
+  }
+
+  .warehouse-admin-shell .picker-side-panel.staff-side-panel-ref {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(280px, min(85vw, 100% - 2rem));
+    max-width: 280px;
+    height: 100%;
+    max-height: none;
+    align-self: auto;
+    min-height: 0;
+    transform: translateX(-100%);
+    transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: 460;
+  }
+
+  .warehouse-admin-shell .picker-side-panel.staff-side-panel-ref.open {
+    transform: translateX(0);
+  }
+
+  .warehouse-admin-shell .picker-side-panel-overlay {
+    display: block !important;
+    position: absolute;
+    inset: 0;
+    z-index: 459;
+    background: rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .warehouse-admin-shell .picker-side-panel-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Gamburger — katta ekranda ham; matnli «Menyu» yashirin */
+  .warehouse-admin-shell .warehouse-admin-topbar-hamburger {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .warehouse-admin-shell .picker-topbar-inner {
+    justify-content: flex-start;
+    gap: 0.75rem;
+  }
+
+  .warehouse-admin-shell .picker-topbar-logo {
+    flex: 1;
+    text-align: left;
+    font-size: 1.15rem;
+    letter-spacing: -0.02em;
+  }
+
+  .warehouse-admin-shell .picker-main.warehouse-admin-main {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .warehouse-admin-shell .warehouse-admin-page {
+    max-width: min(1280px, 100%);
+    margin: 0 auto;
+    padding: 0.75rem 1.25rem 1.5rem;
+    box-sizing: border-box;
+  }
+}
+
+@media (max-width: 1024px) {
+  /**
+   * Mobil ombor admin: jadval kartochka emas — desktopdagi kabi 10 ustunli grid,
+   * `warehouse-admin-sheet-unified` ichida gorizontal scroll.
+   */
+  .warehouse-admin-shell .warehouse-admin-sheet-unified {
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    touch-action: pan-x;
+  }
+
+  .warehouse-admin-shell .warehouse-admin-sheet-unified-inner {
+    width: calc(10 * var(--wa-sheet-col));
+    max-width: none;
+    box-sizing: border-box;
+  }
+
+  .warehouse-admin-shell .warehouse-admin-sheet-unified .warehouse-admin-top-vlines-strip--sheet {
+    display: grid;
+    width: 100%;
+    box-sizing: border-box;
+    grid-template-columns: repeat(10, var(--wa-sheet-col));
+  }
+
+  .warehouse-admin-shell .warehouse-admin-sheet-unified .warehouse-admin-top-vseg {
+    padding: 0 6px;
+    min-width: 0;
+  }
+
+  .warehouse-admin-shell .warehouse-admin-sheet-unified .warehouse-admin-top-vseg-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .warehouse-admin-shell .warehouse-admin-sheet-unified .warehouse-admin-grid-rows {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .warehouse-admin-shell .warehouse-admin-sheet-unified .warehouse-admin-grid-row-empty {
+    width: calc(10 * var(--wa-sheet-col));
+    max-width: none;
+    box-sizing: border-box;
+  }
+
+  .warehouse-admin-shell .warehouse-admin-grid-rows--sheet {
+    border: 1px solid rgba(15, 23, 42, 0.16);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    background: var(--seller-bg, #fff);
+    gap: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .theme-dark .warehouse-admin-shell .warehouse-admin-grid-rows--sheet {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: transparent;
+  }
+
+  .warehouse-admin-shell .warehouse-admin-grid-rows--sheet > .warehouse-admin-sheet-row-group {
+    display: block;
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  .warehouse-admin-shell .warehouse-admin-grid-rows--sheet .warehouse-admin-grid-row {
+    display: grid;
+    grid-template-columns: repeat(10, var(--wa-sheet-col));
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 48px;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
+    background: transparent;
+  }
+
+  .warehouse-admin-shell .warehouse-admin-grid-rows--sheet .warehouse-admin-grid-row > .warehouse-admin-grid-cell {
+    border-right: 1px solid rgba(15, 23, 42, 0.12);
+    border-bottom: none;
+    justify-content: center;
+    text-align: center;
+    padding: 4px 2px;
+    min-height: 0;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0;
+  }
+
+  .warehouse-admin-shell .warehouse-admin-grid-rows--sheet .warehouse-admin-grid-row > .warehouse-admin-grid-cell:last-child {
+    flex-direction: column;
+    align-items: stretch;
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+
+  .theme-dark .warehouse-admin-shell .warehouse-admin-grid-rows--sheet .warehouse-admin-grid-row > .warehouse-admin-grid-cell {
+    border-right-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .warehouse-admin-shell .warehouse-admin-grid-rows--sheet .warehouse-admin-grid-row > .warehouse-admin-grid-cell::before {
+    content: none !important;
+    display: none !important;
+  }
+}
+
+.warehouse-admin-main.warehouse-admin-main {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Topbar ostida tor bo‘sh joy, keyin 10 ta teng kata */
+.warehouse-admin-top-rule-slot {
+  flex-shrink: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding-top: 8px;
+  background: var(--bg-deep);
+}
+
+/* Telefon/kichik planshet — jadval sarlavhalari uchun gorizontal sirg‘ish */
+.warehouse-admin-top-scroll-wrap {
+  width: 100%;
+}
+
+@media (max-width: 1023px) {
+  .warehouse-admin-top-scroll-wrap {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    touch-action: pan-x;
+  }
+
+  .warehouse-admin-top-scroll-wrap .warehouse-admin-top-vlines-strip {
+    width: max-content;
+    max-width: none;
+    grid-template-columns: repeat(10, minmax(82px, 1fr));
+  }
+
+  .warehouse-admin-top-scroll-wrap .warehouse-admin-top-vseg {
+    padding: 0 var(--block-inset);
+  }
+
+  .warehouse-admin-top-scroll-wrap .warehouse-admin-top-vseg-label {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: nowrap;
+  }
+}
+
+/* Keng ekran — kataklar ekran kengligi boʻyicha teng boʻladi */
+@media (min-width: 1024px) {
+  .warehouse-admin-top-scroll-wrap {
+    overflow-x: visible;
+  }
+
+  .warehouse-admin-top-scroll-wrap .warehouse-admin-top-vlines-strip {
+    width: 100%;
+    max-width: 100%;
+    grid-template-columns: repeat(10, minmax(0, 1fr));
+  }
+}
+
+.theme-dark .warehouse-admin-top-scroll-wrap {
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+
+.warehouse-admin-top-vlines-strip {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  width: 100%;
+  height: 25px;
+  min-height: 25px;
+  max-height: 25px;
+  box-sizing: border-box;
+  align-items: center;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.06), rgba(37, 99, 235, 0.02));
+}
+
+.warehouse-admin-top-vseg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  height: 100%;
+  padding: 0 var(--block-inset);
+  box-sizing: border-box;
+}
+
+.warehouse-admin-top-vseg:not(:last-child) {
+  border-right: 1px solid rgba(15, 23, 42, 0.16);
+}
+
+.warehouse-admin-top-vseg-label {
+  margin: 0;
+  width: 100%;
+  max-width: 100%;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: rgba(30, 41, 59, 0.72);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.theme-dark .warehouse-admin-top-vseg-label {
+  color: rgba(226, 232, 240, 0.85);
+}
+
+.theme-dark .warehouse-admin-top-vlines-strip {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, rgba(96, 165, 250, 0.1), rgba(96, 165, 250, 0.02));
+}
+
+.theme-dark .warehouse-admin-top-vseg:not(:last-child) {
+  border-right-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Jahon body: tepa sarlavha bilan bir xil 10 teng ustun */
+@media (max-width: 1023px) {
+  .warehouse-admin-body-scroll-wrap {
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    touch-action: pan-x;
+  }
+
+  .warehouse-admin-body-scroll-wrap .warehouse-admin-grid-rows {
+    width: max-content;
+    max-width: none;
+  }
+
+  .warehouse-admin-body-scroll-wrap .warehouse-admin-grid-row {
+    width: max-content;
+    grid-template-columns: repeat(10, minmax(82px, 1fr));
+  }
+
+  .warehouse-admin-body-scroll-wrap .warehouse-admin-grid-cell {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .warehouse-admin-body-scroll-wrap {
+    overflow-x: visible;
+  }
+
+  .warehouse-admin-body-scroll-wrap .warehouse-admin-grid-rows {
+    width: 100%;
+  }
+
+  .warehouse-admin-body-scroll-wrap .warehouse-admin-grid-row {
+    width: 100%;
+    grid-template-columns: repeat(10, minmax(0, 1fr));
+  }
+}
+
+/* Birlashtirilgan jadval: ustun sarlavhalari va maʼlumotlar bitta gorizontal scrollda */
+.warehouse-admin-sheet-unified {
+  --wa-sheet-col: 92px;
+  margin: 8px calc(-1 * var(--warehouse-body-pad-inline, var(--block-inset))) 0;
+  padding-inline: var(--warehouse-body-pad-inline, var(--block-inset));
+  box-sizing: border-box;
+}
+
+@media (max-width: 1023px) {
+  .warehouse-admin-sheet-unified {
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    touch-action: pan-x;
+  }
+
+  /**
+   * Mobil: sarlavha va har bir qator alohida grid — `1fr`/`max-content` ustunlarni siljitadi.
+   * Bitta ichki kenglik va repeat(10, <baribir px>) ikkalasida ham bir xil ustun chiziqlari.
+   */
+  .warehouse-admin-sheet-unified-inner {
+    width: calc(10 * var(--wa-sheet-col));
+    max-width: none;
+    box-sizing: border-box;
+  }
+
+  .warehouse-admin-sheet-unified .warehouse-admin-top-vlines-strip--sheet {
+    width: 100%;
+    box-sizing: border-box;
+    grid-template-columns: repeat(10, var(--wa-sheet-col));
+  }
+
+  .warehouse-admin-sheet-unified .warehouse-admin-top-vseg {
+    padding: 0 6px;
+    min-width: 0;
+  }
+
+  .warehouse-admin-sheet-unified .warehouse-admin-top-vseg-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .warehouse-admin-sheet-unified .warehouse-admin-grid-rows {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .warehouse-admin-sheet-unified .warehouse-admin-grid-row {
+    width: 100%;
+    box-sizing: border-box;
+    grid-template-columns: repeat(10, var(--wa-sheet-col));
+  }
+
+  .warehouse-admin-sheet-unified .warehouse-admin-grid-cell {
+    padding-left: 4px;
+    padding-right: 4px;
+    min-width: 0;
+  }
+
+  .warehouse-admin-sheet-unified .warehouse-admin-grid-row-empty {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+@media (min-width: 1024px) {
+  .warehouse-admin-sheet-unified {
+    overflow-x: visible;
+  }
+
+  .warehouse-admin-sheet-unified-inner {
+    width: 100%;
+  }
+
+  .warehouse-admin-sheet-unified .warehouse-admin-top-vlines-strip--sheet {
+    width: 100%;
+    grid-template-columns: repeat(10, minmax(0, 1fr));
+  }
+
+  .warehouse-admin-sheet-unified .warehouse-admin-grid-rows {
+    width: 100%;
+  }
+
+  .warehouse-admin-sheet-unified .warehouse-admin-grid-row {
+    width: 100%;
+    grid-template-columns: repeat(10, minmax(0, 1fr));
+  }
+}
+
+.theme-dark .warehouse-admin-sheet-unified {
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+
+.warehouse-admin-grid-rows--sheet {
+  border-top: none;
+}
+
+.warehouse-admin-body-scroll-wrap {
+  margin: 8px calc(-1 * var(--warehouse-body-pad-inline, var(--block-inset))) 0;
+  padding-inline: var(--warehouse-body-pad-inline, var(--block-inset));
+  box-sizing: border-box;
+}
+
+.warehouse-admin-grid-rows {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 8px 20px -14px rgba(15, 23, 42, 0.35);
+  overflow: hidden;
+}
+
+.theme-dark .warehouse-admin-grid-rows {
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 20px -14px rgba(0, 0, 0, 0.6);
+}
+
+.warehouse-admin-grid-row-empty {
+  margin: 0;
+  padding: 0.75rem 10px;
+  font-size: 0.875rem;
+  color: var(--seller-muted, #64748b);
+}
+
+.warehouse-admin-grid-row {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 48px;
+  border-top: 1px solid rgba(15, 23, 42, 0.1);
+  background: var(--seller-bg, #fff);
+  transition: background-color 0.15s ease;
+}
+
+.warehouse-admin-grid-row:nth-child(even) {
+  background: rgba(15, 23, 42, 0.015);
+}
+
+.warehouse-admin-grid-row:hover {
+  background: rgba(37, 99, 235, 0.045);
+}
+
+.theme-dark .warehouse-admin-grid-row {
+  border-top-color: rgba(255, 255, 255, 0.08);
+  background: transparent;
+}
+
+.theme-dark .warehouse-admin-grid-row:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.theme-dark .warehouse-admin-grid-row:hover {
+  background: rgba(96, 165, 250, 0.08);
+}
+
+.warehouse-admin-grid-cell {
+  min-width: 0;
+  min-height: 0;
+  padding: var(--block-inset);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border-right: 1px solid rgba(15, 23, 42, 0.12);
+}
+
+.warehouse-admin-grid-cell:last-child {
+  border-right: none;
+}
+
+.theme-dark .warehouse-admin-grid-cell {
+  border-right-color: rgba(255, 255, 255, 0.08);
+}
+
+.warehouse-admin-cell-img {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.warehouse-admin-product-thumb-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.06);
+  flex-shrink: 0;
+}
+
+.theme-dark .warehouse-admin-product-thumb-wrap {
+  background: rgba(248, 250, 252, 0.08);
+}
+
+.warehouse-admin-product-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.warehouse-admin-thumb-ph {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: rgba(15, 23, 42, 0.35);
+}
+
+.theme-dark .warehouse-admin-thumb-ph {
+  color: rgba(226, 232, 240, 0.45);
+}
+
+.warehouse-admin-cell-name {
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+}
+
+.warehouse-admin-cell-name-inner {
+  width: 100%;
+  overflow: hidden;
+}
+
+.warehouse-admin-product-name-row {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: 0.78rem;
+  line-height: 1.25;
+}
+
+@media (max-width: 1023px) {
+  .warehouse-admin-product-name-row {
+    white-space: nowrap;
+  }
+}
+
+.warehouse-admin-seller-sub {
+  display: block;
+  width: 100%;
+  margin-top: 2px;
+  font-size: 0.645rem;
+  font-weight: 500;
+  color: var(--seller-muted, #64748b);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.warehouse-admin-num-cell {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.warehouse-admin-cell-text {
+  justify-content: center;
+}
+
+.warehouse-admin-cell-ellipsis {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.warehouse-admin-actions-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.warehouse-admin-actions-stack .warehouse-admin-tasdiq-btn {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  text-align: center;
+  min-width: 0;
+}
+
+.warehouse-admin-action-btn--warn {
+  background: transparent !important;
+  border-color: rgba(245, 158, 11, 0.5) !important;
+  color: #b45309 !important;
+}
+
+.warehouse-admin-action-btn--warn:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.12) !important;
+  border-color: rgba(245, 158, 11, 0.75) !important;
+}
+
+.theme-dark .warehouse-admin-action-btn--warn {
+  border-color: rgba(251, 191, 36, 0.45) !important;
+  color: #fbbf24 !important;
+}
+
+.theme-dark .warehouse-admin-action-btn--warn:hover:not(:disabled) {
+  background: rgba(251, 191, 36, 0.12) !important;
+}
+
+.warehouse-admin-action-btn--danger {
+  background: transparent !important;
+  border-color: rgba(220, 38, 38, 0.5) !important;
+  color: #b91c1c !important;
+  line-height: 1.15;
+}
+
+.warehouse-admin-action-btn--danger:hover:not(:disabled) {
+  background: rgba(220, 38, 38, 0.1) !important;
+  border-color: rgba(220, 38, 38, 0.75) !important;
+}
+
+.theme-dark .warehouse-admin-action-btn--danger {
+  border-color: rgba(248, 113, 113, 0.5) !important;
+  color: #f87171 !important;
+}
+
+.theme-dark .warehouse-admin-action-btn--danger:hover:not(:disabled) {
+  background: rgba(248, 113, 113, 0.12) !important;
+}
+
+.warehouse-admin-cell-actions {
+  padding: 4px;
+  min-width: 0;
+}
+
+.warehouse-admin-tasdiq-btn {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgba(37, 99, 235, 0.5);
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.1), rgba(37, 99, 235, 0.04));
+  color: #1d4ed8;
+  font: inherit;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.15;
+  padding: 0.4rem 0.25rem;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.warehouse-admin-tasdiq-btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.18), rgba(37, 99, 235, 0.08));
+  border-color: rgba(37, 99, 235, 0.7);
+  box-shadow: 0 3px 8px -4px rgba(37, 99, 235, 0.5);
+}
+
+.warehouse-admin-tasdiq-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.warehouse-admin-tasdiq-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.theme-dark .warehouse-admin-tasdiq-btn {
+  border-color: rgba(147, 197, 253, 0.5);
+  background: linear-gradient(180deg, rgba(96, 165, 250, 0.16), rgba(96, 165, 250, 0.05));
+  color: #93c5fd;
+}
+
+.theme-dark .warehouse-admin-tasdiq-btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, rgba(96, 165, 250, 0.24), rgba(96, 165, 250, 0.08));
+  border-color: rgba(147, 197, 253, 0.75);
+}
+
+.warehouse-admin-actions-deleted-label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--seller-muted, #64748b);
+  line-height: 1.2;
+}
+
+.warehouse-admin-page--sheet-first {
+  padding-top: 0.15rem;
+}
+
+.warehouse-admin-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.warehouse-admin-page {
+  padding: 0.35rem 0.5rem 1rem;
+  max-width: 42rem;
+  margin: 0 auto;
+}
+
+.warehouse-admin-home-quick-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  align-items: flex-start;
+}
+
+.warehouse-admin-placeholder {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: var(--seller-muted, #64748b);
+}
+
+.warehouse-admin-home-card.muted-card {
+  border-style: dashed;
+}
+
+.warehouse-admin-home-intro {
+  margin: 0.6rem 0 1rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--seller-muted, #64748b);
+}
+
+.warehouse-admin-home-intro--tight-top {
+  margin-top: 0;
+}
+
+.warehouse-admin-home-grid {
+  display: grid;
+  gap: 0.65rem;
+}
+
+/** Brak: ikki qatorli tab tugmalari + pastda bitta panel */
+.warehouse-admin-brak-tabstrip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 0.65rem;
+  align-items: stretch;
+}
+
+@media (max-width: 639px) {
+  .warehouse-admin-brak-tabstrip {
+    grid-template-columns: 1fr;
+  }
+}
+
+.warehouse-admin-brak-tab {
+  margin: 0;
+  padding: 0.75rem 0.85rem;
+  box-sizing: border-box;
+  border: 1px solid var(--seller-border, #e2e8f0);
+  border-radius: 12px;
+  background: var(--seller-bg, #fff);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  min-height: 4.25rem;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+.theme-dark .warehouse-admin-brak-tab {
+  border-color: #334155;
+  background: #0f172a;
+}
+
+.warehouse-admin-brak-tab:hover {
+  border-color: rgba(37, 99, 235, 0.45);
+}
+
+.theme-dark .warehouse-admin-brak-tab:hover {
+  border-color: rgba(147, 197, 253, 0.45);
+}
+
+.warehouse-admin-brak-tab:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.theme-dark .warehouse-admin-brak-tab:focus-visible {
+  outline-color: #93c5fd;
+}
+
+.warehouse-admin-brak-tab--active {
+  border-color: rgba(37, 99, 235, 0.65);
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
+}
+
+.theme-dark .warehouse-admin-brak-tab--active {
+  border-color: rgba(147, 197, 253, 0.55);
+  box-shadow: 0 0 0 1px rgba(147, 197, 253, 0.18);
+}
+
+.warehouse-admin-brak-tab-line1 {
+  font-weight: 700;
+  font-size: 0.92rem;
+  line-height: 1.25;
+}
+
+.warehouse-admin-brak-tab-line2 {
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--seller-muted, #64748b);
+}
+
+.warehouse-admin-brak-tabpanel {
+  min-height: 4.5rem;
+}
+
+.warehouse-admin-brak-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.warehouse-admin-brak-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 10px 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+}
+
+.theme-dark .warehouse-admin-brak-row {
+  border-color: #334155;
+}
+
+.warehouse-admin-brak-thumb {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.warehouse-admin-brak-thumb-ph {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  display: inline-block;
+  background: #f1f5f9;
+}
+
+.theme-dark .warehouse-admin-brak-thumb-ph {
+  background: #1e293b;
+}
+
+.warehouse-admin-brak-row-meta {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+.warehouse-admin-brak-row-title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.88rem;
+}
+
+.warehouse-admin-brak-row-seller {
+  font-size: 12px;
+  opacity: 0.72;
+}
+
+.warehouse-admin-brak-row-tail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1 1 200px;
+  min-width: min(100%, 168px);
+  align-items: stretch;
+}
+
+.warehouse-admin-actions-stack--embedded {
+  width: 100%;
+}
+
+.warehouse-admin-home-card {
+  border: 1px solid var(--seller-border, #e2e8f0);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  background: var(--seller-bg, #fff);
+}
+
+.theme-dark .warehouse-admin-home-card {
+  border-color: #334155;
+  background: #0f172a;
+}
+
+.warehouse-admin-home-card-title {
+  margin: 0 0 0.55rem;
+  font-size: 0.95rem;
+}
+
+.warehouse-admin-home-link-btn {
+  display: inline-block;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  color: #2563eb;
+  text-align: left;
+}
+
+.theme-dark .warehouse-admin-home-link-btn {
+  color: #93c5fd;
+}
+
+.warehouse-admin-home-link-btn:hover {
+  text-decoration: underline;
+}
+
+/* Ledger tahrirlash (kirim/chiqim/atkaz/brak) */
+.warehouse-admin-ledger-input {
+  width: 64px;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  background: var(--bg-deep);
+  color: inherit;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.theme-dark .warehouse-admin-ledger-input {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.warehouse-admin-ledger-btn {
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  background: var(--bg-deep);
+  color: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.warehouse-admin-ledger-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.theme-dark .warehouse-admin-ledger-btn {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.warehouse-admin-ledger-btn--primary {
+  border-color: rgba(22, 163, 74, 0.45);
+  background: rgba(22, 163, 74, 0.12);
+  color: #15803d;
+}
+
+.warehouse-admin-ledger-readonly-qty {
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-align: center;
+  line-height: 1.2;
+}
+
+button.warehouse-admin-ledger--click-to-edit {
+  margin: 0;
+  padding: 4px 2px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  border-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+button.warehouse-admin-ledger--click-to-edit:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.theme-dark button.warehouse-admin-ledger--click-to-edit:hover {
+  background: rgba(96, 165, 250, 0.12);
+}
+
+button.warehouse-admin-ledger--click-to-edit:focus-visible {
+  outline: 2px solid rgba(59, 130, 246, 0.55);
+  outline-offset: 1px;
+}
+
+.warehouse-admin-cell-unit-sum {
+  padding: 4px 2px !important;
+}
+
+.warehouse-admin-cell-unit-sum-inner {
+  display: block;
+  max-width: 100%;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.theme-dark .warehouse-admin-cell-unit-sum-inner {
+  color: rgba(226, 232, 240, 0.95);
+}
+
+.theme-dark .warehouse-admin-ledger-readonly-qty {
+  color: var(--text);
+}
+
+.warehouse-admin-ledger--readonly {
+  justify-content: center;
+}
+
+.theme-dark .warehouse-admin-ledger-btn--primary {
+  border-color: rgba(74, 222, 128, 0.35);
+  background: rgba(22, 163, 74, 0.22);
+  color: #86efac;
+}
+
+/* Jadval ichidagi qisqa ledger */
+.warehouse-admin-grid-cell--ledger {
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  padding: 4px 2px;
+}
+
+.warehouse-admin-grid-row--ledger {
+  min-height: 56px;
+  align-items: stretch;
+}
+
+.warehouse-admin-grid-row--ledger > .warehouse-admin-grid-cell {
+  align-self: stretch;
+}
+
+/* «Kirim va chiqim»: kirim ombor/superuser tomonidan tasdiqlangan mahsulot qatori */
+.warehouse-admin-grid-row--ledger.warehouse-admin-grid-row--kirim-approved {
+  background: rgba(16, 185, 129, 0.12);
+  border-top-color: rgba(16, 185, 129, 0.38);
+  box-shadow: inset 3px 0 0 #10b981;
+}
+
+.theme-dark .warehouse-admin-grid-row--ledger.warehouse-admin-grid-row--kirim-approved {
+  background: rgba(16, 185, 129, 0.16);
+  border-top-color: rgba(52, 211, 153, 0.32);
+  box-shadow: inset 3px 0 0 #34d399;
+}
+
+/* Chiqim soni kiritilgan mahsulot (ombor chiqimi) */
+.warehouse-admin-grid-row--ledger.warehouse-admin-grid-row--chiqim-active {
+  background: rgba(239, 68, 68, 0.1);
+  border-top-color: rgba(239, 68, 68, 0.42);
+  box-shadow: inset 3px 0 0 #ef4444;
+}
+
+.theme-dark .warehouse-admin-grid-row--ledger.warehouse-admin-grid-row--chiqim-active {
+  background: rgba(239, 68, 68, 0.14);
+  border-top-color: rgba(248, 113, 113, 0.38);
+  box-shadow: inset 3px 0 0 #f87171;
+}
+
+/* Tasdiqlangan chiqim — yashil asosiy qator ostidagi to‘liq qizil jadval qatori */
+.warehouse-admin-grid-row--ledger.warehouse-admin-grid-row--chiqim-confirmed-duplicate {
+  background: linear-gradient(180deg, rgba(254, 226, 226, 0.92) 0%, rgba(254, 202, 202, 0.78) 100%);
+  border-top-color: rgba(239, 68, 68, 0.55);
+  box-shadow: inset 3px 0 0 #dc2626;
+}
+
+.theme-dark .warehouse-admin-grid-row--ledger.warehouse-admin-grid-row--chiqim-confirmed-duplicate {
+  background: linear-gradient(180deg, rgba(127, 29, 29, 0.5) 0%, rgba(69, 10, 10, 0.38) 100%);
+  border-top-color: rgba(248, 113, 113, 0.48);
+  box-shadow: inset 3px 0 0 #f87171;
+}
+
+.warehouse-admin-status-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.warehouse-admin-grid-row--chiqim-confirmed-duplicate .warehouse-admin-status-label--chiqim-confirmed {
+  color: #fff7ed;
+  background: rgba(185, 28, 28, 0.55);
+  border: 1px solid rgba(254, 202, 202, 0.4);
+}
+
+.theme-dark .warehouse-admin-grid-row--chiqim-confirmed-duplicate .warehouse-admin-status-label--chiqim-confirmed {
+  color: #ffedd5;
+  background: rgba(127, 29, 29, 0.65);
+  border: 1px solid rgba(252, 165, 165, 0.35);
+}
+
+.warehouse-admin-status-label--kirim-readonly {
+  color: var(--success-text, #16a34a);
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.28);
+}
+
+.theme-dark .warehouse-admin-status-label--kirim-readonly {
+  color: #86efac;
+  background: rgba(16, 185, 129, 0.16);
+  border: 1px solid rgba(52, 211, 153, 0.28);
+}
+
+.warehouse-admin-actions-tasdiq-label {
+  display: block;
+  width: 100%;
+  text-align: center;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--success-text, #16a34a);
+  line-height: 1.2;
+  margin-bottom: 2px;
+}
+
+.theme-dark .warehouse-admin-actions-tasdiq-label {
+  color: #86efac;
+}
+
+.warehouse-admin-ledger-readonly-tasdiq-label {
+  display: block;
+  width: 100%;
+  text-align: center;
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: var(--success-text, #16a34a);
+  line-height: 1.15;
+}
+
+.theme-dark .warehouse-admin-ledger-readonly-tasdiq-label {
+  color: #86efac;
+}
+
+.warehouse-admin-num-muted {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--seller-muted, #64748b);
+}
+
+.warehouse-admin-ledger--compact .warehouse-admin-ledger-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  align-items: center;
+}
+
+.warehouse-admin-ledger-input--compact {
+  width: 52px !important;
+  height: 26px !important;
+  padding: 0 4px !important;
+  font-size: 0.7rem !important;
+}
+
+.warehouse-admin-ledger--compact .warehouse-admin-ledger-btn {
+  height: 26px;
+  padding: 0 6px;
+  font-size: 0.62rem;
+}
+
+.warehouse-admin-ledger-compact-ok {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--success-text, #16a34a);
+  text-align: center;
+}
+
+.warehouse-admin-ledger-hint-actions {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 600;
+  opacity: 0.78;
+  text-align: center;
+  line-height: 1.25;
+  margin-top: 2px;
+}
+
+.warehouse-admin-actions-chiqim-overlay-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+  max-width: 120px;
+}
+
+.warehouse-admin-tasdiq-btn--chiqim-primary {
+  border-color: rgba(22, 163, 74, 0.5) !important;
+  background: rgba(22, 163, 74, 0.14) !important;
+  color: #15803d !important;
+  font-weight: 800 !important;
+}
+
+.theme-dark .warehouse-admin-tasdiq-btn--chiqim-primary {
+  border-color: rgba(74, 222, 128, 0.4) !important;
+  background: rgba(22, 163, 74, 0.22) !important;
+  color: #86efac !important;
+}
+
+.warehouse-admin-chiqim-expand-cancel {
+  border: none;
+  background: transparent;
+  color: var(--seller-muted, #64748b);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 0;
+  text-decoration: underline;
+}
+
+.theme-dark .warehouse-admin-chiqim-expand-cancel {
+  color: rgba(148, 163, 184, 0.95);
+}
+
+.warehouse-admin-sheet-row-group {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Topbar — mahsulot skaneri tugmasi (qo'ng'iroqcha chap tarafida) */
+.warehouse-admin-topbar-scan-btn {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  border: 1px solid var(--picker-tb-border);
+  background: var(--picker-tb-surface);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.warehouse-admin-topbar-scan-btn:hover {
+  filter: brightness(0.97);
+}
+
+.theme-dark .warehouse-admin-topbar-scan-btn:hover {
+  filter: brightness(1.08);
+}
+
+/* Skanerdan topilgan mahsulot qatori — vaqtinchalik urg'u (pulse) */
+@keyframes warehouseAdminScanHitPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(37, 99, 235, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+  }
+}
+
+.warehouse-admin-sheet-row-group--scan-hit .warehouse-admin-grid-row {
+  background: rgba(37, 99, 235, 0.12) !important;
+  animation: warehouseAdminScanHitPulse 1.3s ease-out 2;
+}
+
+.theme-dark .warehouse-admin-sheet-row-group--scan-hit .warehouse-admin-grid-row {
+  background: rgba(96, 165, 250, 0.18) !important;
+}
