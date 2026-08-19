@@ -1,0 +1,335 @@
+/* Ombor admin yon paneli — barcha CSS dan keyin yuklanadi (main.jsx) */
+
+.warehouse-admin-shell .warehouse-admin-side-panel.staff-side-panel-ref {
+  width: min(272px, 88vw) !important;
+  max-width: 272px !important;
+  backdrop-filter: blur(24px) saturate(1.5) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.5) !important;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref {
+  background: rgba(255, 255, 255, 0.36) !important;
+  border-right: 1px solid rgba(15, 23, 42, 0.1) !important;
+  box-shadow: 6px 0 32px rgba(15, 23, 42, 0.16) !important;
+}
+
+/* Orqadagi sahifa — panel ochilganda xiralashadi (blur + qorong'ilashtirish) */
+.warehouse-admin-shell .picker-side-panel-overlay {
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  transition: opacity 0.22s ease;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .staff-side-panel-head {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .staff-side-panel-logo-icon {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  font-size: 13px;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .staff-side-panel-logo-title {
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #1d4ed8 !important;
+  letter-spacing: -0.01em;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .staff-side-panel-logo-subtitle {
+  font-size: 7px;
+  line-height: 1.1;
+  letter-spacing: 0.9px;
+  color: #94a3b8 !important;
+  padding-left: 26px;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .staff-side-intro {
+  height: auto;
+  min-height: 38px;
+  max-height: none;
+  padding: 8px 16px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  white-space: normal;
+  overflow: visible;
+  flex-wrap: wrap;
+  row-gap: 2px;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .staff-side-intro strong {
+  color: #0f172a !important;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .staff-side-intro .courier-side-meta {
+  color: #64748b !important;
+  font-size: 12px;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-item {
+  color: #1e293b !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-item:hover {
+  background: rgba(37, 99, 235, 0.08) !important;
+  color: #1e293b !important;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-item.picker-side-panel-item-active {
+  background: rgba(37, 99, 235, 0.12) !important;
+  color: #1d4ed8 !important;
+  font-weight: 600;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-item.picker-side-panel-item-active::before {
+  background: #2563eb;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-item-icon.courier-side-nav-tg-plane {
+  color: #1e3a8a !important;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-footer {
+  padding: 12px 14px !important;
+  border-top: 1px solid rgba(15, 23, 42, 0.08) !important;
+  gap: 10px !important;
+  flex-direction: row !important;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-logout {
+  background: rgba(239, 68, 68, 0.08) !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+  color: #dc2626 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.12);
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-logout:hover {
+  background: rgba(239, 68, 68, 0.14) !important;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-theme-row {
+  background: rgba(15, 23, 42, 0.06) !important;
+  border: 1px solid rgba(15, 23, 42, 0.12) !important;
+  color: #475569 !important;
+  flex: 0 0 40px !important;
+  width: 40px !important;
+  min-width: 40px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  padding: 0 !important;
+}
+
+.warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-theme-row:hover {
+  background: rgba(15, 23, 42, 0.1) !important;
+}
+
+.warehouse-admin-shell.picker-mobile.picker-app .picker-side-panel-overlay {
+  background: rgba(15, 23, 42, 0.3) !important;
+  backdrop-filter: blur(3px) !important;
+  -webkit-backdrop-filter: blur(3px) !important;
+}
+
+/* Tun rejimi */
+html.theme-dark .warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref {
+  background: rgba(16, 27, 49, 0.34) !important;
+  border-right-color: rgba(255, 255, 255, 0.07) !important;
+  box-shadow: 6px 0 40px rgba(0, 0, 0, 0.55) !important;
+}
+
+html.theme-dark .warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .staff-side-panel-head,
+html.theme-dark .warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .staff-side-intro {
+  border-bottom-color: rgba(255, 255, 255, 0.07);
+}
+
+html.theme-dark .warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .staff-side-panel-logo-title {
+  color: #93c5fd !important;
+}
+
+html.theme-dark .warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .staff-side-panel-logo-subtitle {
+  color: rgba(150, 150, 210, 0.55) !important;
+}
+
+html.theme-dark .warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .staff-side-intro strong {
+  color: #d0d0f0 !important;
+}
+
+html.theme-dark .warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .staff-side-intro .courier-side-meta {
+  color: rgba(130, 130, 185, 0.65) !important;
+}
+
+html.theme-dark .warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-item {
+  color: rgba(220, 222, 245, 0.92) !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+html.theme-dark .warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-item:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: rgba(210, 220, 255, 0.95) !important;
+}
+
+html.theme-dark .warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-item.picker-side-panel-item-active {
+  background: rgba(74, 158, 255, 0.13) !important;
+  color: #80c8ff !important;
+}
+
+html.theme-dark .warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-item-icon.courier-side-nav-tg-plane {
+  color: inherit !important;
+}
+
+html.theme-dark .warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-footer {
+  border-top-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+html.theme-dark .warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-logout {
+  background: rgba(160, 30, 30, 0.18) !important;
+  border-color: rgba(210, 60, 60, 0.35) !important;
+  color: #ff8585 !important;
+  box-shadow: none;
+}
+
+html.theme-dark .warehouse-admin-shell.picker-mobile .warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-theme-row {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: rgba(190, 200, 245, 0.8) !important;
+}
+
+html.theme-dark .warehouse-admin-shell.picker-mobile.picker-app .picker-side-panel-overlay {
+  background: rgba(0, 0, 0, 0.62) !important;
+  backdrop-filter: blur(3px) !important;
+  -webkit-backdrop-filter: blur(3px) !important;
+}
+
+@media (min-width: 1025px) {
+  .warehouse-admin-shell .picker-side-panel.warehouse-admin-side-panel.staff-side-panel-ref {
+    width: min(300px, min(92vw, 100% - 2rem)) !important;
+    max-width: 300px !important;
+  }
+}
+
+/* ============================================================
+   YAKUNIY TUZATISH (bu fayl barcha CSS dan keyin yuklanadi):
+   Endi sarlavha ikki qatorli: [icon + "MyShop" + ID] va pastda subtitle.
+   Bu struktura brend nomi va "#ID" bir-birining ustiga chiqib ketishining
+   oldini butunlay oladi (endi ular hech qachon bir xil qatorda joy talashmaydi).
+   ============================================================ */
+
+.warehouse-admin-side-panel.staff-side-panel-ref .staff-side-panel-head {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
+  overflow: hidden !important;
+  padding: 0 14px !important;
+  gap: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.warehouse-admin-side-panel.staff-side-panel-ref .staff-side-panel-head-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-wrap: nowrap !important;
+  width: 100%;
+  min-width: 0;
+}
+
+.warehouse-admin-side-panel.staff-side-panel-ref .staff-side-panel-brand {
+  display: flex !important;
+  align-items: center !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  gap: 8px !important;
+}
+
+.warehouse-admin-side-panel.staff-side-panel-ref .staff-side-panel-logo-icon {
+  flex-shrink: 0 !important;
+}
+
+.warehouse-admin-side-panel.staff-side-panel-ref .staff-side-panel-logo-title {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap !important;
+}
+
+.warehouse-admin-side-panel.staff-side-panel-ref .staff-side-panel-logo-subtitle {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap !important;
+}
+
+.warehouse-admin-side-panel.staff-side-panel-ref .staff-side-panel-head-extra {
+  flex: 0 0 auto !important;
+  flex-shrink: 0 !important;
+  margin-left: 6px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.warehouse-admin-side-panel.staff-side-panel-ref .staff-topbar-center-id--inline {
+  font-size: 0.68rem !important;
+  padding: 2px 8px !important;
+  white-space: nowrap !important;
+}
+
+/* Chap menyu qatorlari — qulay, siqilmagan ko'rinish (+2px oraliq) */
+.warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-nav {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  row-gap: 8px !important;
+  padding: 14px 10px !important;
+}
+
+.warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-item {
+  min-height: 48px !important;
+  height: auto !important;
+  max-height: none !important;
+  padding: 12px 14px !important;
+  font-size: 14.5px !important;
+  line-height: 1.25 !important;
+  border-radius: 12px !important;
+  gap: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-item-icon {
+  font-size: 19px !important;
+  width: 26px !important;
+  min-width: 26px !important;
+  flex-shrink: 0 !important;
+}
+
+.warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-item-label {
+  padding: 0 !important;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.warehouse-admin-side-panel.staff-side-panel-ref .staff-side-intro {
+  padding: 12px 16px !important;
+}
+
+.warehouse-admin-side-panel.staff-side-panel-ref .picker-side-panel-footer {
+  padding: 14px 14px !important;
+}
+
+@media (max-width: 380px) {
+  .warehouse-admin-side-panel.staff-side-panel-ref .staff-side-panel-logo-subtitle {
+    display: none;
+  }
+}
