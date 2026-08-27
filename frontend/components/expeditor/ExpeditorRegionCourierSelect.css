@@ -1,0 +1,68 @@
+.erc {
+  width: 100%;
+}
+
+/* Viloyat qatori: nom (chap) + son + o'ngga strelka */
+.erc-region-chip {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  text-align: left;
+}
+
+.erc-region-chip__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.erc-region-chip__count {
+  flex: 0 0 auto;
+  min-width: 1.5rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.erc-region-chip__go {
+  flex: 0 0 auto;
+  opacity: 0.65;
+  font-size: 0.8rem;
+}
+
+.erc-back-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-weight: 800;
+  opacity: 0.95;
+}
+
+.erc-empty {
+  padding: 0.85rem 0.5rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+/* 2-bosqich modali — 1-modal ustidan */
+.erc-backdrop--step2 {
+  z-index: 1600 !important;
+  background: rgba(15, 23, 42, 0.28) !important;
+}
+
+html.theme-dark .erc-backdrop--step2 {
+  background: rgba(0, 0, 0, 0.5) !important;
+}
+
+.erc-panel--step2 {
+  z-index: 1601 !important;
+}
