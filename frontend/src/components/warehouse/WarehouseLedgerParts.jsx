@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 /** Sklad kataklari sarlavalari — `.warehouse-admin-top-vseg-label` */
 export const WAREHOUSE_GRID_HEADERS = [
@@ -61,6 +62,12 @@ export function LedgerQtyEditor({
   const [expanded, setExpanded] = useState(false);
   const inputRef = useRef(null);
   const prevCancelExpandKey = useRef(cancelExpandKey);
+  const confirmOkClass =
+    field === 'warehouse_kirim_qty'
+      ? 'warehouse-admin-ledger-compact-ok warehouse-admin-ledger-compact-ok--kirim'
+      : field === 'warehouse_chiqim_qty'
+        ? 'warehouse-admin-ledger-compact-ok warehouse-admin-ledger-compact-ok--chiqim'
+        : 'warehouse-admin-ledger-compact-ok';
 
   useEffect(() => {
     setExpanded(false);
@@ -125,7 +132,7 @@ export function LedgerQtyEditor({
         <span className="warehouse-admin-ledger-readonly-qty">{fv}</span>
         {confirmedAt && (
           <>
-            <span className="warehouse-admin-ledger-compact-ok" title="Tasdiqlangan" aria-hidden>
+            <span className={confirmOkClass} title="Tasdiqlangan" aria-hidden>
               ✓
             </span>
             <span className="warehouse-admin-ledger-readonly-tasdiq-label">Tasdiqlangan</span>
@@ -199,7 +206,7 @@ export function LedgerQtyEditor({
       >
         <span className="warehouse-admin-ledger-readonly-qty">{fv}</span>
         {confirmedAt && (
-          <span className="warehouse-admin-ledger-compact-ok" title="Tasdiqlangan">
+          <span className={confirmOkClass} title="Tasdiqlangan">
             ✓
           </span>
         )}
@@ -295,7 +302,7 @@ export function LedgerQtyEditor({
       )}
       {confirmedAt && compact && (
         <>
-          <span className="warehouse-admin-ledger-compact-ok" title="Tasdiqlangan" aria-hidden>
+          <span className={confirmOkClass} title="Tasdiqlangan" aria-hidden>
             ✓
           </span>
           <span className="warehouse-admin-ledger-readonly-tasdiq-label">Tasdiqlangan</span>
@@ -364,6 +371,70 @@ export function WarehouseActionsColumn({
   onChiqimLedgerSaveAndConfirm,
   onChiqimLedgerExpandCancel,
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+  const triggerRef = useRef(null);
+  const menuPanelRef = useRef(null);
+  const [dropdownStyle, setDropdownStyle] = useState(null);
+
+  useEffect(() => {
+    if (!menuOpen) {
+      setDropdownStyle(null);
+      return;
+    }
+    const handleClick = (e) => {
+      if (menuRef.current && menuRef.current.contains(e.target)) {
+        return;
+      }
+      if (triggerRef.current && triggerRef.current.contains(e.target)) {
+        return;
+      }
+      if (menuPanelRef.current && menuPanelRef.current.contains(e.target)) {
+        return;
+      }
+      setMenuOpen(false);
+    };
+    const handleKey = (e) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('touchstart', handleClick);
+    document.addEventListener('click', handleClick);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('touchstart', handleClick);
+      document.removeEventListener('click', handleClick);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [menuOpen]);
+
+  useEffect(() => {
+    if (!menuOpen || !triggerRef.current || typeof window === 'undefined') {
+      return;
+    }
+    const updatePosition = () => {
+      const rect = triggerRef.current.getBoundingClientRect();
+      const menuWidth = 170;
+      let left = Math.ceil(rect.left) - menuWidth - 4;
+      const minLeft = 8;
+      if (left < minLeft) left = minLeft;
+      setDropdownStyle({
+        position: 'fixed',
+        top: `${Math.max(0, Math.ceil(rect.top))}px`,
+        left: `${left}px`,
+        zIndex: 9999,
+      });
+    };
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [menuOpen]);
+
   if (readOnly) {
     const showTasdiq =
       Boolean(p?.warehouse_approved_at) &&
@@ -484,19 +555,50 @@ export function WarehouseActionsColumn({
   if (actionsContext === 'delisted_page') {
     return (
       <div className="warehouse-admin-grid-cell warehouse-admin-cell-actions" role="gridcell">
-        {relisted ? (
-          <span className="warehouse-admin-status-label warehouse-admin-status-label--relisted">Sotuvga qaytarildi</span>
-        ) : (
+        <div className="warehouse-admin-actions-dropdown" ref={menuRef}>
           <button
             type="button"
-            className="warehouse-admin-tasdiq-btn warehouse-admin-action-btn--return"
-            title="Mahsulotni sotuvga qaytarish"
-            onClick={() => void onToggleSale(p)}
-            disabled={rowBusy || !delisted}
+            ref={triggerRef}
+            className="warehouse-admin-actions-dropdown-trigger"
+            aria-label="Amallar"
+            aria-expanded={menuOpen}
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              setMenuOpen((prev) => !prev);
+            }}
           >
-            {busy.delistingId === p.id ? '...' : 'Qaytarish'}
+            <i className="fas fa-ellipsis-v" aria-hidden />
           </button>
-        )}
+          {menuOpen
+            ? createPortal(
+                <div
+                  className="warehouse-admin-actions-dropdown-menu"
+                  role="menu"
+                  ref={menuPanelRef}
+                  style={dropdownStyle || undefined}
+                >
+                  {relisted ? (
+                    <span className="warehouse-admin-status-label warehouse-admin-status-label--relisted">Sotuvga qaytarildi</span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="warehouse-admin-tasdiq-btn warehouse-admin-action-btn--return"
+                      role="menuitem"
+                      title="Mahsulotni sotuvga qaytarish"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        void onToggleSale(p);
+                      }}
+                      disabled={rowBusy || !delisted}
+                    >
+                      {busy.delistingId === p.id ? '...' : 'Qaytarish'}
+                    </button>
+                  )}
+                </div>,
+                document.body,
+              )
+            : null}
+        </div>
       </div>
     );
   }
@@ -509,11 +611,8 @@ export function WarehouseActionsColumn({
       ? 'Tasdiq bekor'
       : 'Tasdiqlash';
 
-  // Sotuvdan olish mahsulotning ombor (Kirim) boshqaruvida bajariladi.
-  // Chiqim sahifasi esa faqat chiqim harakatlari tarixini ko‘rsatadi.
   const showSaleToggle =
     actionsContext !== 'home' && actionsContext !== 'chiqim_page';
-  // Bosh sahifada faqat bitta «Tasdiqlash» tugmasi yetarli.
   const showDelete = actionsContext !== 'home';
 
   const saleDisabled = rowBusy || (!delisted && !canDelist);
@@ -526,51 +625,54 @@ export function WarehouseActionsColumn({
       ? 'Saytdan yechish (sotuvdan olinganlar ro‘yxatiga)'
       : 'Avval bosh sahifada kirim tasdiqlang yoki mahsulot sotuvda (active) bo‘lsin';
 
-  const stackInner = (
-    <>
-      {showPrimary && (
-        <button
-          type="button"
-          className="warehouse-admin-tasdiq-btn"
-          title={
-            primaryDisabled && !primaryPending && kind === null
-              ? actionsContext === 'home'
-                ? 'Navbatda tasdiqlash'
-                : 'Hozircha tasdiqlash yoki bekor qilish uchun navbat yo‘q'
-              : undefined
-          }
-          onClick={() => void onPrimary(p, actionsContext)}
-          disabled={primaryDisabled}
-        >
-          {primaryLabel}
-        </button>
-      )}
-      {showSaleToggle && (
-        <button
-          type="button"
-          className="warehouse-admin-tasdiq-btn warehouse-admin-action-btn--warn"
-          title={saleTitle}
-          onClick={() => void onToggleSale(p)}
-          disabled={saleDisabled}
-        >
-          {saleLabel}
-        </button>
-      )}
-      {showDelete && (
-        <button
-          type="button"
-          className="warehouse-admin-tasdiq-btn warehouse-admin-action-btn--danger"
-          onClick={() => void onDelete(p)}
-          disabled={rowBusy}
-        >
-          {busy.deletingProductId === p.id ? '...' : 'Maxsulotni uchirish'}
-        </button>
-      )}
-    </>
-  );
+  const hasActions = showPrimary || showSaleToggle || showDelete;
 
   if (isEmbedded) {
-    return <div className="warehouse-admin-actions-stack warehouse-admin-actions-stack--embedded">{stackInner}</div>;
+    return (
+      <div className="warehouse-admin-actions-stack warehouse-admin-actions-stack--embedded">
+        {showKirimTasdiqLabel && (
+          <span className="warehouse-admin-actions-tasdiq-label">Tasdiqlangan</span>
+        )}
+        {showPrimary && (
+          <button
+            type="button"
+            className="warehouse-admin-tasdiq-btn"
+            title={
+              primaryDisabled && !primaryPending && kind === null
+                ? actionsContext === 'home'
+                  ? 'Navbatda tasdiqlash'
+                  : 'Hozircha tasdiqlash yoki bekor qilish uchun navbat yo‘q'
+                : undefined
+            }
+            onClick={() => void onPrimary(p, actionsContext)}
+            disabled={primaryDisabled}
+          >
+            {primaryLabel}
+          </button>
+        )}
+        {showSaleToggle && (
+          <button
+            type="button"
+            className="warehouse-admin-tasdiq-btn warehouse-admin-action-btn--warn"
+            title={saleTitle}
+            onClick={() => void onToggleSale(p)}
+            disabled={saleDisabled}
+          >
+            {saleLabel}
+          </button>
+        )}
+        {showDelete && (
+          <button
+            type="button"
+            className="warehouse-admin-tasdiq-btn warehouse-admin-action-btn--danger"
+            onClick={() => void onDelete(p)}
+            disabled={rowBusy}
+          >
+            {busy.deletingProductId === p.id ? '...' : 'Maxsulotni uchirish'}
+          </button>
+        )}
+      </div>
+    );
   }
 
   const showKirimTasdiqLabel =
@@ -578,11 +680,85 @@ export function WarehouseActionsColumn({
 
   return (
     <div className="warehouse-admin-grid-cell warehouse-admin-cell-actions" role="gridcell">
-      <div className="warehouse-admin-actions-stack">
+      <div className="warehouse-admin-actions-dropdown" ref={menuRef}>
         {showKirimTasdiqLabel && (
           <span className="warehouse-admin-actions-tasdiq-label">Tasdiqlangan</span>
         )}
-        {stackInner}
+        <button
+          type="button"
+          ref={triggerRef}
+          className="warehouse-admin-actions-dropdown-trigger"
+          aria-label="Amallar"
+          aria-expanded={menuOpen}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+            setMenuOpen((prev) => !prev);
+          }}
+        >
+          <i className="fas fa-ellipsis-v" aria-hidden />
+        </button>
+        {menuOpen && hasActions
+          ? createPortal(
+              <div
+                className="warehouse-admin-actions-dropdown-menu"
+                role="menu"
+                ref={menuPanelRef}
+                style={dropdownStyle || undefined}
+              >
+                {showPrimary && (
+                  <button
+                    type="button"
+                    className="warehouse-admin-tasdiq-btn"
+                    role="menuitem"
+                    title={
+                      primaryDisabled && !primaryPending && kind === null
+                        ? actionsContext === 'home'
+                          ? 'Navbatda tasdiqlash'
+                          : 'Hozircha tasdiqlash yoki bekor qilish uchun navbat yo‘q'
+                        : undefined
+                    }
+                    onClick={() => {
+                      setMenuOpen(false);
+                      void onPrimary(p, actionsContext);
+                    }}
+                    disabled={primaryDisabled}
+                  >
+                    {primaryLabel}
+                  </button>
+                )}
+                {showSaleToggle && (
+                  <button
+                    type="button"
+                    className="warehouse-admin-tasdiq-btn warehouse-admin-action-btn--warn"
+                    role="menuitem"
+                    title={saleTitle}
+                    onClick={() => {
+                      setMenuOpen(false);
+                      void onToggleSale(p);
+                    }}
+                    disabled={saleDisabled}
+                  >
+                    {saleLabel}
+                  </button>
+                )}
+                {showDelete && (
+                  <button
+                    type="button"
+                    className="warehouse-admin-tasdiq-btn warehouse-admin-action-btn--danger"
+                    role="menuitem"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      void onDelete(p);
+                    }}
+                    disabled={rowBusy}
+                  >
+                    {busy.deletingProductId === p.id ? '...' : 'Maxsulotni uchirish'}
+                  </button>
+                )}
+              </div>,
+              document.body,
+            )
+          : null}
       </div>
     </div>
   );
