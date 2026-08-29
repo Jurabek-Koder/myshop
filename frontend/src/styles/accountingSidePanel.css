@@ -1,0 +1,260 @@
+/* Buxgalteriya yon paneli — ombor admin bilan bir xil ko‘rinish */
+
+[data-apanel] {
+  --ap-sidebar-w: 300px;
+}
+
+[data-apanel] .accounting-side-panel.staff-side-panel-ref {
+  width: min(300px, 92vw) !important;
+  max-width: 300px !important;
+}
+
+[data-apanel].ap-theme-light .accounting-side-panel.staff-side-panel-ref {
+  background: #f4f6fb !important;
+  border-right: 1px solid rgba(15, 23, 42, 0.1) !important;
+  box-shadow: 6px 0 32px rgba(15, 23, 42, 0.12) !important;
+}
+
+html.theme-dark [data-apanel] .accounting-side-panel.staff-side-panel-ref {
+  background: #0f0f1e !important;
+  border-right-color: rgba(255, 255, 255, 0.07) !important;
+  box-shadow: 6px 0 40px rgba(0, 0, 0, 0.55) !important;
+}
+
+[data-apanel] .accounting-side-panel.staff-side-panel-ref .staff-side-panel-head {
+  height: auto;
+  min-height: 44px;
+  max-height: none;
+  padding: 6px 16px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+html.theme-dark [data-apanel] .accounting-side-panel.staff-side-panel-ref .staff-side-panel-head {
+  border-bottom-color: rgba(255, 255, 255, 0.07);
+}
+
+[data-apanel] .accounting-side-panel.staff-side-panel-ref .staff-side-panel-logo-icon {
+  font-size: 18px;
+}
+
+[data-apanel].ap-theme-light .accounting-side-panel.staff-side-panel-ref .staff-side-panel-logo-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a !important;
+  letter-spacing: -0.02em;
+}
+
+[data-apanel].ap-theme-light .accounting-side-panel.staff-side-panel-ref .staff-side-panel-logo-subtitle {
+  font-size: 8px;
+  letter-spacing: 1.1px;
+  color: #64748b !important;
+}
+
+html.theme-dark [data-apanel] .accounting-side-panel.staff-side-panel-ref .staff-side-panel-logo-title {
+  color: #e8e8ff !important;
+}
+
+html.theme-dark [data-apanel] .accounting-side-panel.staff-side-panel-ref .staff-side-panel-logo-subtitle {
+  color: rgba(150, 150, 210, 0.55) !important;
+}
+
+[data-apanel] .accounting-side-panel.staff-side-panel-ref .staff-side-intro {
+  height: auto;
+  min-height: 38px;
+  max-height: none;
+  padding: 8px 16px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  white-space: normal;
+  overflow: visible;
+  flex-wrap: wrap;
+  row-gap: 2px;
+}
+
+html.theme-dark [data-apanel] .accounting-side-panel.staff-side-panel-ref .staff-side-intro {
+  border-bottom-color: rgba(255, 255, 255, 0.07);
+}
+
+[data-apanel].ap-theme-light .accounting-side-panel.staff-side-panel-ref .staff-side-intro strong {
+  color: #0f172a !important;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+[data-apanel].ap-theme-light .accounting-side-panel.staff-side-panel-ref .staff-side-intro .courier-side-meta {
+  color: #64748b !important;
+  font-size: 12px;
+}
+
+html.theme-dark [data-apanel] .accounting-side-panel.staff-side-panel-ref .staff-side-intro strong {
+  color: #d0d0f0 !important;
+}
+
+html.theme-dark [data-apanel] .accounting-side-panel.staff-side-panel-ref .staff-side-intro .courier-side-meta {
+  color: rgba(130, 130, 185, 0.65) !important;
+}
+
+[data-apanel].ap-theme-light .accounting-side-panel.staff-side-panel-ref .picker-side-panel-item {
+  color: #334155 !important;
+}
+
+[data-apanel].ap-theme-light .accounting-side-panel.staff-side-panel-ref .picker-side-panel-item:hover {
+  background: rgba(37, 99, 235, 0.08) !important;
+  color: #1e293b !important;
+}
+
+[data-apanel].ap-theme-light .accounting-side-panel.staff-side-panel-ref .picker-side-panel-item.picker-side-panel-item-active {
+  background: rgba(37, 99, 235, 0.12) !important;
+  color: #1d4ed8 !important;
+  font-weight: 600;
+}
+
+[data-apanel].ap-theme-light .accounting-side-panel.staff-side-panel-ref .picker-side-panel-item.picker-side-panel-item-active::before {
+  background: #2563eb;
+}
+
+html.theme-dark [data-apanel] .accounting-side-panel.staff-side-panel-ref .picker-side-panel-item {
+  color: rgba(160, 160, 215, 0.7) !important;
+}
+
+html.theme-dark [data-apanel] .accounting-side-panel.staff-side-panel-ref .picker-side-panel-item:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: rgba(210, 220, 255, 0.95) !important;
+}
+
+html.theme-dark [data-apanel] .accounting-side-panel.staff-side-panel-ref .picker-side-panel-item.picker-side-panel-item-active {
+  background: rgba(74, 158, 255, 0.13) !important;
+  color: #80c8ff !important;
+}
+
+[data-apanel] .accounting-side-panel.staff-side-panel-ref .picker-side-panel-footer {
+  padding: 10px 14px !important;
+  border-top: 1px solid rgba(15, 23, 42, 0.08) !important;
+  gap: 10px !important;
+  flex-direction: row !important;
+}
+
+html.theme-dark [data-apanel] .accounting-side-panel.staff-side-panel-ref .picker-side-panel-footer {
+  border-top-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+[data-apanel].ap-theme-light .accounting-side-panel.staff-side-panel-ref .picker-side-panel-logout {
+  background: rgba(239, 68, 68, 0.08) !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+  color: #dc2626 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.12);
+}
+
+html.theme-dark [data-apanel] .accounting-side-panel.staff-side-panel-ref .picker-side-panel-logout {
+  background: rgba(160, 30, 30, 0.18) !important;
+  border-color: rgba(210, 60, 60, 0.35) !important;
+  color: #ff8585 !important;
+  box-shadow: none;
+}
+
+[data-apanel].ap-theme-light .accounting-side-panel.staff-side-panel-ref .picker-side-panel-theme-row {
+  background: rgba(15, 23, 42, 0.06) !important;
+  border: 1px solid rgba(15, 23, 42, 0.12) !important;
+  color: #475569 !important;
+  flex: 0 0 40px !important;
+  width: 40px !important;
+  min-width: 40px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  padding: 0 !important;
+}
+
+html.theme-dark [data-apanel] .accounting-side-panel.staff-side-panel-ref .picker-side-panel-theme-row {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: rgba(190, 200, 245, 0.8) !important;
+}
+
+[data-apanel] .accounting-side-panel.staff-side-panel-ref .picker-side-panel-inner {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  overflow: hidden !important;
+  background: transparent !important;
+}
+
+/* Layout: desktop — grid ustuni; mobil — overlay */
+[data-apanel] .ap-layout .picker-side-panel-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 80;
+  background: rgba(15, 23, 42, 0.28) !important;
+}
+
+html.theme-dark [data-apanel] .ap-layout .picker-side-panel-overlay {
+  background: rgba(0, 0, 0, 0.62) !important;
+}
+
+[data-apanel]:not(.is-sidebar-open) .accounting-side-panel.staff-side-panel-ref {
+  display: none !important;
+}
+
+[data-apanel].is-sidebar-open .accounting-side-panel.staff-side-panel-ref {
+  display: flex !important;
+}
+
+@media (min-width: 769px) {
+  [data-apanel].is-sidebar-open .ap-layout {
+    grid-template-columns: var(--ap-sidebar-w) minmax(0, 1fr) !important;
+  }
+
+  [data-apanel] .accounting-side-panel.staff-side-panel-ref {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+    grid-column: 1;
+    grid-row: 1;
+    height: 100% !important;
+    min-height: 0 !important;
+    z-index: 1 !important;
+  }
+
+  [data-apanel] .ap-main-scroll {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  [data-apanel].is-sidebar-open .ap-main-scroll {
+    grid-column: 2;
+  }
+
+  [data-apanel] .ap-layout .picker-side-panel-overlay {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  [data-apanel] .accounting-side-panel.staff-side-panel-ref {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    height: 100% !important;
+    transform: translateX(-100%) !important;
+    z-index: 90 !important;
+  }
+
+  [data-apanel].is-sidebar-open .accounting-side-panel.staff-side-panel-ref.open {
+    transform: translateX(0) !important;
+  }
+
+  [data-apanel]:not(.is-sidebar-open) .ap-layout .picker-side-panel-overlay {
+    display: none !important;
+  }
+
+  [data-apanel].is-sidebar-open .ap-layout .picker-side-panel-overlay.show {
+    display: block !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+}
