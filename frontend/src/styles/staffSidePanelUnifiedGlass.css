@@ -1,0 +1,148 @@
+/*
+ * Barcha xodim panellari (Operator, Picker, Kuryer, Buxgalteriya) yon menyusini
+ * Ombor admin panelidagi bilan bir xil "shisha" (glass) dizaynga keltiradi:
+ *   - yanada shaffof fon + kuchliroq blur
+ *   - orqadagi sahifa panel ochilganda xiralashadi (dim + blur overlay)
+ *   - menyu qatorlari orasida qulay bo'shliq
+ *   - shaffof fon ustida ham matn aniq-tiniq o'qilishi uchun yengil text-shadow
+ *
+ * Bu fayl staffSidePanelGlass.css dan KEYIN yuklanadi (main.jsx), shu sababli
+ * shu yerdagi qiymatlar ustunlik qiladi. Ombor admin panelining o'ziga xos
+ * qoidalari (`.warehouse-admin-side-panel...`) bundan ham speсifik va aynan
+ * saqlanib qoladi — bu fayl faqat QOLGAN panellarga taalluqli.
+ */
+
+/* --- Panel foni: shaffoflik + kuchli blur --- */
+.picker-mobile .picker-side-panel.staff-side-panel-ref:not(.warehouse-admin-side-panel),
+[data-apanel] .accounting-side-panel.staff-side-panel-ref {
+  background: rgba(255, 255, 255, 0.36) !important;
+  border-right: 1px solid rgba(15, 23, 42, 0.1) !important;
+  box-shadow: 6px 0 32px rgba(15, 23, 42, 0.16) !important;
+  backdrop-filter: blur(24px) saturate(1.5) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.5) !important;
+}
+
+html.theme-dark .picker-mobile .picker-side-panel.staff-side-panel-ref:not(.warehouse-admin-side-panel),
+html.theme-dark [data-apanel] .accounting-side-panel.staff-side-panel-ref {
+  background: rgba(16, 27, 49, 0.34) !important;
+  border-right-color: rgba(255, 255, 255, 0.07) !important;
+  box-shadow: 6px 0 40px rgba(0, 0, 0, 0.55) !important;
+}
+
+/* --- Orqadagi sahifa: panel ochilganda xiralashadi (dim + blur) --- */
+.picker-mobile .picker-side-panel-overlay,
+[data-apanel] .ap-layout .picker-side-panel-overlay {
+  background: rgba(15, 23, 42, 0.3) !important;
+  backdrop-filter: blur(3px) !important;
+  -webkit-backdrop-filter: blur(3px) !important;
+  transition: opacity 0.22s ease !important;
+}
+
+html.theme-dark .picker-mobile .picker-side-panel-overlay,
+html.theme-dark [data-apanel] .ap-layout .picker-side-panel-overlay {
+  background: rgba(0, 0, 0, 0.62) !important;
+  backdrop-filter: blur(3px) !important;
+  -webkit-backdrop-filter: blur(3px) !important;
+}
+
+/* --- Menyu qatorlari orasidagi bo'shliq — Ombor admin bilan bir xil --- */
+.picker-mobile .picker-side-panel.staff-side-panel-ref:not(.warehouse-admin-side-panel) .picker-side-panel-nav,
+[data-apanel] .accounting-side-panel.staff-side-panel-ref .picker-side-panel-nav {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  row-gap: 8px !important;
+}
+
+.picker-mobile .picker-side-panel.staff-side-panel-ref:not(.warehouse-admin-side-panel) .picker-side-panel-item,
+[data-apanel] .accounting-side-panel.staff-side-panel-ref .picker-side-panel-item {
+  min-height: 46px;
+  border-radius: 12px;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+html.theme-dark .picker-mobile .picker-side-panel.staff-side-panel-ref:not(.warehouse-admin-side-panel) .picker-side-panel-item,
+html.theme-dark [data-apanel] .accounting-side-panel.staff-side-panel-ref .picker-side-panel-item {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+/* --- Sarlavha (icon + brend nomi) — ixcham va sig'imli (Picker / Kuryer / Operator) --- */
+.picker-mobile .picker-side-panel.staff-side-panel-ref:not(.warehouse-admin-side-panel) .staff-side-panel-head {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  height: 56px !important;
+  min-height: 56px !important;
+  max-height: 56px !important;
+  overflow: hidden !important;
+  padding: 0 16px !important;
+  gap: 2px !important;
+  box-sizing: border-box !important;
+}
+
+/* --- Buxgalteriya sarlavhasi (yangi head-row tuzilmasi) — ixcham --- */
+[data-apanel] .accounting-side-panel.staff-side-panel-ref .staff-side-panel-head {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
+  overflow: hidden !important;
+  padding: 0 16px !important;
+  gap: 1px !important;
+  box-sizing: border-box !important;
+}
+
+.picker-mobile .picker-side-panel.staff-side-panel-ref:not(.warehouse-admin-side-panel) .staff-side-panel-brand,
+[data-apanel] .accounting-side-panel.staff-side-panel-ref .staff-side-panel-brand {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.picker-mobile .picker-side-panel.staff-side-panel-ref:not(.warehouse-admin-side-panel) .staff-side-panel-logo-text,
+[data-apanel] .accounting-side-panel.staff-side-panel-ref .staff-side-panel-logo-text {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 1px !important;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.picker-mobile .picker-side-panel.staff-side-panel-ref:not(.warehouse-admin-side-panel) .staff-side-panel-logo-text span,
+[data-apanel] .accounting-side-panel.staff-side-panel-ref .staff-side-panel-logo-text span {
+  line-height: 1.15 !important;
+}
+
+.picker-mobile .picker-side-panel.staff-side-panel-ref:not(.warehouse-admin-side-panel) .staff-side-panel-logo-text small,
+[data-apanel] .accounting-side-panel.staff-side-panel-ref .staff-side-panel-logo-text small {
+  line-height: 1.15 !important;
+}
+
+/* Buxgalteriya paneli StaffSidePanel.jsx (yangi tuzilma: head-row + logo-title/subtitle) dan
+   foydalanadi — Ombor admindagi kabi bir xil qat'iy ixcham balandlik + markazga tekislash. */
+[data-apanel] .accounting-side-panel.staff-side-panel-ref .staff-side-panel-head-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100%;
+  min-width: 0;
+}
+
+[data-apanel] .accounting-side-panel.staff-side-panel-ref .staff-side-panel-logo-title,
+[data-apanel] .accounting-side-panel.staff-side-panel-ref .staff-side-panel-logo-subtitle {
+  line-height: 1.15 !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap !important;
+}
+
+[data-apanel] .accounting-side-panel.staff-side-panel-ref .staff-side-intro {
+  min-height: 34px !important;
+  height: auto !important;
+  padding: 6px 16px !important;
+}
