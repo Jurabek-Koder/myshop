@@ -1,0 +1,10 @@
+{
+	"appId": "com.myshopgroup.myshop",
+	"appName": "MyShop",
+	"webDir": "dist",
+	"backgroundColor": "#ffffff",
+	"packageClassList": [
+		"AppPlugin",
+		"CAPBrowserPlugin"
+	]
+}
