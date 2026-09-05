@@ -1,0 +1,51 @@
+# ============ Sirlar / muhit fayllari — HECH QACHON commit qilinmasin ============
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env
+frontend/.env.production
+frontend/.env.local
+# .env.capacitor va .env.example — MAXSUS holat: quyida qayta ruxsat beriladi
+# (mobil build uchun kerak, sirlar emas — faqat build vaqtidagi API manzili)
+
+# ============ Node ============
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ============ Build natijalari ============
+frontend/dist/
+frontend/android/app/build/
+frontend/android/build/
+frontend/android/.gradle/
+frontend/android/capacitor-cordova-android-plugins/build/
+frontend/ios/App/build/
+frontend/ios/App/Pods/
+frontend/ios/App/App/public/
+*.apk
+*.aab
+
+# ============ Baza va foydalanuvchi fayllari — hech qachon Git'ga tushmasin ============
+backend/data/
+backend/uploads/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# ============ Log fayllar ============
+*.log
+logs/
+
+# ============ IDE / OS ============
+.DS_Store
+.vscode/
+.idea/
+Thumbs.db
+
+# ============ Qayta ruxsat: bular sir EMAS, kerakli namuna/build fayllar ============
+!backend/.env.example
+!frontend/.env.capacitor
