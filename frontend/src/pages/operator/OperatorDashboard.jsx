@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { usePickerUiSettings } from '../../context/PickerUiSettingsContext';
 import PickerLichka from '../../components/picker/PickerLichka';
+import ChatGroupsScreen from '../../components/chatGroups/ChatGroupsScreen.jsx';
 import StaffNotificationBell from '../../components/notifications/StaffNotificationBell.jsx';
 import StaffTopbarProfileMenu from '../../components/staff/StaffTopbarProfileMenu';
 import StaffTopbarCenterId from '../../components/staff/StaffTopbarCenterId.jsx';
@@ -81,6 +82,7 @@ const OPERATOR_TAB_KEYS = new Set([
   'home',
   'create_lead',
   'lichka',
+  'guruh',
   'pending',
   'contacted',
   'picker',
@@ -1368,6 +1370,7 @@ export default function OperatorDashboard() {
   const isCreateLeadFilter = filter === 'create_lead';
   const isHomeFilter = filter === 'home';
   const isLichkaFilter = filter === 'lichka';
+  const isGuruhFilter = filter === 'guruh';
   const isLichkaManualFilter = filter === 'lichka_manual';
   const isProfileFilter = filter === 'profile';
   const isSettingsFilter = filter === 'settings';
@@ -2083,6 +2086,7 @@ export default function OperatorDashboard() {
       { id: 'finance', label: 'Moliya', icon: '💰' },
       { id: 'stats', label: 'Statistika', icon: '📊' },
       { id: 'lichka', label: pickerUiT.navMyShopChat, icon: myshopPlaneIcon },
+      { id: 'guruh', label: 'Operatorlar guruhi', icon: '👥' },
       { id: 'lichka_manual', label: 'Qollanma', icon: '📘' },
     ],
     [pickerUiT.navMyShopChat]
@@ -2105,6 +2109,7 @@ export default function OperatorDashboard() {
       { id: 'finance', icon: '💰', label: 'Moliya', title: 'Moliya', description: 'Moliya bo‘limi balans va daromadlar haqida ma‘lumot beradi. Qancha sotilgan, balans holati va moliyaviy hisobotlarni shu yerdan kuzatishingiz mumkin.' },
       { id: 'stats', icon: '📊', label: 'Statistika', title: 'Statistika', description: 'Statistika bo‘limi ishlash ko‘rsatkichlarini tahlil qiladi. Bu yerda grafika va diagrammalar orqali natijalaringizni kuzatishingiz mumkin.' },
       { id: 'lichka', icon: myshopPlaneIcon, label: pickerUiT.navMyShopChat, title: 'My Chat', description: 'My Chat operatorlararo yozishmalar va mijozlar bilan muloqot uchun. Bu bo‘limdan xabarlarni o‘qib, javob yozishingiz, rasm yoki fayl yuborishingiz mumkin.' },
+      { id: 'guruh', icon: '👥', label: 'Operatorlar guruhi', title: 'Operatorlar guruhi', description: 'Barcha operatorlar bilan bitta umumiy guruh chat. Ombor admini va superuser bu yerga admin sifatida qo‘shilgan.' },
     ],
     [pickerUiT.navHome, pickerUiT.navMyShopChat]
   );
@@ -2150,7 +2155,7 @@ export default function OperatorDashboard() {
     return `Leadlar: ${leads.length}`;
   }, [filter, finance.earnings.length, isOrdersFilter, isArchivedOrdersFilter, orders.length, isHomeFilter, isCreateLeadFilter, products.length, isLichkaFilter, leads.length, pendingOrders.length]);
 
-  const mainTelegramLayout = isLichkaFilter;
+  const mainTelegramLayout = isLichkaFilter || isGuruhFilter;
   const hideTopbarForMessaging = isLichkaFilter;
 
   const todayLine = useMemo(
@@ -2333,7 +2338,9 @@ export default function OperatorDashboard() {
 
         <main className={`picker-main operator-picker-main${mainTelegramLayout ? ' picker-main--telegram' : ''}`}>
           <StaffAdvanceConfirm />
-          {isLichkaFilter ? (
+          {isGuruhFilter ? (
+            <ChatGroupsScreen onExit={() => goNav('home')} />
+          ) : isLichkaFilter ? (
             <PickerLichka
               t={pickerUiT}
               request={request}
